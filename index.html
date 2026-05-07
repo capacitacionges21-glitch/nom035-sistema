@@ -5,16 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema NOM-035 STPS | HR Dashboard</title>
     
-    <!-- Tailwind CSS para diseño moderno y responsive -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Chart.js para gráficos ejecutivos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Iconos Phosphor -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
@@ -59,17 +55,13 @@
 </head>
 <body class="antialiased h-screen overflow-hidden flex flex-col">
 
-    <!-- Sistema de Notificaciones (Toasts) en lugar de alerts -->
     <div id="toast-container" class="fixed top-4 left-4 right-4 sm:left-auto sm:w-96 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- MAIN APP CONTAINER -->
     <div id="app" class="h-full w-full flex-1 overflow-y-auto">
 
-        <!-- ================= LOGIN VIEW (PANTALLA DE ACCESO) ================= -->
         <div id="login-view" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 fade-in">
             <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden">
                 
-                <!-- Opciones Iniciales (Botones Principales) -->
                 <div id="auth-landing" class="fade-in">
                     <div class="text-center mb-8">
                         <div class="mx-auto h-12 w-12 bg-blue-600 text-white rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-blue-200">
@@ -102,7 +94,6 @@
                     </div>
                 </div>
 
-                <!-- Formulario Empleado -->
                 <div id="auth-employee" class="hidden fade-in">
                     <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-blue-600 flex items-center transition-colors">
                         <i class="ph ph-arrow-left mr-1"></i> Atrás
@@ -118,17 +109,13 @@
                                 class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" 
                                 placeholder="Escribe para buscar..." oninput="filterEmployees()">
                             
-                            <!-- Aquí guardamos el valor real del empleado seleccionado -->
                             <input type="hidden" id="employee-id" name="employee-id">
                             
-                            <!-- Dropdown de resultados (Autocomplete) -->
                             <ul id="employee-dropdown" class="absolute z-20 mt-1 w-full bg-white shadow-lg max-h-48 rounded-md py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none hidden">
-                                <!-- Las opciones se inyectarán por JS -->
-                            </ul>
+                                </ul>
                         </div>
                         <div>
                             <label for="branch" class="block text-sm font-medium text-slate-700">Sucursal / Cadena</label>
-                            <!-- Campo modificado a readonly para autocompletado automático -->
                             <input id="branch" name="branch" type="text" readonly required
                                 class="mt-1 block w-full px-4 py-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 focus:outline-none cursor-not-allowed transition-shadow" 
                                 placeholder="Se autocompletará al seleccionar colaborador...">
@@ -139,7 +126,6 @@
                     </form>
                 </div>
 
-                <!-- Formulario Administrador -->
                 <div id="auth-admin" class="hidden fade-in">
                     <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-slate-800 flex items-center transition-colors">
                         <i class="ph ph-arrow-left mr-1"></i> Atrás
@@ -171,10 +157,8 @@
             </div>
         </div>
 
-        <!-- ================= DASHBOARD VIEW ================= -->
         <div id="dashboard-view" class="hidden h-full flex flex-col md:flex-row bg-slate-50 fade-in relative">
             
-            <!-- Mobile Dashboard Header -->
             <div class="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3 shrink-0">
                 <div class="flex items-center">
                     <i class="ph ph-chart-pie-slice text-blue-600 text-2xl mr-2"></i>
@@ -185,10 +169,8 @@
                 </button>
             </div>
 
-            <!-- Mobile Sidebar Overlay -->
             <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
 
-            <!-- Sidebar -->
             <aside id="dashboard-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col shadow-2xl transform -translate-x-full md:relative md:translate-x-0 md:shadow-none transition-transform duration-300 ease-in-out shrink-0">
                 <div class="h-16 flex items-center justify-between px-6 border-b border-slate-100 shrink-0">
                     <div class="flex items-center">
@@ -220,7 +202,6 @@
                 </div>
             </aside>
 
-            <!-- Contenido Principal Dashboard -->
             <main class="flex-1 overflow-y-auto p-6 md:p-8">
                 <div class="flex justify-between items-center mb-8">
                     <div>
@@ -228,11 +209,10 @@
                         <p class="text-sm text-slate-500 mt-1">Periodo de evaluación activo: 2026</p>
                     </div>
                     <button onclick="syncData()" class="flex items-center bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
-                        <i class="ph ph-arrows-clockwise mr-2"></i> Sincronizar Google Sheets
+                        <i class="ph ph-arrows-clockwise mr-2"></i> Actualizar Datos
                     </button>
                 </div>
 
-                <!-- KPIs -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
                         <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
@@ -240,7 +220,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500">Participación</p>
-                            <p class="text-2xl font-bold text-slate-800" id="kpi-participation">85%</p>
+                            <p class="text-2xl font-bold text-slate-800" id="kpi-participation">--%</p>
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
@@ -249,7 +229,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500">Nivel de Riesgo Global</p>
-                            <p class="text-2xl font-bold text-slate-800" id="kpi-risk">Medio-Alto</p>
+                            <p class="text-2xl font-bold text-slate-800" id="kpi-risk">--</p>
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
@@ -258,7 +238,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-slate-500">Dominios Críticos</p>
-                            <p class="text-2xl font-bold text-slate-800" id="kpi-domains">2</p>
+                            <p class="text-2xl font-bold text-slate-800" id="kpi-domains">-</p>
                         </div>
                     </div>
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
@@ -272,7 +252,6 @@
                     </div>
                 </div>
 
-                <!-- Gráficos -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                         <h3 class="text-lg font-bold text-slate-800 mb-4">Riesgo por Dominio</h3>
@@ -288,7 +267,6 @@
                     </div>
                 </div>
 
-                <!-- Tabla de Semáforos -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-slate-800">Semáforo de Categorías</h3>
@@ -304,17 +282,14 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-slate-200" id="table-categories">
-                                <!-- Se llena por JS -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </main>
         </div>
 
-        <!-- ================= SURVEY VIEW ================= -->
         <div id="survey-view" class="hidden min-h-full bg-slate-50 pb-12 fade-in">
-            <!-- Header Encuesta -->
             <header class="bg-white shadow-sm sticky top-0 z-20">
                 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div class="flex items-center min-w-0">
@@ -326,13 +301,11 @@
                         <button onclick="logout()" class="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors">Salir</button>
                     </div>
                 </div>
-                <!-- Barra de progreso -->
                 <div class="w-full bg-slate-200 h-1.5">
                     <div id="survey-progress" class="bg-blue-600 h-1.5 transition-all duration-300" style="width: 0%"></div>
                 </div>
             </header>
 
-            <!-- Contenedor de Preguntas -->
             <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-6">
                     <h2 class="text-3xl font-bold text-slate-800 mb-1">Bienvenidos a Encuesta Nom035</h2>
@@ -374,13 +347,10 @@
 
                 <form id="dynamic-survey-form" onsubmit="submitSurvey(event)">
                     <div id="questions-container" class="space-y-6">
-                        <!-- Las preguntas se inyectarán aquí dinámicamente por páginas -->
-                    </div>
+                        </div>
 
-                    <!-- Botonera adaptada para móvil (se apilan verticalmente en pantallas pequeñas) -->
                     <div id="survey-nav-buttons" class="mt-8 flex flex-col-reverse sm:flex-row justify-between items-center gap-3 pt-6 border-t border-slate-200">
-                        <!-- Botones Atrás / Siguiente se inyectan aquí con JavaScript -->
-                    </div>
+                        </div>
                 </form>
             </main>
         </div>
@@ -522,7 +492,7 @@
             { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 }
         ];
 
-        // Se elimina el mockEmployees y se crea la variable que recibirá los datos de Sheets
+        // Variable que recibirá los datos de Sheets
         let loadedEmployees = [];
 
         // Estado de la Aplicación
@@ -554,10 +524,8 @@
             
             container.appendChild(toast);
             
-            // Animar entrada (remover translación)
             setTimeout(() => toast.classList.remove('translate-x-full', 'sm:translate-x-full'), 10);
 
-            // Remover después de 3s
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-x-full');
                 setTimeout(() => toast.remove(), 300);
@@ -574,7 +542,6 @@
             window.scrollTo(0,0);
         }
 
-        // NUEVO: Alternar vistas dentro de la caja de login
         function switchAuthView(view) {
             document.getElementById('auth-landing').classList.add('hidden');
             document.getElementById('auth-employee').classList.add('hidden');
@@ -583,7 +550,6 @@
             document.getElementById(`auth-${view}`).classList.remove('hidden');
         }
 
-        // Función para Menú Móvil del Dashboard
         function toggleSidebar() {
             const sidebar = document.getElementById('dashboard-sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -598,7 +564,6 @@
             const hiddenId = document.getElementById('employee-id');
             const filter = searchInput.value.toUpperCase();
             
-            // Borramos el ID real si el usuario empieza a borrar o modificar el texto
             hiddenId.value = '';
             document.getElementById('branch').value = '';
 
@@ -607,7 +572,6 @@
                 return;
             }
 
-            // Filtrar por número de ID o por Nombre usando los datos cargados desde Sheets
             const matches = loadedEmployees.filter(emp => 
                 (emp.id && emp.id.toUpperCase().includes(filter)) || 
                 (emp.name && emp.name.toUpperCase().includes(filter))
@@ -629,12 +593,10 @@
             }
         }
 
-        // Seleccionar un empleado de la lista
         function selectEmployee(id, name, cadena, sucursal) {
             document.getElementById('employee-search').value = `${id} - ${name}`;
-            document.getElementById('employee-id').value = id; // Guardamos el ID internamente
+            document.getElementById('employee-id').value = id; 
             
-            // Autocompletar la sucursal/cadena
             const branchInput = document.getElementById('branch');
             const cadenaText = cadena ? cadena : 'Sin Cadena';
             const sucursalText = sucursal ? sucursal : 'Sin Sucursal';
@@ -643,7 +605,6 @@
             document.getElementById('employee-dropdown').classList.add('hidden');
         }
 
-        // Cerrar el dropdown si se hace click fuera de él
         document.addEventListener('click', function(event) {
             const searchInput = document.getElementById('employee-search');
             const dropdown = document.getElementById('employee-dropdown');
@@ -654,12 +615,10 @@
             }
         });
 
-        // NUEVO: Manejar login de empleado
         function handleEmployeeLogin(event) {
             event.preventDefault();
             const empId = document.getElementById('employee-id').value;
             
-            // Validamos que hayan seleccionado un empleado de la lista, no solo escrito cualquier cosa
             if (!empId) {
                 showToast('Por favor, busca y selecciona tu nombre de la lista desplegable.', 'error');
                 return;
@@ -675,14 +634,13 @@
             renderSurvey();
         }
 
-        // NUEVO: Manejar login de administrador
         function handleAdminLogin(event) {
             event.preventDefault();
             const user = document.getElementById('admin-user').value;
             const pass = document.getElementById('admin-pass').value;
 
-            // Validación simple para el demo
-            if (user === 'admin' && pass === 'Capacit2026.') {
+            // Validación de credenciales de Administrador
+            if (user === 'admin' && pass === 'admin123') {
                 appState.user = { user, role: 'admin' };
                 showToast(`Bienvenido al Dashboard, ${user}`);
                 navigateTo('dashboard-view');
@@ -696,7 +654,6 @@
             appState.user = null;
             appState.answers = {};
             
-            // Limpiar formularios y devolver a la vista de botones
             document.getElementById('employee-login-form').reset();
             document.getElementById('admin-login-form').reset();
             document.getElementById('branch').value = '';
@@ -707,12 +664,9 @@
             navigateTo('login-view');
         }
 
-        // Manejador de Preguntas Filtro (Sí/No)
         function handleFilterChange(filterId, isYes) {
             let targets = [];
-            // Bloque 13: Si NO atiende clientes, ocultar de la 86 a la 89
             if (filterId === 85) targets = [86, 87, 88, 89];
-            // Bloque 14: Si NO tiene colaboradores a cargo, ocultar de la 91 a la 94
             if (filterId === 90) targets = [91, 92, 93, 94];
 
             targets.forEach(id => {
@@ -724,7 +678,6 @@
                     } else {
                         el.classList.add('hidden');
                         el.classList.remove('fade-in');
-                        // Deseleccionar cualquier opción previa
                         const radios = el.querySelectorAll('input[type="radio"]');
                         radios.forEach(r => r.checked = false);
                     }
@@ -736,13 +689,11 @@
             const container = document.getElementById('questions-container');
             container.innerHTML = '';
             
-            // Crear una "página" por cada bloque definido
             surveyBlocks.forEach((block) => {
                 const pageDiv = document.createElement('div');
                 pageDiv.id = `survey-page-${block.id}`;
                 pageDiv.className = 'hidden space-y-6 fade-in pb-4';
                 
-                // Encabezado del Bloque
                 const blockHeader = document.createElement('div');
                 blockHeader.className = 'bg-blue-50 rounded-2xl p-6 mb-6 border border-blue-100';
                 blockHeader.innerHTML = `
@@ -751,23 +702,19 @@
                 `;
                 pageDiv.appendChild(blockHeader);
 
-                // Filtrar las preguntas correspondientes a este bloque
                 const blockQuestions = surveyQuestions.filter(q => q.id >= block.start && q.id <= block.end);
 
                 blockQuestions.forEach((q, index) => {
                     const qCard = document.createElement('div');
                     qCard.id = `question-card-${q.id}`;
-                    // La clase 'question-card' la usaremos para la validación
                     qCard.className = 'question-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow';
                     
-                    // Si es una pregunta que depende de un filtro (86-89 o 91-94), la iniciamos oculta por defecto hasta que digan "Sí"
                     if ((q.id >= 86 && q.id <= 89) || (q.id >= 91 && q.id <= 94)) {
                         qCard.classList.add('hidden');
                     }
                     
                     let optionsHtml = '';
 
-                    // Manejo especial para preguntas de Filtro (Sí/No)
                     if (q.categoria === 'Control') {
                         const radioSiId = `q_${q.id}_v_si`;
                         const radioNoId = `q_${q.id}_v_no`;
@@ -790,7 +737,6 @@
                             </div>
                         `;
                     } else {
-                        // Manejo estándar de escala 0-4
                         optionsHtml = '<div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mt-4">';
                         scaleOptions.forEach(opt => {
                             const actualValue = q.inversa ? (4 - opt.value) : opt.value;
@@ -824,7 +770,6 @@
                 container.appendChild(pageDiv);
             });
             
-            // Inicializar en el Bloque 1
             currentSurveyPage = 1;
             updatePaginationUI();
             updateProgress();
@@ -833,7 +778,6 @@
         function updatePaginationUI() {
             const totalPages = surveyBlocks.length;
             
-            // Ocultar todas las páginas, mostrar solo la actual
             for (let p = 1; p <= totalPages; p++) {
                 const div = document.getElementById(`survey-page-${p}`);
                 if (div) {
@@ -845,33 +789,27 @@
                 }
             }
 
-            // Actualizar botones de navegación inferior
             const navContainer = document.getElementById('survey-nav-buttons');
             navContainer.innerHTML = '';
             
-            // Inyectar botón Atrás (ocupa todo el ancho en móvil)
             if (currentSurveyPage > 1) {
                 navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(-1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><i class="ph ph-arrow-left mr-2"></i> Atrás</button>`;
             } else {
-                navContainer.innerHTML += `<div class="hidden sm:block"></div>`; // Espaciador para mantener el botón "Siguiente" a la derecha en PC
+                navContainer.innerHTML += `<div class="hidden sm:block"></div>`; 
             }
 
-            // Inyectar botón Siguiente o botón de Enviar (ocupa todo el ancho en móvil)
             if (currentSurveyPage < totalPages) {
                 navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Siguiente <i class="ph ph-arrow-right ml-2"></i></button>`;
             } else {
                 navContainer.innerHTML += `<button type="submit" id="btn-submit-survey" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg shadow-sm hover:bg-emerald-700 transition-colors"><i class="ph ph-paper-plane-right mr-2"></i> Finalizar y Enviar</button>`;
             }
             
-            // Hacer scroll suave hacia arriba al cambiar de bloque
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function changeSurveyPage(delta) {
-            // Validar que se hayan contestado todas las preguntas de la vista actual antes de avanzar
             if (delta === 1) {
                 const pageDiv = document.getElementById(`survey-page-${currentSurveyPage}`);
-                // Solo validar las tarjetas de preguntas que NO están ocultas (considerando los filtros)
                 const visibleCards = pageDiv.querySelectorAll('.question-card:not(.hidden)');
                 let allAnswered = true;
 
@@ -879,7 +817,6 @@
                     const checkedRadio = card.querySelector('input[type="radio"]:checked');
                     if (!checkedRadio) {
                         allAnswered = false;
-                        // Resaltar visualmente la pregunta sin responder
                         card.classList.add('border-red-300', 'bg-red-50');
                         setTimeout(() => card.classList.remove('border-red-300', 'bg-red-50'), 2000);
                     }
@@ -887,7 +824,7 @@
                 
                 if (!allAnswered) {
                     showToast('Por favor, responde todas las preguntas de este bloque para continuar.', 'error');
-                    return; // Detiene la navegación
+                    return; 
                 }
             }
             
@@ -897,7 +834,6 @@
         }
 
         function updateProgress() {
-            // La barra de progreso ahora se basa en los bloques completados
             const total = surveyBlocks.length;
             const progress = ((currentSurveyPage - 1) / total) * 100;
             document.getElementById('survey-progress').style.width = `${progress}%`;
@@ -907,29 +843,25 @@
         async function submitSurvey(event) {
             event.preventDefault();
             
-            // Recolectar respuestas
             const formData = new FormData(event.target);
             const respuestas = {};
-            const respuestasTexto = {}; // NUEVO: Para guardar el texto de la opción
+            const respuestasTexto = {}; 
             let puntajeTotal = 0;
 
             for (let [key, value] of formData.entries()) {
                 const questionId = key.split('_')[1];
                 respuestas[questionId] = value;
                 
-                // NUEVO: Extraemos la etiqueta de texto ("Siempre", "Nunca", "Sí", "No") del input seleccionado
                 const selectedRadio = document.querySelector(`input[name="${key}"]:checked`);
                 if (selectedRadio) {
                     respuestasTexto[questionId] = selectedRadio.nextElementSibling.innerText.trim();
                 }
 
-                // Solo sumar si es un número válido (ignoramos las respuestas 'SI' o 'NO' de los filtros)
                 if (!isNaN(value)) {
                     puntajeTotal += parseInt(value, 10);
                 }
             }
 
-            // Preparar payload para Google Apps Script
             const payload = {
                 action: 'saveSurvey',
                 timestamp: new Date().toISOString(),
@@ -940,17 +872,15 @@
                 puntajeTotal: puntajeTotal
             };
 
-            // Mostrar estado de carga
             const btn = document.getElementById('btn-submit-survey');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-2 shrink-0"></i> Guardando...';
             btn.disabled = true;
 
             try {
-                // Petición real a tu Google Apps Script
                 const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Necesario para evitar errores de CORS con Google Apps Script
+                    mode: 'no-cors', 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
@@ -972,36 +902,67 @@
             }
         }
 
+        // ==========================================
+        // FUNCIONES DEL DASHBOARD Y KPI
+        // ==========================================
         
-        function initDashboard() {
-            // Simulamos obtener datos agrupados y procesados desde Google Apps Script
-            const mockDashboardData = {
+        async function initDashboard() {
+            try {
+                showToast('Cargando datos del servidor...', 'info');
+                document.getElementById('kpi-participation').innerText = '...';
+                document.getElementById('kpi-risk').innerText = '...';
+                
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getDashboardData");
+                const result = await response.json();
+                
+                let dataToRender;
+                if (result.status === 'success' && result.data) {
+                    dataToRender = result.data;
+                } else {
+                    dataToRender = getEmptyDashboardData();
+                }
+                
+                updateKPIs(dataToRender);
+                renderCharts(dataToRender);
+                renderTable(dataToRender.semaforoCategorias);
+                
+            } catch (error) {
+                console.error("Error al cargar dashboard:", error);
+                showToast('No se detectaron encuestas o hubo un error de red.', 'error');
+                const emptyData = getEmptyDashboardData();
+                updateKPIs(emptyData);
+                renderCharts(emptyData);
+                renderTable(emptyData.semaforoCategorias);
+            }
+        }
+
+        function getEmptyDashboardData() {
+            return {
+                participacion: "0%",
+                riesgoGlobal: "Sin datos",
+                dominiosCriticos: 0,
                 riesgoPorDominio: {
                     labels: ['Ambiente de trabajo', 'Carga de trabajo', 'Falta de control', 'Jornada', 'Interferencia', 'Liderazgo', 'Violencia'],
-                    data: [12, 28, 15, 8, 10, 18, 5] // Puntajes promedio
+                    data: [0, 0, 0, 0, 0, 0, 0]
                 },
                 riesgoPorSucursal: {
-                    labels: ['CDMX - Corporativo', 'MTY - Norte', 'GDL - Bajío'],
-                    data: [45, 60, 30] // Riesgo global promedio (Inventado para gráfica)
+                    labels: ['Sin encuestas registradas'],
+                    data: [1] 
                 },
-                semaforoCategorias: [
-                    { cat: 'Ambiente de trabajo', pts: 12, riesgo: 'Bajo', color: 'bg-emerald-100 text-emerald-800' },
-                    { cat: 'Factores de actividad', pts: 28, riesgo: 'Alto', color: 'bg-red-100 text-red-800' },
-                    { cat: 'Organización del tiempo', pts: 15, riesgo: 'Medio', color: 'bg-amber-100 text-amber-800' },
-                    { cat: 'Liderazgo y relaciones', pts: 23, riesgo: 'Alto', color: 'bg-red-100 text-red-800' },
-                ]
+                semaforoCategorias: []
             };
+        }
 
-            renderCharts(mockDashboardData);
-            renderTable(mockDashboardData.semaforoCategorias);
+        function updateKPIs(data) {
+            document.getElementById('kpi-participation').innerText = data.participacion || '0%';
+            document.getElementById('kpi-risk').innerText = data.riesgoGlobal || 'Sin datos';
+            document.getElementById('kpi-domains').innerText = data.dominiosCriticos || '0';
         }
 
         function renderCharts(data) {
-            // Destruir gráficos anteriores si existen para evitar solapamientos
             if(appState.charts.domains) appState.charts.domains.destroy();
             if(appState.charts.branches) appState.charts.branches.destroy();
 
-            // Gráfico de Dominios (Radar o Barras)
             const ctxDom = document.getElementById('chart-domains').getContext('2d');
             appState.charts.domains = new Chart(ctxDom, {
                 type: 'bar',
@@ -1010,7 +971,7 @@
                     datasets: [{
                         label: 'Puntaje Promedio',
                         data: data.riesgoPorDominio.data,
-                        backgroundColor: '#3b82f6', // blue-500
+                        backgroundColor: '#3b82f6', 
                         borderRadius: 6
                     }]
                 },
@@ -1022,7 +983,9 @@
                 }
             });
 
-            // Gráfico por Sucursal (Doughnut)
+            let isEmpy = data.riesgoPorSucursal.labels[0].includes('Sin encuestas');
+            let doughnutColors = isEmpy ? ['#e2e8f0'] : ['#2563eb', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6'];
+
             const ctxBranch = document.getElementById('chart-branches').getContext('2d');
             appState.charts.branches = new Chart(ctxBranch, {
                 type: 'doughnut',
@@ -1030,9 +993,9 @@
                     labels: data.riesgoPorSucursal.labels,
                     datasets: [{
                         data: data.riesgoPorSucursal.data,
-                        backgroundColor: ['#2563eb', '#f59e0b', '#ef4444'], // blue, amber, red
+                        backgroundColor: doughnutColors,
                         borderWidth: 0,
-                        hoverOffset: 4
+                        hoverOffset: isEmpy ? 0 : 4
                     }]
                 },
                 options: {
@@ -1040,7 +1003,8 @@
                     maintainAspectRatio: false,
                     cutout: '70%',
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: { position: 'bottom' },
+                        tooltip: { enabled: !isEmpy } 
                     }
                 }
             });
@@ -1049,9 +1013,14 @@
         function renderTable(categorias) {
             const tbody = document.getElementById('table-categories');
             tbody.innerHTML = '';
+            
+            if (categorias.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-sm text-slate-500 italic">No hay datos suficientes para generar el semáforo.</td></tr>`;
+                return;
+            }
 
             categorias.forEach(cat => {
-                const accion = cat.riesgo === 'Alto' ? 'Intervención inmediata' : 
+                const accion = cat.riesgo === 'Alto' || cat.riesgo === 'Muy Alto' ? 'Intervención inmediata' : 
                                cat.riesgo === 'Medio' ? 'Programa de prevención' : 'Monitoreo';
                 
                 const tr = document.createElement('tr');
@@ -1070,13 +1039,11 @@
             });
         }
 
-        // NUEVA FUNCIÓN: Cargar empleados desde Google Sheets al iniciar la página
         async function loadEmployeesFromSheets() {
             try {
                 const searchInput = document.getElementById('employee-search');
                 if(searchInput) searchInput.placeholder = "Sincronizando empleados...";
 
-                // Petición GET al Apps Script
                 const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getEmployees", {
                     method: 'GET',
                     redirect: 'follow'
@@ -1096,13 +1063,11 @@
                     throw new Error("Respuesta no exitosa de Sheets");
                 }
             } catch (error) {
-                // Cambiado a console.warn para no alarmar en la consola del navegador
                 console.warn("Aviso: No se pudo conectar con Sheets. Usando base de datos local. Asegúrate de que tu Apps Script esté publicado para 'Cualquier persona' (Anyone).", error.message);
                 
                 const searchInput = document.getElementById('employee-search');
                 if(searchInput) searchInput.placeholder = "Escribe para buscar... (Modo Local)";
                 
-                // Fallback para evitar que el sistema se rompa
                 loadedEmployees = [
                     { id: '0000004', name: 'JOSE GUADALUPE GONZALEZ', cadena: 'ESTACIONES DE SERVICIO', sucursal: 'Servicio Sac Xan' },
                     { id: '1200010', name: 'VICTOR HUGO GOMEZ CARRILLO', cadena: 'ADMINISTRACION FJCMT', sucursal: 'FUNDACION JUAN CAMILO' },
@@ -1112,15 +1077,11 @@
             }
         }
 
-        // Disparar la carga de empleados cuando el HTML termine de cargar
         document.addEventListener('DOMContentLoaded', loadEmployeesFromSheets);
 
         async function syncData() {
-            showToast('Sincronizando con Google Sheets...', 'info');
-            // Aquí iría el GET request a la API de Apps Script para traer nuevos datos
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await initDashboard(); 
             showToast('Datos actualizados correctamente.');
-            initDashboard(); // Recargar gráficas
         }
 
     </script>
