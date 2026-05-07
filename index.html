@@ -65,7 +65,7 @@
     <!-- MAIN APP CONTAINER -->
     <div id="app" class="h-full w-full flex-1 overflow-y-auto">
 
-        <!-- ================= LOGIN VIEW (NUEVA PANTALLA DE ACCESO) ================= -->
+        <!-- ================= LOGIN VIEW (PANTALLA DE ACCESO) ================= -->
         <div id="login-view" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 fade-in">
             <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden">
                 
@@ -128,7 +128,7 @@
                         </div>
                         <div>
                             <label for="branch" class="block text-sm font-medium text-slate-700">Sucursal / Cadena</label>
-                            <!-- Campo modificado a readonly para autocompletado -->
+                            <!-- Campo modificado a readonly para autocompletado automático -->
                             <input id="branch" name="branch" type="text" readonly required
                                 class="mt-1 block w-full px-4 py-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 focus:outline-none cursor-not-allowed transition-shadow" 
                                 placeholder="Se autocompletará al seleccionar colaborador...">
@@ -391,7 +391,6 @@
          * ==========================================
          * CONFIGURACIÓN DE APPS SCRIPT
          * ==========================================
-         * Reemplaza esta URL con la URL de tu Web App publicada desde Google Apps Script.
          */
         const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySJvazF8nNBT1NuGICDPPg1He-t2B6-lx6-MSGIeL7L_YrA8lXTTbGa8voHr0_oU1D/exec"; 
 
@@ -420,7 +419,7 @@
             { id: 17, pregunta: "Mi trabajo exige que atienda varios asuntos al mismo tiempo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
             { id: 18, pregunta: "En mi trabajo soy responsable de cosas de mucho valor", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
             { id: 19, pregunta: "Respondo ante mi jefe por los resultados de toda mi área de trabajo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
-            { id: 20, principal: false, pregunta: "En el trabajo me dan órdenes contradictorias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
+            { id: 20, pregunta: "En el trabajo me dan órdenes contradictorias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
             { id: 21, pregunta: "Considero que en mi trabajo me piden hacer cosas innecesarias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
             { id: 22, pregunta: "Trabajo horas extras más de tres veces a la semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
             { id: 23, pregunta: "Mi trabajo me exige laborar en días de descanso, festivos o fines de semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
@@ -601,6 +600,7 @@
             
             // Borramos el ID real si el usuario empieza a borrar o modificar el texto
             hiddenId.value = '';
+            document.getElementById('branch').value = '';
 
             if (!filter) {
                 dropdown.classList.add('hidden');
@@ -699,6 +699,9 @@
             // Limpiar formularios y devolver a la vista de botones
             document.getElementById('employee-login-form').reset();
             document.getElementById('admin-login-form').reset();
+            document.getElementById('branch').value = '';
+            document.getElementById('employee-id').value = '';
+            
             switchAuthView('landing');
             
             navigateTo('login-view');
@@ -930,10 +933,10 @@
             const payload = {
                 action: 'saveSurvey',
                 timestamp: new Date().toISOString(),
-                empId: 'DEMO-123', // TODO: Reemplazar con empleado real al integrar login
-                branch: document.getElementById('branch').value, // Obtenemos la sucursal/cadena concatenada
+                empId: document.getElementById('employee-id').value, 
+                branch: document.getElementById('branch').value, 
                 respuestas: JSON.stringify(respuestas),
-                respuestasTexto: respuestasTexto, // NUEVO: Enviamos el objeto con los textos puros
+                respuestasTexto: respuestasTexto, 
                 puntajeTotal: puntajeTotal
             };
 
@@ -1074,7 +1077,10 @@
                 if(searchInput) searchInput.placeholder = "Sincronizando empleados...";
 
                 // Petición GET al Apps Script
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getEmployees");
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getEmployees", {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
