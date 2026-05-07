@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema NOM-035 STPS | HR Dashboard</title>
+    
+    <!-- Tailwind CSS para diseño moderno y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js para gráficos ejecutivos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Iconos Phosphor -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #1e293b; /* slate-800 */
+        }
+        
+        /* Personalización de scrollbar para un look más limpio */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        /* Animaciones suaves para transiciones de vistas */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilo para radio buttons personalizados en la encuesta */
+        .radio-custom:checked + label {
+            background-color: #eff6ff; /* blue-50 */
+            border-color: #3b82f6; /* blue-500 */
+            color: #1d4ed8; /* blue-700 */
+        }
+    </style>
+</head>
+<body class="antialiased h-screen overflow-hidden flex flex-col">
+
+    <!-- Sistema de Notificaciones (Toasts) en lugar de alerts -->
+    <div id="toast-container" class="fixed top-4 left-4 right-4 sm:left-auto sm:w-96 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app" class="h-full w-full flex-1 overflow-y-auto">
+
+        <!-- ================= LOGIN VIEW (NUEVA PANTALLA DE ACCESO) ================= -->
+        <div id="login-view" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 fade-in">
+            <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden">
+                
+                <!-- Opciones Iniciales (Botones Principales) -->
+                <div id="auth-landing" class="fade-in">
+                    <div class="text-center mb-8">
+                        <div class="mx-auto h-12 w-12 bg-blue-600 text-white rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-blue-200">
+                            <i class="ph ph-shield-check text-2xl"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold text-slate-800">NOM-035 System</h2>
+                        <p class="mt-2 text-sm text-slate-500">Plataforma de evaluación de riesgo psicosocial</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <button onclick="switchAuthView('employee')" class="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group text-left">
+                            <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                <i class="ph ph-clipboard-text text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-lg">Resuelve tu encuesta aquí</h3>
+                                <p class="text-xs text-slate-500 mt-1">Acceso para colaboradores</p>
+                            </div>
+                        </button>
+
+                        <button onclick="switchAuthView('admin')" class="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-slate-800 hover:bg-slate-50 transition-all group text-left">
+                            <div class="h-12 w-12 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-slate-800 group-hover:text-white transition-colors">
+                                <i class="ph ph-lock-key text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-lg">Administrador</h3>
+                                <p class="text-xs text-slate-500 mt-1">Acceso administrador</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Formulario Empleado -->
+                <div id="auth-employee" class="hidden fade-in">
+                    <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-blue-600 flex items-center transition-colors">
+                        <i class="ph ph-arrow-left mr-1"></i> Atrás
+                    </button>
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Comenzar Encuesta</h2>
+                        <p class="mt-1 text-sm text-slate-500">Ingresa tus datos corporativos</p>
+                    </div>
+                    <form id="employee-login-form" class="space-y-5" onsubmit="handleEmployeeLogin(event)">
+                        <div class="relative">
+                            <label for="employee-search" class="block text-sm font-medium text-slate-700">Número de Empleado o Nombre</label>
+                            <input id="employee-search" type="text" autocomplete="off" required 
+                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" 
+                                placeholder="Escribe para buscar..." oninput="filterEmployees()">
+                            
+                            <!-- Aquí guardamos el valor real del empleado seleccionado -->
+                            <input type="hidden" id="employee-id" name="employee-id">
+                            
+                            <!-- Dropdown de resultados (Autocomplete) -->
+                            <ul id="employee-dropdown" class="absolute z-20 mt-1 w-full bg-white shadow-lg max-h-48 rounded-md py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none hidden">
+                                <!-- Las opciones se inyectarán por JS -->
+                            </ul>
+                        </div>
+                        <div>
+                            <label for="branch" class="block text-sm font-medium text-slate-700">Sucursal / Cadena</label>
+                            <select id="branch" name="branch" required
+                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                                <option value="">Selecciona tu sucursal...</option>
+                                <option value="CDMX - Corporativo">CDMX - Corporativo</option>
+                                <option value="MTY - Norte">MTY - Norte</option>
+                                <option value="GDL - Bajío">GDL - Bajío</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                            Entrar a la Encuesta
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Formulario Administrador -->
+                <div id="auth-admin" class="hidden fade-in">
+                    <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-slate-800 flex items-center transition-colors">
+                        <i class="ph ph-arrow-left mr-1"></i> Atrás
+                    </button>
+                    <div class="text-center mb-6">
+                        <h2 class="text-2xl font-bold text-slate-800">Acceso RH</h2>
+                        <p class="mt-1 text-sm text-slate-500">Gestión y Gráficas STPS</p>
+                    </div>
+                    <form id="admin-login-form" class="space-y-5" onsubmit="handleAdminLogin(event)">
+                        <div>
+                            <label for="admin-user" class="block text-sm font-medium text-slate-700">Usuario</label>
+                            <input id="admin-user" name="admin-user" type="text" required 
+                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-shadow" 
+                                placeholder="Usuario de RH">
+                        </div>
+                        <div>
+                            <label for="admin-pass" class="block text-sm font-medium text-slate-700">Contraseña</label>
+                            <input id="admin-pass" name="admin-pass" type="password" required 
+                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-shadow" 
+                                placeholder="••••••••">
+                            <p class="text-xs text-slate-400 mt-2">Demo credenciales: admin / admin123</p>
+                        </div>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors">
+                            Ingresar al Dashboard
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ================= DASHBOARD VIEW ================= -->
+        <div id="dashboard-view" class="hidden h-full flex flex-col md:flex-row bg-slate-50 fade-in relative">
+            
+            <!-- Mobile Dashboard Header -->
+            <div class="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3 shrink-0">
+                <div class="flex items-center">
+                    <i class="ph ph-chart-pie-slice text-blue-600 text-2xl mr-2"></i>
+                    <span class="font-bold text-lg text-slate-800">HR Analytics</span>
+                </div>
+                <button onclick="toggleSidebar()" class="text-slate-500 hover:text-slate-800 focus:outline-none p-1">
+                    <i class="ph ph-list text-3xl"></i>
+                </button>
+            </div>
+
+            <!-- Mobile Sidebar Overlay -->
+            <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
+            <!-- Sidebar -->
+            <aside id="dashboard-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col shadow-2xl transform -translate-x-full md:relative md:translate-x-0 md:shadow-none transition-transform duration-300 ease-in-out shrink-0">
+                <div class="h-16 flex items-center justify-between px-6 border-b border-slate-100 shrink-0">
+                    <div class="flex items-center">
+                        <i class="ph ph-chart-pie-slice text-blue-600 text-2xl mr-2"></i>
+                        <span class="font-bold text-lg text-slate-800">HR Analytics</span>
+                    </div>
+                    <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-slate-700 p-1">
+                        <i class="ph ph-x text-2xl"></i>
+                    </button>
+                </div>
+                <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg transition-colors">
+                        <i class="ph ph-squares-four text-lg mr-3"></i> Resumen Global
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
+                        <i class="ph ph-buildings text-lg mr-3"></i> Por Sucursal
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
+                        <i class="ph ph-warning-circle text-lg mr-3"></i> Riesgos y Dominios
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
+                        <i class="ph ph-file-text text-lg mr-3"></i> Reportes STPS
+                    </a>
+                </nav>
+                <div class="p-4 border-t border-slate-200">
+                    <button onclick="logout()" class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <i class="ph ph-sign-out text-lg mr-3"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Contenido Principal Dashboard -->
+            <main class="flex-1 overflow-y-auto p-6 md:p-8">
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900">Dashboard NOM-035</h1>
+                        <p class="text-sm text-slate-500 mt-1">Periodo de evaluación activo: 2026</p>
+                    </div>
+                    <button onclick="syncData()" class="flex items-center bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
+                        <i class="ph ph-arrows-clockwise mr-2"></i> Sincronizar Google Sheets
+                    </button>
+                </div>
+
+                <!-- KPIs -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
+                            <i class="ph ph-users text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500">Participación</p>
+                            <p class="text-2xl font-bold text-slate-800" id="kpi-participation">85%</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
+                        <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4">
+                            <i class="ph ph-siren text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500">Nivel de Riesgo Global</p>
+                            <p class="text-2xl font-bold text-slate-800" id="kpi-risk">Medio-Alto</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
+                        <div class="p-3 rounded-full bg-amber-100 text-amber-600 mr-4">
+                            <i class="ph ph-warning-octagon text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500">Dominios Críticos</p>
+                            <p class="text-2xl font-bold text-slate-800" id="kpi-domains">2</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
+                        <div class="p-3 rounded-full bg-emerald-100 text-emerald-600 mr-4">
+                            <i class="ph ph-check-circle text-2xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-slate-500">Cumplimiento STPS</p>
+                            <p class="text-2xl font-bold text-slate-800">Al día</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Riesgo por Dominio</h3>
+                        <div class="relative h-64 w-full">
+                            <canvas id="chart-domains"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Distribución de Riesgo por Sucursal</h3>
+                        <div class="relative h-64 w-full">
+                            <canvas id="chart-branches"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Semáforos -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <h3 class="text-lg font-bold text-slate-800">Semáforo de Categorías</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Categoría</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Puntaje Promedio</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nivel de Riesgo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Acción Requerida</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-200" id="table-categories">
+                                <!-- Se llena por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- ================= SURVEY VIEW ================= -->
+        <div id="survey-view" class="hidden min-h-full bg-slate-50 pb-12 fade-in">
+            <!-- Header Encuesta -->
+            <header class="bg-white shadow-sm sticky top-0 z-20">
+                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center min-w-0">
+                        <i class="ph ph-clipboard-text text-blue-600 text-2xl mr-2 shrink-0"></i>
+                        <h1 class="font-bold text-base sm:text-lg text-slate-800 truncate pr-2">Cuestionario NOM-035</h1>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                        <span class="text-xs sm:text-sm text-slate-500 truncate max-w-[100px] sm:max-w-[200px]" id="survey-user-info">EMP-001 | CDMX</span>
+                        <button onclick="logout()" class="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors">Salir</button>
+                    </div>
+                </div>
+                <!-- Barra de progreso -->
+                <div class="w-full bg-slate-200 h-1.5">
+                    <div id="survey-progress" class="bg-blue-600 h-1.5 transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </header>
+
+            <!-- Contenedor de Preguntas -->
+            <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-6">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-1">Bienvenidos a Encuesta Nom035</h2>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4 pb-4 border-b border-slate-200">Factores de Riesgo Psicosocial</h3>
+                    
+                    <div class="space-y-3 text-slate-600 text-sm md:text-base leading-relaxed">
+                        <p>Con el objetivo de cumplir con lo establecido en la <span class="font-bold text-slate-800">NOM-035-STPS-2018</span>, te invitamos a responder el siguiente cuestionario para la identificación de factores de riesgo psicosocial en tu centro de trabajo.</p>
+                        
+                        <p>Este instrumento es <span class="font-bold text-slate-800">confidencial</span> y tiene como propósito <span class="font-bold text-slate-800">mejorar las condiciones laborales</span> y promover un ambiente de trabajo saludable.</p>
+                        
+                        <p>Consulta nuestro anuncio de privacidad en <a href="http://www.gruges.com.mx" target="_blank" class="text-blue-600 hover:underline">www.gruges.com.mx</a> o en tu app Hola GES en el apartado Documentos</p>
+                    </div>
+
+                    <div class="mt-6 pt-4">
+                        <h4 class="font-bold text-slate-800 mb-3 flex items-center">
+                            <span class="bg-green-500 text-white rounded shadow-sm w-5 h-5 flex items-center justify-center mr-2 text-xs">✓</span>
+                            Indicaciones generales:
+                        </h4>
+                        <ul class="list-disc pl-8 space-y-1 text-slate-600 text-sm md:text-base">
+                            <li>Lee cuidadosamente cada enunciado antes de contestar.</li>
+                            <li>No hay respuestas correctas o incorrectas; lo importante es tu percepción personal.</li>
+                        </ul>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-slate-200">
+                        <p class="text-slate-700 text-sm md:text-base mb-4">Para cada afirmación, selecciona la opción que <span class="font-bold text-slate-900">mejor refleje la frecuencia con la que has experimentado esa situación</span> en tu lugar de trabajo.</p>
+                        
+                        <p class="text-slate-700 text-sm md:text-base mb-3">Usa la siguiente escala:</p>
+                        
+                        <ul class="list-disc pl-8 space-y-2 text-slate-600 text-sm md:text-base">
+                            <li><span class="font-bold text-slate-800">Siempre:</span> Ocurre todo el tiempo o casi todo el tiempo</li>
+                            <li><span class="font-bold text-slate-800">Frecuentemente:</span> Ocurre con regularidad</li>
+                            <li><span class="font-bold text-slate-800">A veces:</span> Ocurre de forma ocasional</li>
+                            <li><span class="font-bold text-slate-800">Rara vez:</span> Ocurre en pocas ocasiones</li>
+                            <li><span class="font-bold text-slate-800">Nunca:</span> No ha ocurrido</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <form id="dynamic-survey-form" onsubmit="submitSurvey(event)">
+                    <div id="questions-container" class="space-y-6">
+                        <!-- Las preguntas se inyectarán aquí dinámicamente por páginas -->
+                    </div>
+
+                    <!-- Botonera adaptada para móvil (se apilan verticalmente en pantallas pequeñas) -->
+                    <div id="survey-nav-buttons" class="mt-8 flex flex-col-reverse sm:flex-row justify-between items-center gap-3 pt-6 border-t border-slate-200">
+                        <!-- Botones Atrás / Siguiente se inyectan aquí con JavaScript -->
+                    </div>
+                </form>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ==========================================
+         * CONFIGURACIÓN DE APPS SCRIPT
+         * ==========================================
+         * Reemplaza esta URL con la URL de tu Web App publicada desde Google Apps Script.
+         */
+        const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySJvazF8nNBT1NuGICDPPg1He-t2B6-lx6-MSGIeL7L_YrA8lXTTbGa8voHr0_oU1D/exec"; 
+
+        /**
+         * ==========================================
+         * DATA MOCK: JSON DE PREGUNTAS NOM-035
+         * ==========================================
+         */
+        const surveyQuestions = [
+            { id: 1, pregunta: "El espacio donde trabajo me permite realizar mis actividades de manera segura e higiénica", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: true },
+            { id: 2, pregunta: "Mi trabajo me exige hacer mucho esfuerzo físico", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: false },
+            { id: 3, pregunta: "Me preocupa sufrir un accidente en mi trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: false },
+            { id: 4, pregunta: "Considero que en mi trabajo se aplican las normas de seguridad y salud en el trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: true },
+            { id: 5, pregunta: "Considero que las actividades que realizo son peligrosas", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: false },
+            { id: 6, pregunta: "Tengo suficiente luz en mi lugar de trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
+            { id: 7, pregunta: "La temperatura es adecuada en mi centro de trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
+            { id: 8, pregunta: "El nivel de ruido en mi centro de trabajo es soportable", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
+            { id: 9, pregunta: "Los sistemas de red funcionan adecuadamente en mi centro de trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
+            { id: 10, pregunta: "Me entregaron al menos un juego de uniforme en buen estado al ingresar a la empresa", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
+            { id: 11, pregunta: "Por la cantidad de trabajo que tengo debo quedarme tiempo adicional a mi turno", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas cuantitativas", inversa: false },
+            { id: 12, pregunta: "Por la cantidad de trabajo que tengo debo trabajar sin parar", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas cuantitativas", inversa: false },
+            { id: 13, pregunta: "Considero que es necesario mantener un ritmo de trabajo acelerado", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Ritmo de trabajo acelerado", inversa: false },
+            { id: 14, pregunta: "Mi trabajo exige que esté muy concentrado", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            { id: 15, pregunta: "Mi trabajo requiere que memorice mucha información", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            { id: 16, pregunta: "En mi trabajo tengo que tomar decisiones difíciles muy rápido", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            { id: 17, pregunta: "Mi trabajo exige que atienda varios asuntos al mismo tiempo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            { id: 18, pregunta: "En mi trabajo soy responsable de cosas de mucho valor", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
+            { id: 19, pregunta: "Respondo ante mi jefe por los resultados de toda mi área de trabajo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
+            { id: 20, pregunta: "En el trabajo me dan órdenes contradictorias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
+            { id: 21, pregunta: "Considero que en mi trabajo me piden hacer cosas innecesarias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
+            { id: 22, pregunta: "Trabajo horas extras más de tres veces a la semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
+            { id: 23, pregunta: "Mi trabajo me exige laborar en días de descanso, festivos o fines de semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
+            { id: 24, pregunta: "Considero que el tiempo en el trabajo es mucho y perjudica mis actividades familiares o personales", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia del trabajo fuera del centro laboral", inversa: false },
+            { id: 25, pregunta: "Debo atender asuntos de trabajo cuando estoy en casa", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia del trabajo fuera del centro laboral", inversa: false },
+            { id: 26, pregunta: "Pienso en las actividades familiares o personales cuando estoy en mi trabajo", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia de las responsabilidades familiares", inversa: false },
+            { id: 27, pregunta: "Pienso que mis responsabilidades familiares afectan mi trabajo", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia de las responsabilidades familiares", inversa: false },
+            { id: 28, pregunta: "Mi trabajo permite que desarrolle nuevas habilidades", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Posibilidad de desarrollo", inversa: true },
+            { id: 29, pregunta: "En mi trabajo puedo aspirar a un mejor puesto", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Posibilidad de desarrollo", inversa: true },
+            { id: 30, pregunta: "Durante mi jornada de trabajo puedo tomar pausas cuando las necesito", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 31, pregunta: "Puedo decidir cuánto trabajo realizo durante la jornada laboral", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 32, pregunta: "Puedo decidir la velocidad a la que realizo mis actividades en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 33, pregunta: "Puedo cambiar el orden de las actividades que realizo en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 34, pregunta: "Los cambios que se presentan en mi trabajo dificultan mi labor", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Participación y manejo del cambio", inversa: false },
+            { id: 35, pregunta: "Cuando se presentan cambios en mi trabajo se tienen en cuenta mis ideas o aportaciones", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Participación y manejo del cambio", inversa: true },
+            { id: 36, pregunta: "Al ingresar recibí inducción y orientación", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
+            { id: 37, pregunta: "Me informan con claridad cuáles son mis funciones", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
+            { id: 38, pregunta: "Me explican claramente los resultados que debo obtener en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
+            { id: 39, pregunta: "Me explican claramente los objetivos de mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
+            { id: 40, pregunta: "Me informan con quién puedo resolver problemas o asuntos de trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
+            { id: 41, pregunta: "Me permiten asistir a capacitaciones relacionadas con mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
+            { id: 42, pregunta: "Recibo capacitación útil para hacer mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
+            { id: 43, pregunta: "Las instrucciones que mi jefe nos da son bastantes claras y específicas", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Escasa claridad de funciones", inversa: true },
+            { id: 44, pregunta: "Cuando cometo un error mi líder me corrige y me llama la atención con respeto y a solas", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 45, pregunta: "Considero adecuado el nivel de exigencia por parte de mi líder", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 46, pregunta: "Mi líder supervisa equitativamente y está pendiente de nuestro trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 47, pregunta: "Mi jefe en mi centro de trabajo me tratan bien, con amabilidad y de forma respetuosa", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 48, pregunta: "Mi jefe ayuda a organizar mejor el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 49, pregunta: "Mi jefe tiene en cuenta mis puntos de vista y opiniones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 50, pregunta: "Mi jefe me comunica a tiempo la información relacionada con el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 51, pregunta: "La orientación que me da mi jefe me ayuda a realizar mejor mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 52, pregunta: "Mi jefe ayuda a solucionar los problemas que se presentan en el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 53, pregunta: "Puedo confiar en mis compañeros de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            { id: 54, pregunta: "Entre compañeros solucionamos los problemas de trabajo de forma respetuosa", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            { id: 55, pregunta: "En mi trabajo me hacen sentir parte del grupo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            { id: 56, pregunta: "Cuando tenemos que realizar trabajo de equipo los compañeros colaboran", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            { id: 57, pregunta: "Mis compañeros de trabajo me ayudan cuando tengo dificultades", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            { id: 58, pregunta: "Conozco bien qué aporto con mi trabajo a la empresa", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
+            { id: 59, pregunta: "Me informan sobre lo que hago bien en mi trabajo", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
+            { id: 60, pregunta: "La forma como evalúan mi trabajo en mi centro de trabajo me ayuda a mejorar mi desempeño", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
+            { id: 61, pregunta: "En mi centro de trabajo me pagan a tiempo mi salario", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 62, pregunta: "El pago que recibo es el que merezco por el trabajo que realizo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 63, pregunta: "Me entregan mi recibo de nómina", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 64, pregunta: "Si obtengo los resultados esperados en mi trabajo me recompensan o reconocen", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 65, pregunta: "En mi empresa existen posibilidades reales de movilidad (cambios de puesto, sucursal, plan de sucesión)", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 66, pregunta: "Considero que mi trabajo es estable", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Inestabilidad laboral", inversa: true },
+            { id: 67, pregunta: "En mi trabajo existe continua rotación de personal", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Inestabilidad laboral", inversa: false },
+            { id: 68, pregunta: "Siento orgullo de laborar en este centro de trabajo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 69, pregunta: "Me siento comprometido con mi trabajo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 70, pregunta: "El puesto que ocupo en la empresa está en relación a la experiencia que poseo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 71, pregunta: "Mi puesto está en relación con mi nivel académico", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 72, pregunta: "Estoy satisfecho(a) con mi trayectoria en la empresa", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 73, pregunta: "De haber sabido como iban a ser la cosas en mi empresa igual hubiera entrado en ella", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 74, pregunta: "Si pudiera dejar la empresa por otro trabajo, a igualdad de sueldo y mismas condiciones, lo haría", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: false },
+            { id: 75, pregunta: "Me gusta la empresa", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 76, pregunta: "Me siento integrado en la empresa", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 77, pregunta: "En mi trabajo puedo expresarme libremente sin interrupciones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: true },
+            { id: 78, pregunta: "Recibo críticas constantes a mi persona y/o trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 79, pregunta: "Recibo burlas, calumnias, difamaciones, humillaciones o ridiculizaciones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 80, pregunta: "Se ignora mi presencia o se me excluye de las reuniones de trabajo y en la toma de decisiones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 81, pregunta: "Se manipulan las situaciones de trabajo para hacerme parecer un mal trabajador", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 82, pregunta: "Se ignoran mis éxitos laborales y se atribuyen a otros trabajadores", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 83, pregunta: "Me bloquean o impiden las oportunidades que tengo para obtener ascenso o mejora en mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 84, pregunta: "He presenciado actos de violencia en mi centro de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 85, pregunta: "En mi trabajo debo brindar servicio a clientes o usuarios (si la respuesta es \"SI\", responda las preguntas siguientes. Si su respuesta fue \"NO\" pase a las preguntas de la sección siguiente).", categoria: "Control", dominio: "Filtro (no puntúa)", dimension: "", inversa: false },
+            { id: 86, pregunta: "Atiendo clientes o usuarios muy enojados", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            { id: 87, pregunta: "Mi trabajo me exige atender personas muy necesitadas de ayuda o enfermas", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            { id: 88, pregunta: "Para hacer mi trabajo debo demostrar sentimientos distintos a los míos", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            { id: 89, pregunta: "Mi trabajo me exige atender situaciones de violencia", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            { id: 90, pregunta: "Tengo colaboradores a mi cargo (si la respuesta es \"SI\", responda las preguntas siguientes. Si su respuesta fue \"NO\" pase a las preguntas de la sección siguiente).", categoria: "Control", dominio: "Filtro (no puntúa)", dimension: "", inversa: false },
+            { id: 91, pregunta: "Le comunican tarde los asuntos de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            { id: 92, pregunta: "Dificultan el logro de los resultados del trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            { id: 93, pregunta: "Cooperan poco cuando se necesita", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            { id: 94, pregunta: "Ignoran las sugerencias para mejorar su trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false }
+        ];
+
+        const scaleOptions = [
+            { value: 0, text: "Nunca", color: "text-slate-500" },
+            { value: 1, text: "Rara vez", color: "text-slate-600" },
+            { value: 2, text: "A veces", color: "text-blue-600" },
+            { value: 3, text: "Frecuentemente", color: "text-orange-500" },
+            { value: 4, text: "Siempre", color: "text-red-500" }
+        ];
+
+        // Definición de Bloques Oficiales NOM-035
+        const surveyBlocks = [
+            { id: 1, title: "Sección 1", desc: "Para cada afirmación, selecciona la opción que mejor refleje la frecuencia con la que has experimentado esa situación en tu lugar de trabajo.", start: 1, end: 10 },
+            { id: 2, title: "Sección 2", desc: "Para responder a las preguntas siguientes piense en la cantidad y ritmo de trabajo que tiene.", start: 11, end: 13 },
+            { id: 3, title: "Sección 3", desc: "Las preguntas siguientes están relacionadas con el esfuerzo mental que le exige su trabajo.", start: 14, end: 17 },
+            { id: 4, title: "Sección 4", desc: "Las preguntas siguientes están relacionadas con las actividades que realiza en su trabajo y las responsabilidades que tiene.", start: 18, end: 21 },
+            { id: 5, title: "Sección 5", desc: "Las preguntas siguientes están relacionadas con su jornada de trabajo.", start: 22, end: 27 },
+            { id: 6, title: "Sección 6", desc: "Las preguntas siguientes están relacionadas con las decisiones que puede tomar en su trabajo.", start: 28, end: 33 },
+            { id: 7, title: "Sección 7", desc: "Las preguntas siguientes están relacionadas con cualquier tipo de cambio que ocurra en su trabajo (considere los últimos cambios realizados).", start: 34, end: 35 },
+            { id: 8, title: "Sección 8", desc: "Las preguntas siguientes están relacionadas con la capacitación e información que se le proporciona sobre su trabajo.", start: 36, end: 42 },
+            { id: 9, title: "Sección 9", desc: "Las preguntas siguientes están relacionadas con el o los jefes con quien tiene contacto.", start: 43, end: 52 },
+            { id: 10, title: "Sección 10", desc: "Las preguntas siguientes se refieren a las relaciones con sus compañeros.", start: 53, end: 57 },
+            { id: 11, title: "Sección 11", desc: "Las preguntas siguientes están relacionadas con la información que recibe sobre su rendimiento en el trabajo, el reconocimiento, el sentido de pertenencia y la estabilidad que le ofrece su trabajo.", start: 58, end: 76 },
+            { id: 12, title: "Sección 12", desc: "Las preguntas siguientes están relacionadas con actos de violencia laboral (malos tratos, acoso, hostigamiento, acoso psicológico).", start: 77, end: 84 },
+            { id: 13, title: "Sección 13", desc: "Las preguntas siguientes están relacionadas con la atención a clientes y usuarios.", start: 85, end: 89 },
+            { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 }
+        ];
+
+        // MOCK DATA: Base de datos de empleados simulada para el Autocomplete
+        const mockEmployees = [
+            { id: '0023203', name: 'YAHJANNI SAHDAI CU CONTRERAS' },
+            { id: '0012345', name: 'JUAN PEREZ LOPEZ' },
+            { id: 'EMP-001', name: 'MARIA GARCIA RAMIREZ' },
+            { id: '0098765', name: 'CARLOS MARTINEZ HERNANDEZ' }
+        ];
+
+        // Estado de la Aplicación
+        let appState = {
+            user: null,
+            answers: {},
+            charts: {}
+        };
+
+        // Variables para la paginación de la encuesta
+        let currentSurveyPage = 1;
+
+        
+        // Utilidad: Mostrar notificaciones (Toasts)
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bg = type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 
+                       type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 
+                       'bg-blue-50 border-blue-200 text-blue-800';
+            
+            const icon = type === 'success' ? '<i class="ph ph-check-circle text-xl mr-2 shrink-0"></i>' : 
+                         type === 'error' ? '<i class="ph ph-warning-circle text-xl mr-2 shrink-0"></i>' : 
+                         '<i class="ph ph-info text-xl mr-2 shrink-0"></i>';
+
+            toast.className = `pointer-events-auto flex items-center p-4 border rounded-lg shadow-lg ${bg} fade-in transform transition-all duration-300 translate-x-full sm:translate-x-full w-full`;
+            toast.innerHTML = `${icon} <span class="font-medium text-sm">${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Animar entrada (remover translación)
+            setTimeout(() => toast.classList.remove('translate-x-full', 'sm:translate-x-full'), 10);
+
+            // Remover después de 3s
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Navegación (SPA Router Básico)
+        function navigateTo(viewId) {
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.add('hidden');
+            document.getElementById('survey-view').classList.add('hidden');
+            
+            document.getElementById(viewId).classList.remove('hidden');
+            window.scrollTo(0,0);
+        }
+
+        // NUEVO: Alternar vistas dentro de la caja de login
+        function switchAuthView(view) {
+            document.getElementById('auth-landing').classList.add('hidden');
+            document.getElementById('auth-employee').classList.add('hidden');
+            document.getElementById('auth-admin').classList.add('hidden');
+
+            document.getElementById(`auth-${view}`).classList.remove('hidden');
+        }
+
+        // Función para Menú Móvil del Dashboard
+        function toggleSidebar() {
+            const sidebar = document.getElementById('dashboard-sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+        
+        // LOGICA AUTOCOMPLETADO: Filtrar empleados en tiempo real
+        function filterEmployees() {
+            const searchInput = document.getElementById('employee-search');
+            const dropdown = document.getElementById('employee-dropdown');
+            const hiddenId = document.getElementById('employee-id');
+            const filter = searchInput.value.toUpperCase();
+            
+            // Borramos el ID real si el usuario empieza a borrar o modificar el texto
+            hiddenId.value = '';
+
+            if (!filter) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            // Filtrar por número de ID o por Nombre del colaborador
+            const matches = mockEmployees.filter(emp => 
+                emp.id.includes(filter) || emp.name.includes(filter)
+            );
+
+            dropdown.innerHTML = '';
+            if (matches.length > 0) {
+                matches.forEach(emp => {
+                    const li = document.createElement('li');
+                    li.className = 'cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 border-b border-slate-50 transition-colors';
+                    li.innerHTML = `<span class="font-bold text-slate-800">${emp.id}</span> <span class="text-slate-400 mx-1">-</span> <span class="text-slate-600">${emp.name}</span>`;
+                    li.onclick = () => selectEmployee(emp.id, emp.name);
+                    dropdown.appendChild(li);
+                });
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.innerHTML = '<li class="cursor-default select-none relative py-2 pl-3 pr-9 text-slate-500 italic">No se encontraron colaboradores...</li>';
+                dropdown.classList.remove('hidden');
+            }
+        }
+
+        // Seleccionar un empleado de la lista
+        function selectEmployee(id, name) {
+            document.getElementById('employee-search').value = `${id} - ${name}`;
+            document.getElementById('employee-id').value = id; // Guardamos el ID internamente
+            document.getElementById('employee-dropdown').classList.add('hidden');
+        }
+
+        // Cerrar el dropdown si se hace click fuera de él
+        document.addEventListener('click', function(event) {
+            const searchInput = document.getElementById('employee-search');
+            const dropdown = document.getElementById('employee-dropdown');
+            if (searchInput && dropdown) {
+                if (event.target !== searchInput && event.target !== dropdown && !dropdown.contains(event.target)) {
+                    dropdown.classList.add('hidden');
+                }
+            }
+        });
+
+        // NUEVO: Manejar login de empleado
+        function handleEmployeeLogin(event) {
+            event.preventDefault();
+            const empId = document.getElementById('employee-id').value;
+            
+            // Validamos que hayan seleccionado un empleado de la lista, no solo escrito cualquier cosa
+            if (!empId) {
+                showToast('Por favor, busca y selecciona tu nombre de la lista desplegable.', 'error');
+                return;
+            }
+
+            const branch = document.getElementById('branch').value;
+
+            appState.user = { empId, branch, role: 'empleado' };
+            showToast(`Bienvenido, ${empId}`);
+
+            document.getElementById('survey-user-info').innerText = `${empId} | ${branch}`;
+            navigateTo('survey-view');
+            renderSurvey();
+        }
+
+        // NUEVO: Manejar login de administrador
+        function handleAdminLogin(event) {
+            event.preventDefault();
+            const user = document.getElementById('admin-user').value;
+            const pass = document.getElementById('admin-pass').value;
+
+            // Validación simple para el demo
+            if (user === 'admin' && pass === 'admin123') {
+                appState.user = { user, role: 'admin' };
+                showToast(`Bienvenido al Dashboard, ${user}`);
+                navigateTo('dashboard-view');
+                initDashboard();
+            } else {
+                showToast(`Usuario o contraseña incorrectos`, 'error');
+            }
+        }
+
+        function logout() {
+            appState.user = null;
+            appState.answers = {};
+            
+            // Limpiar formularios y devolver a la vista de botones
+            document.getElementById('employee-login-form').reset();
+            document.getElementById('admin-login-form').reset();
+            switchAuthView('landing');
+            
+            navigateTo('login-view');
+        }
+
+        // Manejador de Preguntas Filtro (Sí/No)
+        function handleFilterChange(filterId, isYes) {
+            let targets = [];
+            // Bloque 13: Si NO atiende clientes, ocultar de la 86 a la 89
+            if (filterId === 85) targets = [86, 87, 88, 89];
+            // Bloque 14: Si NO tiene colaboradores a cargo, ocultar de la 91 a la 94
+            if (filterId === 90) targets = [91, 92, 93, 94];
+
+            targets.forEach(id => {
+                const el = document.getElementById(`question-card-${id}`);
+                if (el) {
+                    if (isYes) {
+                        el.classList.remove('hidden');
+                        el.classList.add('fade-in');
+                    } else {
+                        el.classList.add('hidden');
+                        el.classList.remove('fade-in');
+                        // Deseleccionar cualquier opción previa
+                        const radios = el.querySelectorAll('input[type="radio"]');
+                        radios.forEach(r => r.checked = false);
+                    }
+                }
+            });
+        }
+
+        function renderSurvey() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+            
+            // Crear una "página" por cada bloque definido
+            surveyBlocks.forEach((block) => {
+                const pageDiv = document.createElement('div');
+                pageDiv.id = `survey-page-${block.id}`;
+                pageDiv.className = 'hidden space-y-6 fade-in pb-4';
+                
+                // Encabezado del Bloque
+                const blockHeader = document.createElement('div');
+                blockHeader.className = 'bg-blue-50 rounded-2xl p-6 mb-6 border border-blue-100';
+                blockHeader.innerHTML = `
+                    <h2 class="text-xl font-bold text-blue-800 mb-2">${block.title}</h2>
+                    <p class="text-blue-900 font-medium">${block.desc}</p>
+                `;
+                pageDiv.appendChild(blockHeader);
+
+                // Filtrar las preguntas correspondientes a este bloque
+                const blockQuestions = surveyQuestions.filter(q => q.id >= block.start && q.id <= block.end);
+
+                blockQuestions.forEach((q, index) => {
+                    const qCard = document.createElement('div');
+                    qCard.id = `question-card-${q.id}`;
+                    // La clase 'question-card' la usaremos para la validación
+                    qCard.className = 'question-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow';
+                    
+                    // Si es una pregunta que depende de un filtro (86-89 o 91-94), la iniciamos oculta por defecto hasta que digan "Sí"
+                    if ((q.id >= 86 && q.id <= 89) || (q.id >= 91 && q.id <= 94)) {
+                        qCard.classList.add('hidden');
+                    }
+                    
+                    let optionsHtml = '';
+
+                    // Manejo especial para preguntas de Filtro (Sí/No)
+                    if (q.categoria === 'Control') {
+                        const radioSiId = `q_${q.id}_v_si`;
+                        const radioNoId = `q_${q.id}_v_no`;
+                        optionsHtml = `
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div class="relative">
+                                    <input type="radio" id="${radioSiId}" name="q_${q.id}" value="SI" required 
+                                        class="peer sr-only radio-custom" onchange="handleFilterChange(${q.id}, true)">
+                                    <label for="${radioSiId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
+                                        <span class="text-lg font-bold text-slate-700 block mb-1">Sí</span>
+                                    </label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" id="${radioNoId}" name="q_${q.id}" value="NO" required 
+                                        class="peer sr-only radio-custom" onchange="handleFilterChange(${q.id}, false)">
+                                    <label for="${radioNoId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
+                                        <span class="text-lg font-bold text-slate-700 block mb-1">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        // Manejo estándar de escala 0-4
+                        optionsHtml = '<div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mt-4">';
+                        scaleOptions.forEach(opt => {
+                            const actualValue = q.inversa ? (4 - opt.value) : opt.value;
+                            const radioId = `q_${q.id}_v_${opt.value}`; 
+                            
+                            optionsHtml += `
+                                <div class="relative">
+                                    <input type="radio" id="${radioId}" name="q_${q.id}" value="${actualValue}" required 
+                                        class="peer sr-only radio-custom">
+                                    <label for="${radioId}" 
+                                        class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
+                                        <span class="text-sm font-medium text-slate-700 block mb-1">${opt.text}</span>
+                                    </label>
+                                </div>
+                            `;
+                        });
+                        optionsHtml += '</div>';
+                    }
+
+                    qCard.innerHTML = `
+                        <div class="mb-2 flex items-center justify-between">
+                            <span class="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded uppercase tracking-wider">Pregunta ${q.id}</span>
+                            <span class="text-xs font-medium text-slate-400">${q.dominio}</span>
+                        </div>
+                        <h3 class="text-lg font-medium text-slate-800 leading-relaxed mb-4">${q.pregunta}</h3>
+                        ${optionsHtml}
+                    `;
+                    pageDiv.appendChild(qCard);
+                });
+
+                container.appendChild(pageDiv);
+            });
+            
+            // Inicializar en el Bloque 1
+            currentSurveyPage = 1;
+            updatePaginationUI();
+            updateProgress();
+        }
+
+        function updatePaginationUI() {
+            const totalPages = surveyBlocks.length;
+            
+            // Ocultar todas las páginas, mostrar solo la actual
+            for (let p = 1; p <= totalPages; p++) {
+                const div = document.getElementById(`survey-page-${p}`);
+                if (div) {
+                    if (p === currentSurveyPage) {
+                        div.classList.remove('hidden');
+                    } else {
+                        div.classList.add('hidden');
+                    }
+                }
+            }
+
+            // Actualizar botones de navegación inferior
+            const navContainer = document.getElementById('survey-nav-buttons');
+            navContainer.innerHTML = '';
+            
+            // Inyectar botón Atrás (ocupa todo el ancho en móvil)
+            if (currentSurveyPage > 1) {
+                navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(-1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><i class="ph ph-arrow-left mr-2"></i> Atrás</button>`;
+            } else {
+                navContainer.innerHTML += `<div class="hidden sm:block"></div>`; // Espaciador para mantener el botón "Siguiente" a la derecha en PC
+            }
+
+            // Inyectar botón Siguiente o botón de Enviar (ocupa todo el ancho en móvil)
+            if (currentSurveyPage < totalPages) {
+                navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Siguiente <i class="ph ph-arrow-right ml-2"></i></button>`;
+            } else {
+                navContainer.innerHTML += `<button type="submit" id="btn-submit-survey" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg shadow-sm hover:bg-emerald-700 transition-colors"><i class="ph ph-paper-plane-right mr-2"></i> Finalizar y Enviar</button>`;
+            }
+            
+            // Hacer scroll suave hacia arriba al cambiar de bloque
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function changeSurveyPage(delta) {
+            // Validar que se hayan contestado todas las preguntas de la vista actual antes de avanzar
+            if (delta === 1) {
+                const pageDiv = document.getElementById(`survey-page-${currentSurveyPage}`);
+                // Solo validar las tarjetas de preguntas que NO están ocultas (considerando los filtros)
+                const visibleCards = pageDiv.querySelectorAll('.question-card:not(.hidden)');
+                let allAnswered = true;
+
+                visibleCards.forEach(card => {
+                    const checkedRadio = card.querySelector('input[type="radio"]:checked');
+                    if (!checkedRadio) {
+                        allAnswered = false;
+                        // Resaltar visualmente la pregunta sin responder
+                        card.classList.add('border-red-300', 'bg-red-50');
+                        setTimeout(() => card.classList.remove('border-red-300', 'bg-red-50'), 2000);
+                    }
+                });
+                
+                if (!allAnswered) {
+                    showToast('Por favor, responde todas las preguntas de este bloque para continuar.', 'error');
+                    return; // Detiene la navegación
+                }
+            }
+            
+            currentSurveyPage += delta;
+            updatePaginationUI();
+            updateProgress();
+        }
+
+        function updateProgress() {
+            // La barra de progreso ahora se basa en los bloques completados
+            const total = surveyBlocks.length;
+            const progress = ((currentSurveyPage - 1) / total) * 100;
+            document.getElementById('survey-progress').style.width = `${progress}%`;
+        }
+
+        
+        async function submitSurvey(event) {
+            event.preventDefault();
+            
+            // Recolectar respuestas
+            const formData = new FormData(event.target);
+            const respuestas = {};
+            const respuestasTexto = {}; // NUEVO: Para guardar el texto de la opción
+            let puntajeTotal = 0;
+
+            for (let [key, value] of formData.entries()) {
+                const questionId = key.split('_')[1];
+                respuestas[questionId] = value;
+                
+                // NUEVO: Extraemos la etiqueta de texto ("Siempre", "Nunca", "Sí", "No") del input seleccionado
+                const selectedRadio = document.querySelector(`input[name="${key}"]:checked`);
+                if (selectedRadio) {
+                    respuestasTexto[questionId] = selectedRadio.nextElementSibling.innerText.trim();
+                }
+
+                // Solo sumar si es un número válido (ignoramos las respuestas 'SI' o 'NO' de los filtros)
+                if (!isNaN(value)) {
+                    puntajeTotal += parseInt(value, 10);
+                }
+            }
+
+            // Preparar payload para Google Apps Script
+            const payload = {
+                action: 'saveSurvey',
+                timestamp: new Date().toISOString(),
+                empId: 'DEMO-123', // TODO: Reemplazar con empleado real al integrar login
+                branch: 'Sucursal Centro', // TODO: Reemplazar con sucursal real
+                respuestas: JSON.stringify(respuestas),
+                respuestasTexto: respuestasTexto, // NUEVO: Enviamos el objeto con los textos puros
+                puntajeTotal: puntajeTotal
+            };
+
+            // Mostrar estado de carga
+            const btn = document.getElementById('btn-submit-survey');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-2 shrink-0"></i> Guardando...';
+            btn.disabled = true;
+
+            try {
+                // Petición real a tu Google Apps Script
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Necesario para evitar errores de CORS con Google Apps Script
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                showToast('¡Encuesta guardada con éxito! Gracias por tu participación.');
+                
+                setTimeout(() => {
+                    logout();
+                }, 2000);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Hubo un error al guardar. Intenta de nuevo.', 'error');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        
+        function initDashboard() {
+            // Simulamos obtener datos agrupados y procesados desde Google Apps Script
+            const mockDashboardData = {
+                riesgoPorDominio: {
+                    labels: ['Ambiente de trabajo', 'Carga de trabajo', 'Falta de control', 'Jornada', 'Interferencia', 'Liderazgo', 'Violencia'],
+                    data: [12, 28, 15, 8, 10, 18, 5] // Puntajes promedio
+                },
+                riesgoPorSucursal: {
+                    labels: ['CDMX - Corporativo', 'MTY - Norte', 'GDL - Bajío'],
+                    data: [45, 60, 30] // Riesgo global promedio (Inventado para gráfica)
+                },
+                semaforoCategorias: [
+                    { cat: 'Ambiente de trabajo', pts: 12, riesgo: 'Bajo', color: 'bg-emerald-100 text-emerald-800' },
+                    { cat: 'Factores de actividad', pts: 28, riesgo: 'Alto', color: 'bg-red-100 text-red-800' },
+                    { cat: 'Organización del tiempo', pts: 15, riesgo: 'Medio', color: 'bg-amber-100 text-amber-800' },
+                    { cat: 'Liderazgo y relaciones', pts: 23, riesgo: 'Alto', color: 'bg-red-100 text-red-800' },
+                ]
+            };
+
+            renderCharts(mockDashboardData);
+            renderTable(mockDashboardData.semaforoCategorias);
+        }
+
+        function renderCharts(data) {
+            // Destruir gráficos anteriores si existen para evitar solapamientos
+            if(appState.charts.domains) appState.charts.domains.destroy();
+            if(appState.charts.branches) appState.charts.branches.destroy();
+
+            // Gráfico de Dominios (Radar o Barras)
+            const ctxDom = document.getElementById('chart-domains').getContext('2d');
+            appState.charts.domains = new Chart(ctxDom, {
+                type: 'bar',
+                data: {
+                    labels: data.riesgoPorDominio.labels,
+                    datasets: [{
+                        label: 'Puntaje Promedio',
+                        data: data.riesgoPorDominio.data,
+                        backgroundColor: '#3b82f6', // blue-500
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Gráfico por Sucursal (Doughnut)
+            const ctxBranch = document.getElementById('chart-branches').getContext('2d');
+            appState.charts.branches = new Chart(ctxBranch, {
+                type: 'doughnut',
+                data: {
+                    labels: data.riesgoPorSucursal.labels,
+                    datasets: [{
+                        data: data.riesgoPorSucursal.data,
+                        backgroundColor: ['#2563eb', '#f59e0b', '#ef4444'], // blue, amber, red
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        function renderTable(categorias) {
+            const tbody = document.getElementById('table-categories');
+            tbody.innerHTML = '';
+
+            categorias.forEach(cat => {
+                const accion = cat.riesgo === 'Alto' ? 'Intervención inmediata' : 
+                               cat.riesgo === 'Medio' ? 'Programa de prevención' : 'Monitoreo';
+                
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">${cat.cat}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">${cat.pts} pts</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${cat.color}">
+                            ${cat.riesgo}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">${accion}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function syncData() {
+            showToast('Sincronizando con Google Sheets...', 'info');
+            // Aquí iría el GET request a la API de Apps Script para traer nuevos datos
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            showToast('Datos actualizados correctamente.');
+            initDashboard(); // Recargar gráficas
+        }
+
+    </script>
+</body>
+</html>
