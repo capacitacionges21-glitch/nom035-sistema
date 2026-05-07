@@ -6,44 +6,55 @@
     <title>Sistema NOM-035 STPS | HR Dashboard</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+    <!-- Librerías para generación de PDF (jsPDF y AutoTable) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f8fafc; 
-            color: #1e293b; 
-        }
-        
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .radio-custom:checked + label {
-            background-color: #eff6ff; 
-            border-color: #3b82f6; 
-            color: #1d4ed8; 
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .radio-custom:checked + label { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
     </style>
 </head>
 <body class="antialiased h-screen overflow-hidden flex flex-col">
 
     <div id="toast-container" class="fixed top-4 left-4 right-4 sm:left-auto sm:w-96 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
+    <!-- Modal para generar PDF -->
+    <div id="pdf-modal" class="fixed inset-0 bg-slate-900/60 z-[70] hidden flex items-center justify-center fade-in px-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-lg">Generar Reporte Individual</h3>
+                <button onclick="closePdfModal()" class="text-slate-400 hover:text-red-500"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-500 mb-4">Selecciona un colaborador para exportar su Plan de Acción en formato PDF.</p>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Colaborador</label>
+                    <select id="pdf-employee-select" class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 outline-none">
+                        <option value="">Selecciona un empleado...</option>
+                        <!-- Opciones generadas por JS -->
+                    </select>
+                </div>
+                <button onclick="downloadEmployeePDF()" class="w-full flex items-center justify-center px-4 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="ph ph-file-pdf mr-2 text-lg"></i> Descargar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="app" class="h-full w-full flex-1 overflow-y-auto">
 
+        <!-- ================= LOGIN VIEW ================= -->
         <div id="login-view" class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 fade-in">
             <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-slate-100 relative overflow-hidden">
                 
@@ -53,181 +64,110 @@
                             <i class="ph ph-shield-check text-2xl"></i>
                         </div>
                         <h2 class="text-3xl font-bold text-slate-800">NOM-035 System</h2>
-                        <p class="mt-2 text-sm text-slate-500">Plataforma de evaluación de riesgo psicosocial</p>
+                        <p class="mt-2 text-sm text-slate-500">Evaluación de riesgo psicosocial</p>
                     </div>
 
                     <div class="space-y-4">
                         <button onclick="switchAuthView('employee')" class="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all group text-left">
-                            <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                                <i class="ph ph-clipboard-text text-2xl"></i>
-                            </div>
+                            <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-blue-600 group-hover:text-white transition-colors"><i class="ph ph-clipboard-text text-2xl"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-800 text-lg">Resuelve tu encuesta aquí</h3>
                                 <p class="text-xs text-slate-500 mt-1">Acceso para colaboradores</p>
                             </div>
                         </button>
-
                         <button onclick="switchAuthView('admin')" class="w-full flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-slate-800 hover:bg-slate-50 transition-all group text-left">
-                            <div class="h-12 w-12 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-slate-800 group-hover:text-white transition-colors">
-                                <i class="ph ph-lock-key text-2xl"></i>
-                            </div>
+                            <div class="h-12 w-12 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-slate-800 group-hover:text-white transition-colors"><i class="ph ph-lock-key text-2xl"></i></div>
                             <div>
                                 <h3 class="font-bold text-slate-800 text-lg">Administrador</h3>
-                                <p class="text-xs text-slate-500 mt-1">Acceso administrador</p>
+                                <p class="text-xs text-slate-500 mt-1">Acceso RH y Gráficas</p>
                             </div>
                         </button>
                     </div>
                 </div>
 
+                <!-- Formulario Empleado -->
                 <div id="auth-employee" class="hidden fade-in">
-                    <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-blue-600 flex items-center transition-colors">
-                        <i class="ph ph-arrow-left mr-1"></i> Atrás
-                    </button>
-                    <div class="text-center mb-6">
-                        <h2 class="text-2xl font-bold text-slate-800">Comenzar Encuesta</h2>
-                        <p class="mt-1 text-sm text-slate-500">Ingresa tus datos corporativos</p>
-                    </div>
+                    <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-blue-600 flex items-center transition-colors"><i class="ph ph-arrow-left mr-1"></i> Atrás</button>
                     <form id="employee-login-form" class="space-y-5" onsubmit="handleEmployeeLogin(event)">
                         <div class="relative">
-                            <label for="employee-search" class="block text-sm font-medium text-slate-700">Número de Empleado o Nombre</label>
-                            <input id="employee-search" type="text" autocomplete="off" required 
-                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" 
-                                placeholder="Escribe para buscar..." oninput="filterEmployees()">
-                            
+                            <label class="block text-sm font-medium text-slate-700">Número de Empleado o Nombre</label>
+                            <input id="employee-search" type="text" autocomplete="off" required class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Escribe para buscar..." oninput="filterEmployees()">
                             <input type="hidden" id="employee-id" name="employee-id">
-                            
-                            <ul id="employee-dropdown" class="absolute z-20 mt-1 w-full bg-white shadow-lg max-h-48 rounded-md py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none hidden">
-                            </ul>
+                            <ul id="employee-dropdown" class="absolute z-20 mt-1 w-full bg-white shadow-lg max-h-48 rounded-md py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto hidden"></ul>
                         </div>
                         <div>
-                            <label for="branch" class="block text-sm font-medium text-slate-700">Sucursal / Cadena</label>
-                            <input id="branch" name="branch" type="text" readonly required
-                                class="mt-1 block w-full px-4 py-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 focus:outline-none cursor-not-allowed transition-shadow" 
-                                placeholder="Se autocompletará al seleccionar colaborador...">
+                            <label class="block text-sm font-medium text-slate-700">Sucursal / Cadena</label>
+                            <input id="branch" name="branch" type="text" readonly required class="mt-1 block w-full px-4 py-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 cursor-not-allowed" placeholder="Se autocompletará...">
                         </div>
-                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                            Entrar a la Encuesta
-                        </button>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors">Entrar a la Encuesta</button>
                     </form>
                 </div>
 
+                <!-- Formulario Administrador -->
                 <div id="auth-admin" class="hidden fade-in">
-                    <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-slate-800 flex items-center transition-colors">
-                        <i class="ph ph-arrow-left mr-1"></i> Atrás
-                    </button>
-                    <div class="text-center mb-6">
-                        <h2 class="text-2xl font-bold text-slate-800">Acceso RH</h2>
-                        <p class="mt-1 text-sm text-slate-500">Gestión y Gráficas STPS</p>
-                    </div>
+                    <button onclick="switchAuthView('landing')" class="mb-6 text-sm font-medium text-slate-500 hover:text-slate-800 flex items-center transition-colors"><i class="ph ph-arrow-left mr-1"></i> Atrás</button>
                     <form id="admin-login-form" class="space-y-5" onsubmit="handleAdminLogin(event)">
                         <div>
-                            <label for="admin-user" class="block text-sm font-medium text-slate-700">Usuario</label>
-                            <input id="admin-user" name="admin-user" type="text" required 
-                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-shadow" 
-                                placeholder="Usuario de RH">
+                            <label class="block text-sm font-medium text-slate-700">Usuario</label>
+                            <input id="admin-user" type="text" required class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none" placeholder="Usuario de RH">
                         </div>
                         <div>
-                            <label for="admin-pass" class="block text-sm font-medium text-slate-700">Contraseña</label>
-                            <input id="admin-pass" name="admin-pass" type="password" required 
-                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-shadow" 
-                                placeholder="••••••••">
+                            <label class="block text-sm font-medium text-slate-700">Contraseña</label>
+                            <input id="admin-pass" type="password" required class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm outline-none" placeholder="••••••••">
                         </div>
-                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors">
-                            Ingresar al Dashboard
-                        </button>
+                        <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 transition-colors">Ingresar al Dashboard</button>
                     </form>
                 </div>
-
             </div>
         </div>
 
+        <!-- ================= DASHBOARD VIEW ================= -->
         <div id="dashboard-view" class="hidden h-full flex flex-col md:flex-row bg-slate-50 fade-in relative">
             
-            <div class="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-3 shrink-0">
-                <div class="flex items-center">
+            <aside id="dashboard-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col shadow-2xl transform -translate-x-full md:relative md:translate-x-0 md:shadow-none transition-transform duration-300 ease-in-out shrink-0">
+                <div class="h-16 flex items-center px-6 border-b border-slate-100 shrink-0">
                     <i class="ph ph-chart-pie-slice text-blue-600 text-2xl mr-2"></i>
                     <span class="font-bold text-lg text-slate-800">HR Analytics</span>
                 </div>
-                <button onclick="toggleSidebar()" class="text-slate-500 hover:text-slate-800 focus:outline-none p-1">
-                    <i class="ph ph-list text-3xl"></i>
-                </button>
-            </div>
-
-            <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
-
-            <aside id="dashboard-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 flex flex-col shadow-2xl transform -translate-x-full md:relative md:translate-x-0 md:shadow-none transition-transform duration-300 ease-in-out shrink-0">
-                <div class="h-16 flex items-center justify-between px-6 border-b border-slate-100 shrink-0">
-                    <div class="flex items-center">
-                        <i class="ph ph-chart-pie-slice text-blue-600 text-2xl mr-2"></i>
-                        <span class="font-bold text-lg text-slate-800">HR Analytics</span>
-                    </div>
-                    <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-slate-700 p-1">
-                        <i class="ph ph-x text-2xl"></i>
-                    </button>
-                </div>
-                
                 <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-                    <a id="menu-resumen" onclick="switchDashTab('resumen')" class="flex items-center px-4 py-3 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg transition-colors cursor-pointer">
-                        <i class="ph ph-squares-four text-lg mr-3"></i> Resumen Global
-                    </a>
-                    <a id="menu-sucursales" onclick="switchDashTab('sucursales')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors cursor-pointer">
-                        <i class="ph ph-buildings text-lg mr-3"></i> Por Sucursal
-                    </a>
-                    <a id="menu-dominios" onclick="switchDashTab('dominios')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors cursor-pointer">
-                        <i class="ph ph-warning-circle text-lg mr-3"></i> Riesgos y Dominios
-                    </a>
-                    <a id="menu-reportes" onclick="switchDashTab('reportes')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors cursor-pointer">
-                        <i class="ph ph-file-text text-lg mr-3"></i> Reportes STPS
-                    </a>
+                    <a id="menu-resumen" onclick="switchDashTab('resumen')" class="flex items-center px-4 py-3 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg transition-colors cursor-pointer"><i class="ph ph-squares-four text-lg mr-3"></i> Resumen Global</a>
+                    <a id="menu-sucursales" onclick="switchDashTab('sucursales')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-buildings text-lg mr-3"></i> Por Sucursal</a>
+                    <a id="menu-dominios" onclick="switchDashTab('dominios')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-warning-circle text-lg mr-3"></i> Riesgos y Dominios</a>
+                    <a id="menu-planes" onclick="switchDashTab('planes')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-briefcase text-lg mr-3"></i> Planes de Acción</a>
+                    <a id="menu-reportes" onclick="switchDashTab('reportes')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-file-text text-lg mr-3"></i> Reportes STPS</a>
                 </nav>
                 <div class="p-4 border-t border-slate-200">
-                    <button onclick="logout()" class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <i class="ph ph-sign-out text-lg mr-3"></i> Cerrar Sesión
-                    </button>
+                    <button onclick="logout()" class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="ph ph-sign-out text-lg mr-3"></i> Cerrar Sesión</button>
                 </div>
             </aside>
 
-            <main class="flex-1 overflow-y-auto p-6 md:p-8 relative">
+            <main class="flex-1 overflow-y-auto p-6 md:p-8">
                 
                 <div id="tab-resumen" class="fade-in block">
                     <div class="flex justify-between items-center mb-8">
                         <div>
                             <h1 class="text-2xl font-bold text-slate-900">Dashboard NOM-035</h1>
-                            <p class="text-sm text-slate-500 mt-1">Periodo de evaluación activo: 2026</p>
+                            <p class="text-sm text-slate-500 mt-1">Periodo activo: 2026</p>
                         </div>
-                        <button onclick="syncData()" class="flex items-center bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 shadow-sm transition-all">
-                            <i class="ph ph-arrows-clockwise mr-2"></i> Actualizar Datos
-                        </button>
+                        <button onclick="syncData()" class="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm"><i class="ph ph-arrows-clockwise mr-2"></i> Actualizar Datos</button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
                             <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4"><i class="ph ph-users text-2xl"></i></div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500">Participación</p>
-                                <p class="text-2xl font-bold text-slate-800" id="kpi-participation">--%</p>
-                            </div>
+                            <div><p class="text-sm font-medium text-slate-500">Participación</p><p class="text-2xl font-bold text-slate-800" id="kpi-participation">--%</p></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
                             <div class="p-3 rounded-full bg-red-100 text-red-600 mr-4"><i class="ph ph-siren text-2xl"></i></div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500">Riesgo Global</p>
-                                <p class="text-2xl font-bold text-slate-800" id="kpi-risk">--</p>
-                            </div>
+                            <div><p class="text-sm font-medium text-slate-500">Riesgo Global</p><p class="text-2xl font-bold text-slate-800" id="kpi-risk">--</p></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
                             <div class="p-3 rounded-full bg-amber-100 text-amber-600 mr-4"><i class="ph ph-warning-octagon text-2xl"></i></div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500">Dominios Críticos</p>
-                                <p class="text-2xl font-bold text-slate-800" id="kpi-domains">-</p>
-                            </div>
+                            <div><p class="text-sm font-medium text-slate-500">Dominios Críticos</p><p class="text-2xl font-bold text-slate-800" id="kpi-domains">-</p></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
                             <div class="p-3 rounded-full bg-emerald-100 text-emerald-600 mr-4"><i class="ph ph-check-circle text-2xl"></i></div>
-                            <div>
-                                <p class="text-sm font-medium text-slate-500">Cumplimiento</p>
-                                <p class="text-2xl font-bold text-slate-800">Al día</p>
-                            </div>
+                            <div><p class="text-sm font-medium text-slate-500">Cumplimiento</p><p class="text-2xl font-bold text-slate-800">Al día</p></div>
                         </div>
                     </div>
 
@@ -262,157 +202,73 @@
                     </div>
                 </div>
 
-                <div id="tab-sucursales" class="fade-in hidden">
+                <div id="tab-planes" class="fade-in hidden">
                     <div class="mb-8">
-                        <h1 class="text-2xl font-bold text-slate-900">Análisis por Sucursal</h1>
-                        <p class="text-sm text-slate-500 mt-1">Filtra los resultados por centro de trabajo</p>
-                    </div>
-                    
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8 flex flex-col sm:flex-row items-end gap-4">
-                        <div class="w-full sm:w-1/3">
-                            <label class="block text-sm font-medium text-slate-700 mb-2">Seleccionar Sucursal</label>
-                            <select class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option>Todas las sucursales</option>
-                                <option>CDMX - Corporativo</option>
-                                <option>MTY - Norte</option>
-                            </select>
-                        </div>
-                        <button class="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
-                            Aplicar Filtro
-                        </button>
+                        <h1 class="text-2xl font-bold text-slate-900">Planes de Acción Correctiva</h1>
+                        <p class="text-sm text-slate-500 mt-1">Estrategias basadas en las Dimensiones de Mayor Riesgo detectadas</p>
                     </div>
 
-                    <div class="bg-white p-12 rounded-2xl shadow-sm border border-slate-100 text-center">
-                        <i class="ph ph-chart-line-up text-5xl text-slate-300 mb-4"></i>
-                        <h3 class="text-lg font-medium text-slate-700">Módulo en Desarrollo</h3>
-                        <p class="text-slate-500 mt-2 max-w-md mx-auto">Este espacio estará diseñado para visualizar las gráficas filtradas específicamente por la sucursal seleccionada. Listo para la Fase 2.</p>
-                    </div>
-                </div>
-
-                <div id="tab-dominios" class="fade-in hidden">
-                    <div class="mb-8">
-                        <h1 class="text-2xl font-bold text-slate-900">Riesgos y Dominios STPS</h1>
-                        <p class="text-sm text-slate-500 mt-1">Desglose detallado de las métricas oficiales</p>
-                    </div>
-
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200">
-                                <thead class="bg-slate-50">
-                                    <tr>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Dominio</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Categoría Relacionada</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-slate-200">
-                                    <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">Condiciones en el ambiente de trabajo</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">Ambiente de trabajo</td>
-                                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-600">Pendiente de datos</span></td>
-                                    </tr>
-                                    <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">Carga de trabajo</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">Factores propios de la actividad</td>
-                                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-600">Pendiente de datos</span></td>
-                                    </tr>
-                                    <tr class="hover:bg-slate-50 transition-colors">
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-800">Liderazgo</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">Liderazgo y relaciones</td>
-                                        <td class="px-6 py-4 whitespace-nowrap"><span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-slate-100 text-slate-600">Pendiente de datos</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    <div id="no-risk-alert" class="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl mb-8 flex items-center text-emerald-800 hidden">
+                        <i class="ph ph-check-circle text-3xl mr-4"></i>
+                        <div>
+                            <p class="font-bold">¡Sin riesgos críticos!</p>
+                            <p class="text-sm opacity-90">No se han detectado dimensiones con riesgo Alto o Muy Alto que requieran plan de acción inmediato.</p>
                         </div>
                     </div>
+
+                    <!-- Contenedor dinámico de planes de acción -->
+                    <div id="action-plan-container" class="space-y-8"></div>
                 </div>
 
+                <div id="tab-sucursales" class="fade-in hidden"><h1 class="text-2xl font-bold">Análisis por Sucursal</h1><p class="text-slate-500 mt-4 italic">Módulo de filtrado avanzado en desarrollo.</p></div>
+                <div id="tab-dominios" class="fade-in hidden"><h1 class="text-2xl font-bold">Riesgos y Dominios</h1><p class="text-slate-500 mt-4 italic">Vista detallada de puntajes por norma.</p></div>
+                
+                <!-- TAB 4: REPORTES STPS ACTUALIZADO -->
                 <div id="tab-reportes" class="fade-in hidden">
-                    <div class="mb-8">
-                        <h1 class="text-2xl font-bold text-slate-900">Centro de Reportes</h1>
-                        <p class="text-sm text-slate-500 mt-1">Exportación de datos para auditorías STPS</p>
-                    </div>
-
+                    <h1 class="text-2xl font-bold mb-6">Centro de Reportes y Descargas</h1>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center hover:shadow-md transition-shadow">
-                            <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
-                                <i class="ph ph-file-xls text-3xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-slate-800 mb-2">Base de Datos Maestra</h3>
-                            <p class="text-sm text-slate-500 mb-6">Descarga la sábana completa de respuestas (numéricas y en texto plano) directo desde Google Sheets.</p>
-                            <a href="https://docs.google.com/spreadsheets/d/1O0EIf0QoT8xYQhA-Wp2j154i1n9XvHn9z5P9a_yK_bE/" target="_blank" class="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium flex items-center">
-                                <i class="ph ph-download-simple mr-2 text-lg"></i> Abrir Google Sheets
-                            </a>
+                        
+                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
+                            <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-file-xls text-3xl"></i></div>
+                            <h3 class="text-xl font-bold mb-2">Base de Datos Maestra</h3>
+                            <p class="text-sm text-slate-500 mb-6">Accede a la sábana completa de respuestas en Google Sheets para análisis global.</p>
+                            <a href="https://docs.google.com/spreadsheets/d/1O0EIf0QoT8xYQhA-Wp2j154i1n9XvHn9z5P9a_yK_bE/" target="_blank" class="inline-flex px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"><i class="ph ph-download-simple mr-2"></i> Abrir Sheets</a>
                         </div>
 
-                        <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center hover:shadow-md transition-shadow">
-                            <div class="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
-                                <i class="ph ph-file-pdf text-3xl"></i>
-                            </div>
-                            <h3 class="text-xl font-bold text-slate-800 mb-2">Reportes Individuales (PDF)</h3>
-                            <p class="text-sm text-slate-500 mb-6">Generador automático de reportes de riesgo por colaborador para integración a expedientes.</p>
-                            <button class="px-6 py-3 bg-slate-100 text-slate-400 rounded-lg cursor-not-allowed font-medium flex items-center">
-                                <i class="ph ph-lock mr-2 text-lg"></i> Módulo Fase 2
+                        <!-- Botón para PDF -->
+                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
+                            <div class="h-16 w-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-file-pdf text-3xl"></i></div>
+                            <h3 class="text-xl font-bold mb-2">Reportes Individuales (PDF)</h3>
+                            <p class="text-sm text-slate-500 mb-6">Generador automático de Plan de Acción por colaborador listos para expediente.</p>
+                            <button onclick="openPdfModal()" class="inline-flex px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium items-center shadow-sm">
+                                <i class="ph ph-magic-wand mr-2 text-lg"></i> Generar Reportes
                             </button>
                         </div>
+
                     </div>
                 </div>
 
             </main>
         </div>
 
+        <!-- ================= SURVEY VIEW ================= -->
         <div id="survey-view" class="hidden min-h-full bg-slate-50 pb-12 fade-in">
             <header class="bg-white shadow-sm sticky top-0 z-20">
-                <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div class="flex items-center min-w-0">
-                        <i class="ph ph-clipboard-text text-blue-600 text-2xl mr-2 shrink-0"></i>
-                        <h1 class="font-bold text-base sm:text-lg text-slate-800 truncate pr-2">Cuestionario NOM-035</h1>
-                    </div>
-                    <div class="flex items-center gap-3 shrink-0">
-                        <span class="text-xs sm:text-sm text-slate-500 truncate max-w-[100px] sm:max-w-[200px]" id="survey-user-info">EMP-001 | CDMX</span>
-                        <button onclick="logout()" class="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors">Salir</button>
+                <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+                    <h1 class="font-bold text-lg">Cuestionario NOM-035</h1>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs sm:text-sm text-slate-500" id="survey-user-info">EMP-001 | CDMX</span>
+                        <button onclick="logout()" class="text-sm font-medium text-slate-500 hover:text-red-600">Salir</button>
                     </div>
                 </div>
-                <div class="w-full bg-slate-200 h-1.5">
-                    <div id="survey-progress" class="bg-blue-600 h-1.5 transition-all duration-300" style="width: 0%"></div>
-                </div>
+                <div class="w-full bg-slate-200 h-1.5"><div id="survey-progress" class="bg-blue-600 h-1.5 transition-all duration-300" style="width: 0%"></div></div>
             </header>
 
-            <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+            <main class="max-w-4xl mx-auto px-4 mt-8">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-6">
-                    <h2 class="text-3xl font-bold text-slate-800 mb-1">Bienvenidos a Encuesta Nom035</h2>
-                    <h3 class="text-2xl font-bold text-slate-800 mb-4 pb-4 border-b border-slate-200">Factores de Riesgo Psicosocial</h3>
-                    
-                    <div class="space-y-3 text-slate-600 text-sm md:text-base leading-relaxed">
-                        <p>Con el objetivo de cumplir con lo establecido en la <span class="font-bold text-slate-800">NOM-035-STPS-2018</span>, te invitamos a responder el siguiente cuestionario para la identificación de factores de riesgo psicosocial en tu centro de trabajo.</p>
-                        <p>Este instrumento es <span class="font-bold text-slate-800">confidencial</span> y tiene como propósito <span class="font-bold text-slate-800">mejorar las condiciones laborales</span> y promover un ambiente de trabajo saludable.</p>
-                        <p>Consulta nuestro anuncio de privacidad en <a href="http://www.gruges.com.mx" target="_blank" class="text-blue-600 hover:underline">www.gruges.com.mx</a> o en tu app Hola GES en el apartado Documentos</p>
-                    </div>
-
-                    <div class="mt-6 pt-4">
-                        <h4 class="font-bold text-slate-800 mb-3 flex items-center">
-                            <span class="bg-green-500 text-white rounded shadow-sm w-5 h-5 flex items-center justify-center mr-2 text-xs">✓</span>
-                            Indicaciones generales:
-                        </h4>
-                        <ul class="list-disc pl-8 space-y-1 text-slate-600 text-sm md:text-base">
-                            <li>Lee cuidadosamente cada enunciado antes de contestar.</li>
-                            <li>No hay respuestas correctas o incorrectas; lo importante es tu percepción personal.</li>
-                        </ul>
-                    </div>
-
-                    <div class="mt-8 pt-6 border-t border-slate-200">
-                        <p class="text-slate-700 text-sm md:text-base mb-4">Para cada afirmación, selecciona la opción que <span class="font-bold text-slate-900">mejor refleje la frecuencia con la que has experimentado esa situación</span> en tu lugar de trabajo.</p>
-                        <p class="text-slate-700 text-sm md:text-base mb-3">Usa la siguiente escala:</p>
-                        <ul class="list-disc pl-8 space-y-2 text-slate-600 text-sm md:text-base">
-                            <li><span class="font-bold text-slate-800">Siempre:</span> Ocurre todo el tiempo o casi todo el tiempo</li>
-                            <li><span class="font-bold text-slate-800">Frecuentemente:</span> Ocurre con regularidad</li>
-                            <li><span class="font-bold text-slate-800">A veces:</span> Ocurre de forma ocasional</li>
-                            <li><span class="font-bold text-slate-800">Rara vez:</span> Ocurre en pocas ocasiones</li>
-                            <li><span class="font-bold text-slate-800">Nunca:</span> No ha ocurrido</li>
-                        </ul>
-                    </div>
+                    <h2 class="text-3xl font-bold text-slate-800 mb-4 pb-4 border-b border-slate-200 text-center">Factores de Riesgo Psicosocial</h2>
+                    <p class="text-slate-600 leading-relaxed mb-6">Con el objetivo de cumplir con lo establecido en la <span class="font-bold text-slate-800">NOM-035-STPS-2018</span>, te invitamos a responder el siguiente cuestionario.</p>
                 </div>
-
                 <form id="dynamic-survey-form" onsubmit="submitSurvey(event)">
                     <div id="questions-container" class="space-y-6"></div>
                     <div id="survey-nav-buttons" class="mt-8 flex flex-col-reverse sm:flex-row justify-between items-center gap-3 pt-6 border-t border-slate-200"></div>
@@ -533,7 +389,7 @@
             { id: 1, title: "Sección 1", desc: "Para cada afirmación, selecciona la opción que mejor refleje la frecuencia con la que has experimentado esa situación en tu lugar de trabajo.", start: 1, end: 10 },
             { id: 2, title: "Sección 2", desc: "Para responder a las preguntas siguientes piense en la cantidad y ritmo de trabajo que tiene.", start: 11, end: 13 },
             { id: 3, title: "Sección 3", desc: "Las preguntas siguientes están relacionadas con el esfuerzo mental que le exige su trabajo.", start: 14, end: 17 },
-            { id: 4, title: "Sección 4", desc: "Las preguntas siguientes están relacionadas con las actividades que realiza en su trabajo y las responsabilidades que tiene.", start: 18, end: 21 },
+            { id: 4, title: "Sección 4", desc: "Las preguntas siguientes están relacionadas con las activities que realiza en su trabajo y las responsabilidades que tiene.", start: 18, end: 21 },
             { id: 5, title: "Sección 5", desc: "Las preguntas siguientes están relacionadas con su jornada de trabajo.", start: 22, end: 27 },
             { id: 6, title: "Sección 6", desc: "Las preguntas siguientes están relacionadas con las decisiones que puede tomar en su trabajo.", start: 28, end: 33 },
             { id: 7, title: "Sección 7", desc: "Las preguntas siguientes están relacionadas con cualquier tipo de cambio que ocurra en su trabajo (considere los últimos cambios realizados).", start: 34, end: 35 },
@@ -553,10 +409,8 @@
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            const bg = type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 
-                       type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800';
-            const icon = type === 'success' ? '<i class="ph ph-check-circle text-xl mr-2 shrink-0"></i>' : 
-                         type === 'error' ? '<i class="ph ph-warning-circle text-xl mr-2 shrink-0"></i>' : '<i class="ph ph-info text-xl mr-2 shrink-0"></i>';
+            const bg = type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800';
+            const icon = type === 'success' ? '<i class="ph ph-check-circle text-xl mr-2 shrink-0"></i>' : '<i class="ph ph-warning-circle text-xl mr-2 shrink-0"></i>';
 
             toast.className = `pointer-events-auto flex items-center p-4 border rounded-lg shadow-lg ${bg} fade-in transform transition-all duration-300 translate-x-full sm:translate-x-full w-full`;
             toast.innerHTML = `${icon} <span class="font-medium text-sm">${message}</span>`;
@@ -570,17 +424,13 @@
         }
 
         function navigateTo(viewId) {
-            document.getElementById('login-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.add('hidden');
-            document.getElementById('survey-view').classList.add('hidden');
+            ['login-view', 'dashboard-view', 'survey-view'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
             window.scrollTo(0,0);
         }
 
         function switchAuthView(view) {
-            document.getElementById('auth-landing').classList.add('hidden');
-            document.getElementById('auth-employee').classList.add('hidden');
-            document.getElementById('auth-admin').classList.add('hidden');
+            ['auth-landing', 'auth-employee', 'auth-admin'].forEach(v => document.getElementById(v).classList.add('hidden'));
             document.getElementById(`auth-${view}`).classList.remove('hidden');
         }
 
@@ -591,39 +441,196 @@
             overlay.classList.toggle('hidden');
         }
 
-        // ==========================================
-        // FUNCIONALIDAD: TABS DEL DASHBOARD (NUEVO)
-        // ==========================================
         function switchDashTab(tabId) {
-            // Ocultar todos los tabs
-            ['tab-resumen', 'tab-sucursales', 'tab-dominios', 'tab-reportes'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.classList.add('hidden');
-                    el.classList.remove('block');
-                }
+            ['resumen', 'sucursales', 'dominios', 'planes', 'reportes'].forEach(id => {
+                document.getElementById(`tab-${id}`).classList.add('hidden');
+                document.getElementById(`menu-${id}`).className = 'flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer';
             });
-            // Mostrar target
-            const target = document.getElementById(`tab-${tabId}`);
-            if(target) {
-                target.classList.remove('hidden');
-                target.classList.add('block');
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.getElementById(`menu-${tabId}`).className = 'flex items-center px-4 py-3 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg transition-colors cursor-pointer';
+            
+            if(tabId === 'planes') renderActionPlans();
+        }
+
+        // ==========================================
+        // LÓGICA: PLANES DE ACCIÓN (ESTRUCTURA NUEVA)
+        // ==========================================
+        function renderActionPlans() {
+            const container = document.getElementById('action-plan-container');
+            const alert = document.getElementById('no-risk-alert');
+            container.innerHTML = '';
+            
+            // Simulación de dimensiones en riesgo Alto/Muy Alto (Fase 2 conectará a Sheets)
+            const highRiskDimensions = [
+                { dimension: 'Carga mental', riesgo: 'Alto' },
+                { dimension: 'Cargas emocionales', riesgo: 'Muy Alto' },
+                { dimension: 'Jornadas de trabajo extensas', riesgo: 'Alto' }
+            ];
+
+            if (highRiskDimensions.length === 0) {
+                alert.classList.remove('hidden');
+                return;
+            }
+
+            alert.classList.add('hidden');
+
+            const card = document.createElement('div');
+            card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden fade-in mb-8";
+            
+            let tableRows = '';
+            highRiskDimensions.forEach((item, index) => {
+                let riskColor = item.riesgo === 'Muy Alto' ? 'text-red-700 bg-red-100' : 'text-orange-700 bg-orange-100';
+                tableRows += `
+                    <tr>
+                        <td class="px-2 py-4 align-top text-slate-600 text-center">${index + 1}</td>
+                        <td class="px-4 py-4 align-top text-slate-800 font-medium">${item.dimension}</td>
+                        <td class="px-4 py-4 align-top text-center"><span class="px-2 py-1 rounded-full text-xs font-bold ${riskColor}">${item.riesgo}</span></td>
+                        <td class="px-4 py-4"><textarea class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-blue-500 outline-none" rows="2" placeholder="Define las acciones a seguir..."></textarea></td>
+                        <td class="px-4 py-4"><input type="date" class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none"></td>
+                        <td class="px-4 py-4"><input type="text" class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none" placeholder="Encargado"></td>
+                        <td class="px-4 py-4">
+                            <select class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none">
+                                <option>Pendiente</option>
+                                <option>En Proceso</option>
+                                <option>Finalizado</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            card.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full border-collapse border border-slate-200 text-sm">
+                        <thead class="bg-[#1e3a8a] text-white">
+                            <tr>
+                                <th class="border-b border-slate-300 px-2 py-3 text-center font-semibold text-xs tracking-wider">N.</th>
+                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">DIMENSIÓN</th>
+                                <th class="border-b border-slate-300 px-4 py-3 text-center font-semibold text-xs tracking-wider">NIVEL DE RIESGO</th>
+                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">ACCIÓN</th>
+                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">FECHA DE TÉRMINO</th>
+                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">RESPONSABLE</th>
+                                <th class="border-b border-slate-300 px-4 py-3 text-center font-semibold text-xs tracking-wider">ESTATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="p-4 bg-slate-50 flex justify-end border-t border-slate-200">
+                    <button onclick="showToast('Plan de acción guardado temporalmente', 'success')" class="bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-sm">
+                        <i class="ph ph-floppy-disk mr-2"></i> Guardar Plan
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        }
+
+        // ==========================================
+        // LÓGICA DE GENERACIÓN DE PDF INDIVIDUAL
+        // ==========================================
+        
+        function openPdfModal() {
+            const select = document.getElementById('pdf-employee-select');
+            select.innerHTML = '<option value="">Selecciona un colaborador...</option>';
+            
+            if (loadedEmployees && loadedEmployees.length > 0) {
+                loadedEmployees.forEach(emp => {
+                    const option = document.createElement('option');
+                    option.value = JSON.stringify(emp);
+                    option.text = `${emp.id} - ${emp.name} (${emp.sucursal})`;
+                    select.appendChild(option);
+                });
+            } else {
+                select.innerHTML = '<option value="">No hay empleados cargados</option>';
             }
             
-            // Actualizar estilo del menú lateral
-            ['menu-resumen', 'menu-sucursales', 'menu-dominios', 'menu-reportes'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.className = 'flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors cursor-pointer';
-            });
-            const activeMenu = document.getElementById(`menu-${tabId}`);
-            if(activeMenu) activeMenu.className = 'flex items-center px-4 py-3 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg transition-colors cursor-pointer';
-
-            // Cerrar sidebar móvil si está abierto
-            if(window.innerWidth < 768) {
-                toggleSidebar();
-            }
+            document.getElementById('pdf-modal').classList.remove('hidden');
         }
-        
+
+        function closePdfModal() {
+            document.getElementById('pdf-modal').classList.add('hidden');
+        }
+
+        function downloadEmployeePDF() {
+            const select = document.getElementById('pdf-employee-select');
+            if (!select.value) {
+                showToast('Por favor, selecciona un colaborador', 'error');
+                return;
+            }
+
+            const emp = JSON.parse(select.value);
+            showToast('Generando documento PDF...', 'info');
+
+            // Simulación de dimensiones en riesgo
+            const highRiskDimensions = [
+                { dimension: 'Carga mental', riesgo: 'Alto' },
+                { dimension: 'Cargas emocionales', riesgo: 'Muy Alto' },
+                { dimension: 'Jornadas de trabajo extensas', riesgo: 'Alto' }
+            ];
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'pt', 'a4'); // Apaisado para acomodar más columnas
+
+            doc.setFont("helvetica");
+
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text("PLAN DE ACCIÓN - NOM-035-STPS", 40, 40);
+
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            const fechaActual = new Date().toLocaleDateString('es-MX');
+            doc.text(`Fecha de Emisión: ${fechaActual}`, 40, 65);
+            doc.text(`Colaborador: ${emp.name} (${emp.id})`, 40, 80);
+            doc.text(`Sucursal: ${emp.sucursal || 'N/A'}`, 40, 95);
+
+            // Columnas según la nueva estructura
+            const tableColumn = ["N.", "DIMENSIÓN", "NIVEL DE RIESGO", "ACCIÓN", "FECHA DE TÉRMINO", "RESPONSABLE", "ESTATUS"];
+            const tableRows = [];
+
+            highRiskDimensions.forEach((item, index) => {
+                const row = [
+                    (index + 1).toString(),
+                    item.dimension,
+                    item.riesgo,
+                    "", // Acción
+                    "", // Fecha
+                    "", // Responsable
+                    "Pendiente" // Estatus
+                ];
+                tableRows.push(row);
+            });
+
+            doc.autoTable({
+                head: [tableColumn],
+                body: tableRows,
+                startY: 110,
+                theme: 'grid',
+                headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' }, // Color azul oscuro #1e3a8a
+                columnStyles: {
+                    0: { cellWidth: 30, halign: 'center' },
+                    1: { cellWidth: 140 },
+                    2: { cellWidth: 90, halign: 'center' },
+                    3: { cellWidth: 220 }, // Mas espacio para la acción
+                    4: { cellWidth: 100 },
+                    5: { cellWidth: 120 },
+                    6: { cellWidth: 70, halign: 'center' }
+                },
+                styles: { fontSize: 9, minCellHeight: 35, valign: 'middle' },
+                margin: { top: 110, left: 30, right: 30 }
+            });
+
+            doc.save(`Plan_Accion_NOM035_${emp.id}.pdf`);
+            closePdfModal();
+            showToast('PDF descargado con éxito.', 'success');
+        }
+
+        // ==========================================
+        // FUNCIONES GENERALES
+        // ==========================================
+
         function filterEmployees() {
             const searchInput = document.getElementById('employee-search');
             const dropdown = document.getElementById('employee-dropdown');
@@ -709,7 +716,7 @@
                 showToast(`Bienvenido al Dashboard, ${user}`);
                 navigateTo('dashboard-view');
                 initDashboard();
-                switchDashTab('resumen'); // Asegurar que inicie en el primer tab
+                switchDashTab('resumen'); 
             } else {
                 showToast(`Usuario o contraseña incorrectos`, 'error');
             }
@@ -955,15 +962,15 @@
             }
         }
 
-        // ==========================================
-        // FUNCIONES DEL DASHBOARD Y KPI
-        // ==========================================
-        
         async function initDashboard() {
             try {
                 showToast('Cargando datos del servidor...', 'info');
-                document.getElementById('kpi-participation').innerText = '...';
-                document.getElementById('kpi-risk').innerText = '...';
+                
+                const partEl = document.getElementById('kpi-participation');
+                if(partEl) partEl.innerText = '...';
+                
+                const riskEl = document.getElementById('kpi-risk');
+                if(riskEl) riskEl.innerText = '...';
                 
                 const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getDashboardData");
                 const result = await response.json();
@@ -1007,67 +1014,78 @@
         }
 
         function updateKPIs(data) {
-            document.getElementById('kpi-participation').innerText = data.participacion || '0%';
-            document.getElementById('kpi-risk').innerText = data.riesgoGlobal || 'Sin datos';
-            document.getElementById('kpi-domains').innerText = data.dominiosCriticos || '0';
+            const partEl = document.getElementById('kpi-participation');
+            if(partEl) partEl.innerText = data.participacion || '0%';
+            
+            const riskEl = document.getElementById('kpi-risk');
+            if(riskEl) riskEl.innerText = data.riesgoGlobal || 'Sin datos';
+            
+            const domainsEl = document.getElementById('kpi-domains');
+            if(domainsEl) domainsEl.innerText = data.dominiosCriticos || '0';
         }
 
         function renderCharts(data) {
             if(appState.charts.domains) appState.charts.domains.destroy();
             if(appState.charts.branches) appState.charts.branches.destroy();
 
-            const ctxDom = document.getElementById('chart-domains').getContext('2d');
-            appState.charts.domains = new Chart(ctxDom, {
-                type: 'bar',
-                data: {
-                    labels: data.riesgoPorDominio.labels,
-                    datasets: [{
-                        label: 'Puntaje Promedio',
-                        data: data.riesgoPorDominio.data,
-                        backgroundColor: '#3b82f6', 
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
+            const ctxDom = document.getElementById('chart-domains');
+            if(ctxDom) {
+                appState.charts.domains = new Chart(ctxDom.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.riesgoPorDominio.labels,
+                        datasets: [{
+                            label: 'Puntaje Promedio',
+                            data: data.riesgoPorDominio.data,
+                            backgroundColor: '#3b82f6', 
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
 
             let isEmpy = data.riesgoPorSucursal.labels[0].includes('Sin encuestas');
             let doughnutColors = isEmpy ? ['#e2e8f0'] : ['#2563eb', '#f59e0b', '#ef4444', '#10b981', '#8b5cf6'];
 
-            const ctxBranch = document.getElementById('chart-branches').getContext('2d');
-            appState.charts.branches = new Chart(ctxBranch, {
-                type: 'doughnut',
-                data: {
-                    labels: data.riesgoPorSucursal.labels,
-                    datasets: [{
-                        data: data.riesgoPorSucursal.data,
-                        backgroundColor: doughnutColors,
-                        borderWidth: 0,
-                        hoverOffset: isEmpy ? 0 : 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { position: 'bottom' },
-                        tooltip: { enabled: !isEmpy } 
+            const ctxBranch = document.getElementById('chart-branches');
+            if(ctxBranch) {
+                appState.charts.branches = new Chart(ctxBranch.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.riesgoPorSucursal.labels,
+                        datasets: [{
+                            data: data.riesgoPorSucursal.data,
+                            backgroundColor: doughnutColors,
+                            borderWidth: 0,
+                            hoverOffset: isEmpy ? 0 : 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '70%',
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { enabled: !isEmpy } 
+                        }
                     }
-                }
-            });
+                });
+            }
         }
 
         function renderTable(categorias) {
             const tbody = document.getElementById('table-categories');
+            if (!tbody) return; 
+
             tbody.innerHTML = '';
             
-            if (categorias.length === 0) {
+            if (!categorias || categorias.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-sm text-slate-500 italic">No hay datos suficientes para generar el semáforo.</td></tr>`;
                 return;
             }
@@ -1114,7 +1132,7 @@
                     throw new Error("Respuesta no exitosa de Sheets");
                 }
             } catch (error) {
-                console.warn("Aviso: No se pudo conectar con Sheets. Usando base de datos local. Asegúrate de que tu Apps Script esté publicado para 'Cualquier persona' (Anyone).", error.message);
+                console.warn("Aviso: No se pudo conectar con Sheets. Usando base de datos local.", error.message);
                 const searchInput = document.getElementById('employee-search');
                 if(searchInput) searchInput.placeholder = "Escribe para buscar... (Modo Local)";
                 
