@@ -128,13 +128,10 @@
                         </div>
                         <div>
                             <label for="branch" class="block text-sm font-medium text-slate-700">Sucursal / Cadena</label>
-                            <select id="branch" name="branch" required
-                                class="mt-1 block w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                                <option value="">Selecciona tu sucursal...</option>
-                                <option value="CDMX - Corporativo">CDMX - Corporativo</option>
-                                <option value="MTY - Norte">MTY - Norte</option>
-                                <option value="GDL - Bajío">GDL - Bajío</option>
-                            </select>
+                            <!-- Campo modificado a readonly para autocompletado -->
+                            <input id="branch" name="branch" type="text" readonly required
+                                class="mt-1 block w-full px-4 py-3 border border-slate-200 rounded-lg text-sm bg-slate-50 text-slate-500 focus:outline-none cursor-not-allowed transition-shadow" 
+                                placeholder="Se autocompletará al seleccionar colaborador...">
                         </div>
                         <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             Entrar a la Encuesta
@@ -423,7 +420,7 @@
             { id: 17, pregunta: "Mi trabajo exige que atienda varios asuntos al mismo tiempo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
             { id: 18, pregunta: "En mi trabajo soy responsable de cosas de mucho valor", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
             { id: 19, pregunta: "Respondo ante mi jefe por los resultados de toda mi área de trabajo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
-            { id: 20, pregunta: "En el trabajo me dan órdenes contradictorias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
+            { id: 20, principal: false, pregunta: "En el trabajo me dan órdenes contradictorias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
             { id: 21, pregunta: "Considero que en mi trabajo me piden hacer cosas innecesarias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
             { id: 22, pregunta: "Trabajo horas extras más de tres veces a la semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
             { id: 23, pregunta: "Mi trabajo me exige laborar en días de descanso, festivos o fines de semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
@@ -622,7 +619,7 @@
                     const li = document.createElement('li');
                     li.className = 'cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 border-b border-slate-50 transition-colors';
                     li.innerHTML = `<span class="font-bold text-slate-800">${emp.id}</span> <span class="text-slate-400 mx-1">-</span> <span class="text-slate-600">${emp.name}</span>`;
-                    li.onclick = () => selectEmployee(emp.id, emp.name);
+                    li.onclick = () => selectEmployee(emp.id, emp.name, emp.cadena, emp.sucursal);
                     dropdown.appendChild(li);
                 });
                 dropdown.classList.remove('hidden');
@@ -633,9 +630,16 @@
         }
 
         // Seleccionar un empleado de la lista
-        function selectEmployee(id, name) {
+        function selectEmployee(id, name, cadena, sucursal) {
             document.getElementById('employee-search').value = `${id} - ${name}`;
             document.getElementById('employee-id').value = id; // Guardamos el ID internamente
+            
+            // Autocompletar la sucursal/cadena
+            const branchInput = document.getElementById('branch');
+            const cadenaText = cadena ? cadena : 'Sin Cadena';
+            const sucursalText = sucursal ? sucursal : 'Sin Sucursal';
+            branchInput.value = `${cadenaText} - ${sucursalText}`;
+
             document.getElementById('employee-dropdown').classList.add('hidden');
         }
 
@@ -927,7 +931,7 @@
                 action: 'saveSurvey',
                 timestamp: new Date().toISOString(),
                 empId: 'DEMO-123', // TODO: Reemplazar con empleado real al integrar login
-                branch: 'Sucursal Centro', // TODO: Reemplazar con sucursal real
+                branch: document.getElementById('branch').value, // Obtenemos la sucursal/cadena concatenada
                 respuestas: JSON.stringify(respuestas),
                 respuestasTexto: respuestasTexto, // NUEVO: Enviamos el objeto con los textos puros
                 puntajeTotal: puntajeTotal
@@ -1094,10 +1098,10 @@
                 
                 // Fallback para evitar que el sistema se rompa
                 loadedEmployees = [
-                    { id: '0000004', name: 'JOSE GUADALUPE GONZALEZ' },
-                    { id: '1200010', name: 'VICTOR HUGO GOMEZ CARRILLO' },
-                    { id: '0000003', name: 'EFRAIN REYES MENDEZ' },
-                    { id: '0023203', name: 'YAHJANNI SAHDAI CU CONTRERAS' }
+                    { id: '0000004', name: 'JOSE GUADALUPE GONZALEZ', cadena: 'ESTACIONES DE SERVICIO', sucursal: 'Servicio Sac Xan' },
+                    { id: '1200010', name: 'VICTOR HUGO GOMEZ CARRILLO', cadena: 'ADMINISTRACION FJCMT', sucursal: 'FUNDACION JUAN CAMILO' },
+                    { id: '0000003', name: 'EFRAIN REYES MENDEZ', cadena: 'ESTACIONES DE SERVICIO', sucursal: 'Servicio Sac Xan' },
+                    { id: '0023203', name: 'YAHJANNI SAHDAI CU CONTRERAS', cadena: 'ADMINISTRACION', sucursal: 'GERENCIA DE TESORERIA' }
                 ];
             }
         }
