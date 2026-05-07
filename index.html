@@ -526,13 +526,8 @@
             { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 }
         ];
 
-        // MOCK DATA: Base de datos de empleados simulada para el Autocomplete
-        const mockEmployees = [
-            { id: '0023203', name: 'YAHJANNI SAHDAI CU CONTRERAS' },
-            { id: '0012345', name: 'JUAN PEREZ LOPEZ' },
-            { id: 'EMP-001', name: 'MARIA GARCIA RAMIREZ' },
-            { id: '0098765', name: 'CARLOS MARTINEZ HERNANDEZ' }
-        ];
+        // Se elimina el mockEmployees y se crea la variable que recibirá los datos de Sheets
+        let loadedEmployees = [];
 
         // Estado de la Aplicación
         let appState = {
@@ -615,9 +610,10 @@
                 return;
             }
 
-            // Filtrar por número de ID o por Nombre del colaborador
-            const matches = mockEmployees.filter(emp => 
-                emp.id.includes(filter) || emp.name.includes(filter)
+            // Filtrar por número de ID o por Nombre usando los datos cargados desde Sheets
+            const matches = loadedEmployees.filter(emp => 
+                (emp.id && emp.id.toUpperCase().includes(filter)) || 
+                (emp.name && emp.name.toUpperCase().includes(filter))
             );
 
             dropdown.innerHTML = '';
@@ -1066,6 +1062,48 @@
                 tbody.appendChild(tr);
             });
         }
+
+        // NUEVA FUNCIÓN: Cargar empleados desde Google Sheets al iniciar la página
+        async function loadEmployeesFromSheets() {
+            try {
+                const searchInput = document.getElementById('employee-search');
+                if(searchInput) searchInput.placeholder = "Sincronizando empleados...";
+
+                // Petición GET al Apps Script
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getEmployees");
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    loadedEmployees = result.data;
+                    console.log("Empleados sincronizados:", loadedEmployees.length);
+                    if(searchInput) searchInput.placeholder = "Escribe para buscar...";
+                } else {
+                    throw new Error("Respuesta no exitosa de Sheets");
+                }
+            } catch (error) {
+                // Cambiado a console.warn para no alarmar en la consola del navegador
+                console.warn("Aviso: No se pudo conectar con Sheets. Usando base de datos local. Asegúrate de que tu Apps Script esté publicado para 'Cualquier persona' (Anyone).", error.message);
+                
+                const searchInput = document.getElementById('employee-search');
+                if(searchInput) searchInput.placeholder = "Escribe para buscar... (Modo Local)";
+                
+                // Fallback para evitar que el sistema se rompa
+                loadedEmployees = [
+                    { id: '0000004', name: 'JOSE GUADALUPE GONZALEZ' },
+                    { id: '1200010', name: 'VICTOR HUGO GOMEZ CARRILLO' },
+                    { id: '0000003', name: 'EFRAIN REYES MENDEZ' },
+                    { id: '0023203', name: 'YAHJANNI SAHDAI CU CONTRERAS' }
+                ];
+            }
+        }
+
+        // Disparar la carga de empleados cuando el HTML termine de cargar
+        document.addEventListener('DOMContentLoaded', loadEmployeesFromSheets);
 
         async function syncData() {
             showToast('Sincronizando con Google Sheets...', 'info');
