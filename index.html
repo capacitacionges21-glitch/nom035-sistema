@@ -29,6 +29,28 @@
 
     <div id="toast-container" class="fixed top-4 left-4 right-4 sm:left-auto sm:w-96 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
+    <!-- Modal Acuse por Sucursal -->
+    <div id="acuse-modal" class="fixed inset-0 bg-slate-900/60 z-[70] hidden flex items-center justify-center fade-in px-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-lg">Generar Acuse por Sucursal</h3>
+                <button onclick="closeAcuseModal()" class="text-slate-400 hover:text-red-500"><i class="ph ph-x text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-500 mb-4">Selecciona la sucursal para generar el acuse PDF con todas las firmas registradas.</p>
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Sucursal</label>
+                    <select id="acuse-sucursal-select" class="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 outline-none">
+                        <option value="">Selecciona una sucursal...</option>
+                    </select>
+                </div>
+                <button onclick="downloadAcusePDF()" class="w-full flex items-center justify-center px-4 py-3 bg-blue-700 text-white font-medium rounded-lg hover:bg-blue-800 transition-colors">
+                    <i class="ph ph-file-pdf mr-2 text-lg"></i> Descargar Acuse PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para generar PDF -->
     <div id="pdf-modal" class="fixed inset-0 bg-slate-900/60 z-[70] hidden flex items-center justify-center fade-in px-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
@@ -245,6 +267,16 @@
                             </button>
                         </div>
 
+                        <!-- Acuse por Sucursal -->
+                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow md:col-span-2">
+                            <div class="h-16 w-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-signature text-3xl"></i></div>
+                            <h3 class="text-xl font-bold mb-2">Acuse de Recibido por Sucursal</h3>
+                            <p class="text-sm text-slate-500 mb-6">Genera el acuse NOM-035 con las firmas de todos los colaboradores que completaron la encuesta en una sucursal.</p>
+                            <button onclick="openAcuseModal()" class="inline-flex px-6 py-3 bg-indigo-700 text-white rounded-lg hover:bg-indigo-800 transition-colors font-medium items-center shadow-sm">
+                                <i class="ph ph-list-checks mr-2 text-lg"></i> Generar Acuse
+                            </button>
+                        </div>
+
                     </div>
                 </div>
 
@@ -271,6 +303,31 @@
                 </div>
                 <form id="dynamic-survey-form" onsubmit="submitSurvey(event)">
                     <div id="questions-container" class="space-y-6"></div>
+
+                    <!-- ===== PÁGINA DE FIRMA (ACUSE) ===== -->
+                    <div id="survey-firma-page" class="hidden space-y-6 fade-in pb-4">
+                        <div class="bg-blue-50 rounded-2xl p-6 border border-blue-100">
+                            <h2 class="text-xl font-bold text-blue-800 mb-2">Sección final — Acuse de Recibido</h2>
+                            <p class="text-blue-900 font-medium">Estoy de acuerdo en haber resuelto la encuesta <strong>NOM-035-STPS-2018</strong>, firmo de enterado.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="mb-5">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Puesto / Cargo <span class="text-red-500">*</span></label>
+                                <input id="firma-puesto" type="text" placeholder="Ej. Cajero, Gerente de Sucursal, Supervisor..." class="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Firma <span class="text-red-500">*</span></label>
+                                <div class="border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-slate-50 relative" style="height:160px;">
+                                    <canvas id="signature-canvas" class="absolute inset-0 w-full h-full touch-none cursor-crosshair"></canvas>
+                                    <p id="firma-placeholder" class="absolute inset-0 flex items-center justify-center text-slate-300 text-sm select-none pointer-events-none">Firma aquí con el dedo o mouse</p>
+                                </div>
+                                <button type="button" onclick="clearSignature()" class="mt-2 text-xs text-slate-400 hover:text-red-500 flex items-center gap-1 transition-colors">
+                                    <i class="ph ph-eraser"></i> Limpiar firma
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="survey-nav-buttons" class="mt-8 flex flex-col-reverse sm:flex-row justify-between items-center gap-3 pt-6 border-t border-slate-200"></div>
                 </form>
             </main>
@@ -405,6 +462,18 @@
         let loadedEmployees = [];
         let appState = { user: null, answers: {}, charts: {} };
         let currentSurveyPage = 1;
+        let signatureDrawn = false;
+
+        async function loadImgAsB64(src) {
+            const res = await fetch(src);
+            const blob = await res.blob();
+            return new Promise(resolve => {
+                const r = new FileReader();
+                r.onloadend = () => resolve(r.result);
+                r.readAsDataURL(blob);
+            });
+        }
+
 
         function showToast(message, type = 'success') {
             const container = document.getElementById('toast-container');
@@ -691,15 +760,18 @@
         function handleEmployeeLogin(event) {
             event.preventDefault();
             const empId = document.getElementById('employee-id').value;
-            
+
             if (!empId) {
                 showToast('Por favor, busca y selecciona tu nombre de la lista desplegable.', 'error');
                 return;
             }
 
             const branch = document.getElementById('branch').value;
-            appState.user = { empId, branch, role: 'empleado' };
-            showToast(`Bienvenido, ${empId}`);
+            const empData = loadedEmployees.find(e => e.id === empId);
+            const nombre = empData?.name || empId;
+            const sucursal = empData?.sucursal || '';
+            appState.user = { empId, branch, nombre, sucursal, role: 'empleado' };
+            showToast(`Bienvenido, ${nombre}`);
 
             document.getElementById('survey-user-info').innerText = `${empId} | ${branch}`;
             navigateTo('survey-view');
@@ -846,40 +918,49 @@
         }
 
         function updatePaginationUI() {
-            const totalPages = surveyBlocks.length;
-            
-            for (let p = 1; p <= totalPages; p++) {
+            const totalBlocks = surveyBlocks.length;
+            const isFirmaPage = currentSurveyPage > totalBlocks;
+
+            for (let p = 1; p <= totalBlocks; p++) {
                 const div = document.getElementById(`survey-page-${p}`);
                 if (div) {
-                    if (p === currentSurveyPage) div.classList.remove('hidden');
+                    if (p === currentSurveyPage && !isFirmaPage) div.classList.remove('hidden');
                     else div.classList.add('hidden');
                 }
             }
 
+            const firmaDiv = document.getElementById('survey-firma-page');
+            if (firmaDiv) {
+                if (isFirmaPage) { firmaDiv.classList.remove('hidden'); setupSignatureCanvas(); }
+                else firmaDiv.classList.add('hidden');
+            }
+
             const navContainer = document.getElementById('survey-nav-buttons');
             navContainer.innerHTML = '';
-            
+
             if (currentSurveyPage > 1) {
                 navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(-1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-white border border-slate-300 text-slate-700 font-medium rounded-lg shadow-sm hover:bg-slate-50 transition-colors"><i class="ph ph-arrow-left mr-2"></i> Atrás</button>`;
             } else {
-                navContainer.innerHTML += `<div class="hidden sm:block"></div>`; 
+                navContainer.innerHTML += `<div class="hidden sm:block"></div>`;
             }
 
-            if (currentSurveyPage < totalPages) {
-                navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Siguiente <i class="ph ph-arrow-right ml-2"></i></button>`;
-            } else {
+            if (isFirmaPage) {
                 navContainer.innerHTML += `<button type="submit" id="btn-submit-survey" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg shadow-sm hover:bg-emerald-700 transition-colors"><i class="ph ph-paper-plane-right mr-2"></i> Finalizar y Enviar</button>`;
+            } else {
+                navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Siguiente <i class="ph ph-arrow-right ml-2"></i></button>`;
             }
-            
+
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function changeSurveyPage(delta) {
-            if (delta === 1) {
+            const totalBlocks = surveyBlocks.length;
+            const isFirmaPage = currentSurveyPage > totalBlocks;
+
+            if (delta === 1 && !isFirmaPage) {
                 const pageDiv = document.getElementById(`survey-page-${currentSurveyPage}`);
                 const visibleCards = pageDiv.querySelectorAll('.question-card:not(.hidden)');
                 let allAnswered = true;
-
                 visibleCards.forEach(card => {
                     const checkedRadio = card.querySelector('input[type="radio"]:checked');
                     if (!checkedRadio) {
@@ -888,51 +969,110 @@
                         setTimeout(() => card.classList.remove('border-red-300', 'bg-red-50'), 2000);
                     }
                 });
-                
                 if (!allAnswered) {
                     showToast('Por favor, responde todas las preguntas de este bloque para continuar.', 'error');
-                    return; 
+                    return;
                 }
             }
-            
+
             currentSurveyPage += delta;
             updatePaginationUI();
             updateProgress();
         }
 
         function updateProgress() {
-            const total = surveyBlocks.length;
+            const total = surveyBlocks.length + 1;
             const progress = ((currentSurveyPage - 1) / total) * 100;
             document.getElementById('survey-progress').style.width = `${progress}%`;
         }
 
+        // ==========================================
+        // FIRMA DIGITAL (CANVAS)
+        // ==========================================
+        let _sigCanvas = null, _sigCtx = null, _sigDrawing = false;
+
+        function setupSignatureCanvas() {
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas || canvas.dataset.ready === '1') return;
+            canvas.dataset.ready = '1';
+            canvas.width = canvas.offsetWidth || 600;
+            canvas.height = canvas.offsetHeight || 160;
+            _sigCanvas = canvas;
+            _sigCtx = canvas.getContext('2d');
+            _sigCtx.strokeStyle = '#1e293b';
+            _sigCtx.lineWidth = 2;
+            _sigCtx.lineCap = 'round';
+            _sigCtx.lineJoin = 'round';
+
+            function pos(e) {
+                const r = canvas.getBoundingClientRect();
+                const src = e.touches ? e.touches[0] : e;
+                return { x: (src.clientX - r.left) * (canvas.width / r.width), y: (src.clientY - r.top) * (canvas.height / r.height) };
+            }
+            function start(e) { e.preventDefault(); _sigDrawing = true; const p = pos(e); _sigCtx.beginPath(); _sigCtx.moveTo(p.x, p.y); document.getElementById('firma-placeholder').style.display = 'none'; signatureDrawn = true; }
+            function move(e) { e.preventDefault(); if (!_sigDrawing) return; const p = pos(e); _sigCtx.lineTo(p.x, p.y); _sigCtx.stroke(); }
+            function end() { _sigDrawing = false; }
+
+            canvas.addEventListener('mousedown', start);
+            canvas.addEventListener('mousemove', move);
+            canvas.addEventListener('mouseup', end);
+            canvas.addEventListener('touchstart', start, { passive: false });
+            canvas.addEventListener('touchmove', move, { passive: false });
+            canvas.addEventListener('touchend', end);
+        }
+
+        function clearSignature() {
+            if (_sigCtx && _sigCanvas) { _sigCtx.clearRect(0, 0, _sigCanvas.width, _sigCanvas.height); }
+            signatureDrawn = false;
+            const ph = document.getElementById('firma-placeholder');
+            if (ph) ph.style.display = 'flex';
+        }
+
+        function getSignatureDataURL() {
+            return _sigCanvas ? _sigCanvas.toDataURL('image/png') : null;
+        }
+
         async function submitSurvey(event) {
             event.preventDefault();
-            
+
+            const puesto = document.getElementById('firma-puesto')?.value.trim();
+            if (!puesto) {
+                showToast('Por favor ingresa tu puesto antes de enviar.', 'error');
+                return;
+            }
+            if (!signatureDrawn) {
+                showToast('Por favor firma el acuse antes de enviar.', 'error');
+                return;
+            }
+
             const formData = new FormData(event.target);
             const respuestas = {};
-            const respuestasTexto = {}; 
+            const respuestasTexto = {};
             let puntajeTotal = 0;
 
             for (let [key, value] of formData.entries()) {
                 const questionId = key.split('_')[1];
                 respuestas[questionId] = value;
-                
                 const selectedRadio = document.querySelector(`input[name="${key}"]:checked`);
-                if (selectedRadio) {
-                    respuestasTexto[questionId] = selectedRadio.nextElementSibling.innerText.trim();
-                }
-
+                if (selectedRadio) respuestasTexto[questionId] = selectedRadio.nextElementSibling.innerText.trim();
                 if (!isNaN(value)) puntajeTotal += parseInt(value, 10);
             }
+
+            const firmaDataURL = getSignatureDataURL();
+            const fechaFormato = new Date().toLocaleDateString('es-MX');
 
             const payload = {
                 action: 'saveSurvey',
                 timestamp: new Date().toISOString(),
-                empId: document.getElementById('employee-id').value, 
-                branch: document.getElementById('branch').value, 
+                empId: appState.user?.empId || document.getElementById('employee-id').value,
+                nombre: appState.user?.nombre || '',
+                puesto: puesto,
+                sucursal: appState.user?.sucursal || '',
+                branch: document.getElementById('branch').value,
+                fecha: fechaFormato,
+                firma: firmaDataURL,
                 respuestas: JSON.stringify(respuestas),
-                respuestasTexto: respuestasTexto, 
+                respuestasTexto: respuestasTexto,
                 puntajeTotal: puntajeTotal
             };
 
@@ -942,24 +1082,176 @@
             btn.disabled = true;
 
             try {
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', 
+                    mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                
                 showToast('¡Encuesta guardada con éxito! Gracias por tu participación.');
                 setTimeout(() => logout(), 2000);
             } catch (error) {
                 console.error('Error:', error);
                 showToast('Hubo un error al guardar. Intenta de nuevo.', 'error');
             } finally {
-                if (btn) {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
+                if (btn) { btn.innerHTML = originalText; btn.disabled = false; }
             }
+        }
+
+        // ==========================================
+        // ACUSE POR SUCURSAL
+        // ==========================================
+        function openAcuseModal() {
+            const select = document.getElementById('acuse-sucursal-select');
+            select.innerHTML = '<option value="">Selecciona una sucursal...</option>';
+            const sucursales = [...new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean))].sort();
+            sucursales.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s; opt.text = s;
+                select.appendChild(opt);
+            });
+            document.getElementById('acuse-modal').classList.remove('hidden');
+        }
+
+        function closeAcuseModal() {
+            document.getElementById('acuse-modal').classList.add('hidden');
+        }
+
+        async function downloadAcusePDF() {
+            const sucursal = document.getElementById('acuse-sucursal-select').value;
+            if (!sucursal) { showToast('Por favor selecciona una sucursal.', 'error'); return; }
+
+            showToast('Cargando datos de firmas...', 'info');
+
+            let employees = [];
+            try {
+                const res = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getAcuseData&sucursal=${encodeURIComponent(sucursal)}`);
+                const result = await res.json();
+                if (result.status === 'success' && result.data?.length) {
+                    employees = result.data;
+                } else {
+                    showToast('No se encontraron encuestas completadas para esta sucursal.', 'error');
+                    return;
+                }
+            } catch (e) {
+                showToast('Error al conectar con el servidor. Verifica que el Apps Script tenga el endpoint getAcuseData.', 'error');
+                return;
+            }
+
+            await generateAcusePDF(sucursal, employees);
+            closeAcuseModal();
+        }
+
+        async function generateAcusePDF(sucursal, employees) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('portrait', 'mm', 'a4');
+            const pageW = 210, pageH = 297, margin = 15;
+            const contentW = pageW - margin * 2;
+            let y = margin;
+
+            // Logos
+            try {
+                const gesB64 = await loadImgAsB64('logo-ges.png');
+                doc.addImage(gesB64, 'PNG', margin, y, 22, 11);
+            } catch(e) {}
+            try {
+                const nomB64 = await loadImgAsB64('logo-nom035.png');
+                doc.addImage(nomB64, 'PNG', pageW - margin - 22, y - 1, 22, 18);
+            } catch(e) {}
+
+            // Título
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.setTextColor(30, 58, 138);
+            doc.text('ACUSE', pageW / 2, y + 6, { align: 'center' });
+            doc.setFontSize(11);
+            doc.setTextColor(51, 51, 51);
+            doc.text('Encuesta NOM-035-STPS-2018', pageW / 2, y + 13, { align: 'center' });
+            doc.setFontSize(10);
+            doc.text('Eventos Traumáticos Severos', pageW / 2, y + 19, { align: 'center' });
+            y += 25;
+
+            // Línea separadora
+            doc.setDrawColor(203, 213, 225);
+            doc.line(margin, y, pageW - margin, y);
+            y += 5;
+
+            // Aviso de privacidad
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(100, 116, 139);
+            doc.text('Consulta el aviso de privacidad y confidencialidad de los datos en www.gruges.com.mx o en Documentos de App Hola GES', pageW / 2, y, { align: 'center', maxWidth: contentW });
+            y += 9;
+
+            // Caja objetivo
+            doc.setFillColor(239, 246, 255);
+            doc.setDrawColor(191, 219, 254);
+            doc.roundedRect(margin, y, contentW, 16, 2, 2, 'FD');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(29, 78, 216);
+            doc.text('Objetivo de la encuesta de eventos traumáticos severos', margin + 3, y + 5);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(51, 51, 51);
+            doc.text('Identificar a los trabajadores expuestos a estos acontecimientos para canalizarlos y recibir atención psicológica y médica necesaria.', margin + 3, y + 11, { maxWidth: contentW - 6 });
+            y += 21;
+
+            // Sucursal y fecha
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(15, 23, 42);
+            doc.text(`Sucursal: ${sucursal}`, margin, y);
+            doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, pageW - margin, y, { align: 'right' });
+            y += 7;
+
+            // Leyenda de consentimiento
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8.5);
+            doc.setTextColor(71, 85, 105);
+            doc.text('"Estoy de acuerdo en haber resuelto la encuesta, firmo de enterado"', pageW / 2, y, { align: 'center' });
+            y += 7;
+
+            // Tabla con firmas
+            doc.autoTable({
+                startY: y,
+                head: [['N.', 'ID y Nombre', 'Puesto', 'Fecha', 'Firma']],
+                body: employees.map((emp, i) => [
+                    (i + 1).toString(),
+                    `${emp.empId || ''}\n${emp.nombre || ''}`,
+                    emp.puesto || '',
+                    emp.fecha || '',
+                    ''
+                ]),
+                headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', fontSize: 8.5, cellPadding: 3 },
+                columnStyles: {
+                    0: { cellWidth: 10, halign: 'center' },
+                    1: { cellWidth: 55 },
+                    2: { cellWidth: 43 },
+                    3: { cellWidth: 25, halign: 'center' },
+                    4: { cellWidth: 47, halign: 'center' }
+                },
+                styles: { fontSize: 8, minCellHeight: 22, valign: 'middle', overflow: 'linebreak' },
+                alternateRowStyles: { fillColor: [248, 250, 252] },
+                margin: { left: margin, right: margin },
+                didDrawCell: (data) => {
+                    if (data.section === 'body' && data.column.index === 4) {
+                        const emp = employees[data.row.index];
+                        if (emp?.firma) {
+                            try { doc.addImage(emp.firma, 'PNG', data.cell.x + 2, data.cell.y + 2, data.cell.width - 4, data.cell.height - 4); } catch(e) {}
+                        }
+                    }
+                }
+            });
+
+            // Footer
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(148, 163, 184);
+            doc.text('Documento generado por Sistema NOM-035 | Corporativo GES', pageW / 2, pageH - 8, { align: 'center' });
+
+            doc.save(`Acuse_NOM035_${sucursal.replace(/\s+/g, '_')}.pdf`);
+            showToast('Acuse PDF descargado con éxito.', 'success');
         }
 
         async function initDashboard() {
