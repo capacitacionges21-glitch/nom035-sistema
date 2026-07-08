@@ -164,7 +164,60 @@
             </aside>
 
             <main class="flex-1 overflow-y-auto p-6 md:p-8">
-                
+
+                <!-- ===== PANEL DE FILTROS GLOBAL ===== -->
+                <div id="filter-bar" class="bg-white rounded-2xl border border-slate-200 px-4 py-3 mb-6 hidden">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1"><i class="ph ph-funnel mr-1"></i>Filtros</span>
+
+                        <!-- Cadena -->
+                        <div class="relative">
+                            <button id="btn-filter-cadena" onclick="toggleFilterDropdown('cadena')"
+                                class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm hover:border-blue-400 transition-colors">
+                                <i class="ph ph-buildings text-slate-400 text-xs"></i>
+                                <span id="lbl-filter-cadena">Cadena</span>
+                                <i class="ph ph-caret-down text-xs text-slate-400"></i>
+                            </button>
+                            <div id="dd-filter-cadena" class="hidden absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 w-64 max-h-72 overflow-y-auto p-2">
+                                <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-semibold text-slate-500 border-b border-slate-100 mb-1 pb-2">
+                                    <input type="checkbox" id="check-cadena-all" onchange="toggleAllFilter('cadena')" checked class="rounded accent-blue-600"> Seleccionar todo
+                                </label>
+                                <div id="list-filter-cadena" class="space-y-0.5"></div>
+                            </div>
+                        </div>
+
+                        <!-- Sucursal -->
+                        <div class="relative">
+                            <button id="btn-filter-sucursal" onclick="toggleFilterDropdown('sucursal')"
+                                class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm hover:border-blue-400 transition-colors">
+                                <i class="ph ph-map-pin text-slate-400 text-xs"></i>
+                                <span id="lbl-filter-sucursal">Sucursal</span>
+                                <i class="ph ph-caret-down text-xs text-slate-400"></i>
+                            </button>
+                            <div id="dd-filter-sucursal" class="hidden absolute top-full left-0 mt-1 bg-white rounded-xl shadow-xl border border-slate-200 z-50 w-72 max-h-72 overflow-y-auto p-2">
+                                <div class="flex gap-1 mb-2 pb-2 border-b border-slate-100">
+                                    <input id="search-filter-sucursal" type="text" placeholder="Buscar sucursal..." oninput="searchFilterSucursal()"
+                                        class="flex-1 text-xs px-2 py-1.5 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-blue-400">
+                                </div>
+                                <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-semibold text-slate-500 mb-1">
+                                    <input type="checkbox" id="check-sucursal-all" onchange="toggleAllFilter('sucursal')" checked class="rounded accent-blue-600"> Seleccionar todo
+                                </label>
+                                <div id="list-filter-sucursal" class="space-y-0.5"></div>
+                            </div>
+                        </div>
+
+                        <button onclick="applyDashboardFilters()"
+                            class="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                            <i class="ph ph-check"></i> Aplicar
+                        </button>
+                        <button onclick="clearDashboardFilters()"
+                            class="flex items-center gap-1.5 px-3 py-1.5 text-slate-500 rounded-lg text-sm hover:bg-slate-100 transition-colors">
+                            <i class="ph ph-x"></i> Limpiar
+                        </button>
+                        <span id="filter-status" class="text-xs text-blue-600 font-medium ml-1"></span>
+                    </div>
+                </div>
+
                 <div id="tab-resumen" class="fade-in block">
                     <div class="flex justify-between items-center mb-8">
                         <div>
@@ -1280,6 +1333,121 @@
             }).join('');
         }
 
+        // ==========================================
+        // FILTROS GLOBALES DEL DASHBOARD
+        // ==========================================
+        function initFilters() {
+            const cadenas   = [...new Set(loadedEmployees.map(e => e.cadena).filter(Boolean))].sort();
+            const sucursales = [...new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean))].sort();
+
+            const cadList = document.getElementById('list-filter-cadena');
+            if (cadList) {
+                cadList.innerHTML = cadenas.map(c =>
+                    `<label class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-50 cursor-pointer text-sm">
+                        <input type="checkbox" class="filter-cadena-cb rounded accent-blue-600" value="${c.replace(/"/g,'&quot;')}" checked onchange="onCadenaFilterChange()"> ${c}
+                    </label>`
+                ).join('');
+            }
+            _renderSucursalFilterList(sucursales);
+
+            const bar = document.getElementById('filter-bar');
+            if (bar) bar.classList.remove('hidden');
+        }
+
+        function _renderSucursalFilterList(sucursales) {
+            const list = document.getElementById('list-filter-sucursal');
+            if (!list) return;
+            list.innerHTML = sucursales.map(s =>
+                `<label class="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-50 cursor-pointer text-sm filter-sucursal-row" data-suc="${s.replace(/"/g,'&quot;')}">
+                    <input type="checkbox" class="filter-sucursal-cb rounded accent-blue-600" value="${s.replace(/"/g,'&quot;')}" checked> ${s}
+                </label>`
+            ).join('');
+        }
+
+        function onCadenaFilterChange() {
+            const selCadenas = [...document.querySelectorAll('.filter-cadena-cb:checked')].map(cb => cb.value);
+            const total = document.querySelectorAll('.filter-cadena-cb').length;
+            document.getElementById('check-cadena-all').checked = selCadenas.length === total;
+
+            const suc = [...new Set(
+                loadedEmployees
+                    .filter(e => selCadenas.includes(e.cadena))
+                    .map(e => e.sucursal).filter(Boolean)
+            )].sort();
+            _renderSucursalFilterList(suc);
+        }
+
+        function toggleAllFilter(type) {
+            const allCb = document.getElementById(`check-${type}-all`);
+            document.querySelectorAll(`.filter-${type}-cb`).forEach(cb => cb.checked = allCb.checked);
+            if (type === 'cadena') onCadenaFilterChange();
+        }
+
+        function toggleFilterDropdown(type) {
+            ['cadena','sucursal'].forEach(t => {
+                if (t !== type) document.getElementById(`dd-filter-${t}`).classList.add('hidden');
+            });
+            document.getElementById(`dd-filter-${type}`).classList.toggle('hidden');
+        }
+
+        function searchFilterSucursal() {
+            const q = document.getElementById('search-filter-sucursal').value.toLowerCase();
+            document.querySelectorAll('.filter-sucursal-row').forEach(row => {
+                row.style.display = row.dataset.suc.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        async function applyDashboardFilters() {
+            ['cadena','sucursal'].forEach(t => document.getElementById(`dd-filter-${t}`).classList.add('hidden'));
+
+            const selSuc = [...document.querySelectorAll('.filter-sucursal-cb:checked')].map(cb => cb.value);
+            const totalSuc = document.querySelectorAll('.filter-sucursal-cb').length;
+            const selCad = [...document.querySelectorAll('.filter-cadena-cb:checked')].map(cb => cb.value);
+            const totalCad = document.querySelectorAll('.filter-cadena-cb').length;
+            const isFiltered = selSuc.length < totalSuc;
+
+            document.getElementById('lbl-filter-cadena').textContent  = selCad.length < totalCad  ? `Cadena (${selCad.length}/${totalCad})`   : 'Cadena';
+            document.getElementById('lbl-filter-sucursal').textContent = isFiltered ? `Sucursal (${selSuc.length}/${totalSuc})` : 'Sucursal';
+            document.getElementById('filter-status').textContent = isFiltered ? `Mostrando ${selSuc.length} de ${totalSuc} sucursales` : '';
+
+            showToast('Aplicando filtros...', 'info');
+            try {
+                let url = GOOGLE_APPS_SCRIPT_URL + '?action=getDashboardData';
+                if (isFiltered && selSuc.length > 0) url += '&sucursales=' + encodeURIComponent(selSuc.join(','));
+                const res  = await fetch(url);
+                const result = await res.json();
+                const data = result.status === 'success' ? result.data : getEmptyDashboardData();
+                appState.dashData = data;
+                updateKPIs(data);
+                renderCharts(data);
+                renderTable(data.semaforoCategorias);
+                renderSucursalesTab(data);
+                renderDominiosTab(data);
+            } catch { showToast('Error al aplicar filtros.', 'error'); }
+        }
+
+        function clearDashboardFilters() {
+            ['cadena','sucursal'].forEach(t => document.getElementById(`dd-filter-${t}`).classList.add('hidden'));
+            document.querySelectorAll('.filter-cadena-cb').forEach(cb => cb.checked = true);
+            document.getElementById('check-cadena-all').checked = true;
+            onCadenaFilterChange();
+            document.querySelectorAll('.filter-sucursal-cb').forEach(cb => cb.checked = true);
+            document.getElementById('check-sucursal-all').checked = true;
+            document.getElementById('filter-status').textContent = '';
+            document.getElementById('lbl-filter-cadena').textContent  = 'Cadena';
+            document.getElementById('lbl-filter-sucursal').textContent = 'Sucursal';
+            initDashboard();
+        }
+
+        // Cerrar dropdowns al hacer clic fuera
+        document.addEventListener('click', function(ev) {
+            ['cadena','sucursal'].forEach(t => {
+                const btn = document.getElementById(`btn-filter-${t}`);
+                const dd  = document.getElementById(`dd-filter-${t}`);
+                if (dd && btn && !dd.contains(ev.target) && !btn.contains(ev.target)) dd.classList.add('hidden');
+            });
+        });
+
         // ── ACUSE INLINE ───────────────────────────
         function populateAcuseInlineSelect() {
             const select = document.getElementById('acuse-inline-select');
@@ -1473,7 +1641,8 @@
                 updateKPIs(dataToRender);
                 renderCharts(dataToRender);
                 renderTable(dataToRender.semaforoCategorias);
-                
+                if (loadedEmployees?.length) initFilters();
+
             } catch (error) {
                 console.error("Error al cargar dashboard:", error);
                 showToast('No se detectaron encuestas o hubo un error de red.', 'error');
