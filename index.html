@@ -242,8 +242,29 @@
                     <div id="action-plan-container" class="space-y-8"></div>
                 </div>
 
-                <div id="tab-sucursales" class="fade-in hidden"><h1 class="text-2xl font-bold">Análisis por Sucursal</h1><p class="text-slate-500 mt-4 italic">Módulo de filtrado avanzado en desarrollo.</p></div>
-                <div id="tab-dominios" class="fade-in hidden"><h1 class="text-2xl font-bold">Riesgos y Dominios</h1><p class="text-slate-500 mt-4 italic">Vista detallada de puntajes por norma.</p></div>
+                <div id="tab-sucursales" class="fade-in hidden">
+                    <h1 class="text-2xl font-bold mb-6">Análisis por Sucursal</h1>
+                    <div id="sucursales-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <p class="text-slate-400 italic col-span-full text-center py-8">Cargando datos...</p>
+                    </div>
+                </div>
+
+                <div id="tab-dominios" class="fade-in hidden">
+                    <h1 class="text-2xl font-bold mb-6">Riesgos y Dominios NOM-035</h1>
+                    <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-5 py-3 text-left font-semibold text-slate-600">Dominio</th>
+                                    <th class="px-5 py-3 text-center font-semibold text-slate-600">Puntaje Promedio</th>
+                                    <th class="px-5 py-3 text-center font-semibold text-slate-600">Nivel de Riesgo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dominios-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 italic">Los puntajes por dominio se actualizan conforme se acumulan encuestas.</p>
+                </div>
                 
                 <!-- TAB 4: REPORTES STPS ACTUALIZADO -->
                 <div id="tab-reportes" class="fade-in hidden">
@@ -268,13 +289,22 @@
                         </div>
 
                         <!-- Acuse por Sucursal -->
-                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow md:col-span-2">
-                            <div class="h-16 w-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-signature text-3xl"></i></div>
-                            <h3 class="text-xl font-bold mb-2">Acuse de Recibido por Sucursal</h3>
-                            <p class="text-sm text-slate-500 mb-6">Genera el acuse NOM-035 con las firmas de todos los colaboradores que completaron la encuesta en una sucursal.</p>
-                            <button onclick="openAcuseModal()" class="inline-flex px-6 py-3 bg-indigo-700 text-white rounded-lg hover:bg-indigo-800 transition-colors font-medium items-center shadow-sm">
-                                <i class="ph ph-list-checks mr-2 text-lg"></i> Generar Acuse
-                            </button>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-shadow md:col-span-2">
+                            <div class="flex items-center gap-4 mb-5">
+                                <div class="h-14 w-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-signature text-2xl"></i></div>
+                                <div>
+                                    <h3 class="text-xl font-bold">Acuse de Recibido por Sucursal</h3>
+                                    <p class="text-sm text-slate-500">Genera el PDF con todas las firmas de la sucursal seleccionada.</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <select id="acuse-inline-select" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="">Selecciona una sucursal...</option>
+                                </select>
+                                <button onclick="downloadAcuseInline()" class="shrink-0 flex items-center justify-center px-5 py-2.5 bg-indigo-700 text-white font-medium rounded-lg hover:bg-indigo-800 transition-colors text-sm">
+                                    <i class="ph ph-download-simple mr-2"></i> Descargar PDF
+                                </button>
+                            </div>
                         </div>
 
                     </div>
@@ -459,8 +489,45 @@
             { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 }
         ];
 
+        // Calendario de acceso por cadena 2026
+        const CADENA_SCHEDULE = {
+            'ESTACIONES DE SERVICIO':   { inicio: '2026-07-13', fin: '2026-07-23' },
+            'BURGER KING CENTRO/SUR':   { inicio: '2026-07-27', fin: '2026-08-06' },
+            'BURGER KING NORTE':        { inicio: '2026-07-27', fin: '2026-08-06' },
+            'PIZZA HUT':                { inicio: '2026-08-17', fin: '2026-08-20' },
+            'CHURCHS CHICKEN':          { inicio: '2026-08-17', fin: '2026-08-20' },
+            'TIENDAS CONVENIENCIA':     { inicio: '2026-08-17', fin: '2026-08-20' },
+            'ADMINISTRACION BOLICHES':  { inicio: '2026-08-17', fin: '2026-08-20' },
+            'OPERACIONES BOLICHE':      { inicio: '2026-08-17', fin: '2026-08-20' },
+            'ADMINISTRACION SCM':       { inicio: '2026-08-10', fin: '2026-08-13' },
+            'OPERACIONES SCM':          { inicio: '2026-08-10', fin: '2026-08-13' },
+            'COUNTRY CLUB':             { inicio: '2026-08-10', fin: '2026-08-13' },
+            'INMOBILIARIA':             { inicio: '2026-08-24', fin: '2026-08-27' },
+            'TEISA':                    { inicio: '2026-08-24', fin: '2026-08-27' },
+        };
+        const SCHEDULE_DEFAULT_DESDE = '2026-08-28';
+
+        function checkCadenaAccess(cadena) {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+            const fmt = iso => { const [,m,d] = iso.split('-').map(Number); return `${d} de ${MESES[m-1]}`; };
+
+            const key = Object.keys(CADENA_SCHEDULE).find(k => k === (cadena || '').toUpperCase().trim());
+            if (key) {
+                const s = CADENA_SCHEDULE[key];
+                const inicio = new Date(s.inicio + 'T00:00:00');
+                const fin    = new Date(s.fin    + 'T23:59:59');
+                if (today >= inicio && today <= fin) return { allowed: true };
+                if (today < inicio)  return { allowed: false, message: `Tu encuesta estará disponible del ${fmt(s.inicio)} al ${fmt(s.fin)} de 2026.` };
+                return { allowed: false, message: `El período de tu cadena (${fmt(s.inicio)}–${fmt(s.fin)}) ya finalizó. Contacta a Recursos Humanos.` };
+            }
+            const defaultStart = new Date(SCHEDULE_DEFAULT_DESDE + 'T00:00:00');
+            if (today >= defaultStart) return { allowed: true };
+            return { allowed: false, message: 'Tu encuesta estará disponible a partir del 28 de agosto de 2026.' };
+        }
+
         let loadedEmployees = [];
-        let appState = { user: null, answers: {}, charts: {} };
+        let appState = { user: null, answers: {}, charts: {}, dashData: null };
         let currentSurveyPage = 1;
         let signatureDrawn = false;
 
@@ -518,7 +585,10 @@
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
             document.getElementById(`menu-${tabId}`).className = 'flex items-center px-4 py-3 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg transition-colors cursor-pointer';
             
-            if(tabId === 'planes') renderActionPlans();
+            if (tabId === 'planes') renderActionPlans();
+            if (tabId === 'sucursales') renderSucursalesTab(appState.dashData);
+            if (tabId === 'dominios') renderDominiosTab(appState.dashData);
+            if (tabId === 'reportes') populateAcuseInlineSelect();
         }
 
         // ==========================================
@@ -766,13 +836,25 @@
                 return;
             }
 
-            const branch = document.getElementById('branch').value;
+            const branch  = document.getElementById('branch').value;
             const empData = loadedEmployees.find(e => e.id === empId);
-            const nombre = empData?.name || empId;
+            const nombre  = empData?.name  || empId;
             const sucursal = empData?.sucursal || '';
-            appState.user = { empId, branch, nombre, sucursal, puesto: empData?.puesto || '', role: 'empleado' };
-            showToast(`Bienvenido, ${nombre}`);
+            const cadena   = empData?.cadena   || '';
 
+            const access = checkCadenaAccess(cadena);
+            if (!access.allowed) {
+                showToast(access.message, 'error');
+                return;
+            }
+
+            appState.user = {
+                empId, branch, nombre, sucursal, cadena,
+                puesto: empData?.puesto || '',
+                registroPatronal: empData?.registroPatronal || '',
+                role: 'empleado'
+            };
+            showToast(`Bienvenido, ${nombre}`);
             document.getElementById('survey-user-info').innerText = `${empId} | ${branch}`;
             navigateTo('survey-view');
             renderSurvey();
@@ -1124,6 +1206,100 @@
             document.getElementById('acuse-modal').classList.add('hidden');
         }
 
+        // ── SUCURSALES TAB ─────────────────────────
+        function renderSucursalesTab(data) {
+            const grid = document.getElementById('sucursales-grid');
+            if (!grid) return;
+            const d = data || appState.dashData || getEmptyDashboardData();
+            const labels = d.riesgoPorSucursal?.labels || [];
+            const counts = d.riesgoPorSucursal?.data || [];
+
+            if (!labels.length || labels[0] === 'Sin encuestas registradas') {
+                grid.innerHTML = '<p class="text-slate-400 italic col-span-full text-center py-8">No hay encuestas registradas aún.</p>';
+                return;
+            }
+
+            grid.innerHTML = labels.map((suc, i) => {
+                const count = counts[i] || 0;
+                const safeSuc = suc.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                return `
+                    <div class="bg-white rounded-2xl border border-slate-100 p-6 hover:shadow-md transition-shadow">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="h-10 w-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
+                                <i class="ph ph-buildings text-xl"></i>
+                            </div>
+                            <span class="text-2xl font-bold text-slate-800">${count}</span>
+                        </div>
+                        <h3 class="font-semibold text-slate-800 text-sm mb-1 leading-snug">${suc}</h3>
+                        <p class="text-xs text-slate-400 mb-4">${count} encuesta${count !== 1 ? 's' : ''} completada${count !== 1 ? 's' : ''}</p>
+                        <button onclick="downloadAcuseForSucursal('${safeSuc}')"
+                            class="w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                            <i class="ph ph-download-simple mr-1.5"></i> Descargar Acuse
+                        </button>
+                    </div>`;
+            }).join('');
+        }
+
+        // ── DOMINIOS TAB ───────────────────────────
+        function renderDominiosTab(data) {
+            const tbody = document.getElementById('dominios-table-body');
+            if (!tbody) return;
+            const d = data || appState.dashData || getEmptyDashboardData();
+            const labels = d.riesgoPorDominio?.labels || [];
+            const scores = d.riesgoPorDominio?.data || [];
+
+            const nivelColor = (s) => {
+                if (!s) return { texto: '—', cls: 'text-slate-400' };
+                if (s < 20) return { texto: 'Nulo', cls: 'text-slate-500' };
+                if (s < 45) return { texto: 'Bajo', cls: 'text-green-600' };
+                if (s < 79) return { texto: 'Medio', cls: 'text-yellow-600' };
+                if (s < 113) return { texto: 'Alto', cls: 'text-orange-600' };
+                return { texto: 'Muy Alto', cls: 'text-red-600' };
+            };
+
+            tbody.innerHTML = labels.map((label, i) => {
+                const s = scores[i] || 0;
+                const { texto, cls } = nivelColor(s);
+                return `<tr class="border-b border-slate-100 hover:bg-slate-50">
+                    <td class="px-5 py-3 font-medium text-slate-700">${label}</td>
+                    <td class="px-5 py-3 text-center text-slate-600">${s || '—'}</td>
+                    <td class="px-5 py-3 text-center font-semibold ${cls}">${texto}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ── ACUSE INLINE ───────────────────────────
+        function populateAcuseInlineSelect() {
+            const select = document.getElementById('acuse-inline-select');
+            if (!select || !loadedEmployees?.length) return;
+            const sucursales = [...new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean))].sort();
+            select.innerHTML = '<option value="">Selecciona una sucursal...</option>' +
+                sucursales.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+
+        async function downloadAcuseForSucursal(sucursal) {
+            if (!sucursal) { showToast('Sucursal no válida', 'error'); return; }
+            showToast('Consultando datos...', 'info');
+            try {
+                const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getAcuseData&sucursal=' + encodeURIComponent(sucursal));
+                const result = await res.json();
+                if (result.status === 'success' && result.data?.length) {
+                    await generateAcusePDF(sucursal, result.data);
+                } else {
+                    showToast('No hay encuestas registradas para esta sucursal.', 'error');
+                }
+            } catch (err) {
+                showToast('Error al obtener datos.', 'error');
+            }
+        }
+
+        async function downloadAcuseInline() {
+            const select = document.getElementById('acuse-inline-select');
+            const sucursal = select?.value;
+            if (!sucursal) { showToast('Por favor selecciona una sucursal', 'error'); return; }
+            await downloadAcuseForSucursal(sucursal);
+        }
+
         async function downloadAcusePDF() {
             const sucursal = document.getElementById('acuse-sucursal-select').value;
             if (!sucursal) { showToast('Por favor selecciona una sucursal.', 'error'); return; }
@@ -1280,7 +1456,8 @@
                 } else {
                     dataToRender = getEmptyDashboardData();
                 }
-                
+
+                appState.dashData = dataToRender;
                 updateKPIs(dataToRender);
                 renderCharts(dataToRender);
                 renderTable(dataToRender.semaforoCategorias);
