@@ -204,6 +204,17 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4">Encuestas por Cadena</h3>
+                            <div class="relative h-64 w-full"><canvas id="chart-cadenas"></canvas></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4">Encuestas por Puesto</h3>
+                            <div class="relative h-64 w-full"><canvas id="chart-puestos"></canvas></div>
+                        </div>
+                    </div>
+
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                             <h3 class="text-lg font-bold text-slate-800">Semáforo de Categorías</h3>
@@ -1157,6 +1168,7 @@
                 nombre: appState.user?.nombre || '',
                 puesto: puesto,
                 sucursal: appState.user?.sucursal || '',
+                cadena:   appState.user?.cadena   || '',
                 branch: document.getElementById('branch').value,
                 fecha: fechaFormato,
                 firma: firmaDataURL,
@@ -1483,8 +1495,10 @@
                 },
                 riesgoPorSucursal: {
                     labels: ['Sin encuestas registradas'],
-                    data: [1] 
+                    data: [1]
                 },
+                encuestasPorCadena: { labels: [], data: [] },
+                encuestasPorPuesto: { labels: [], data: [] },
                 semaforoCategorias: []
             };
         }
@@ -1501,8 +1515,10 @@
         }
 
         function renderCharts(data) {
-            if(appState.charts.domains) appState.charts.domains.destroy();
+            if(appState.charts.domains)  appState.charts.domains.destroy();
             if(appState.charts.branches) appState.charts.branches.destroy();
+            if(appState.charts.cadenas)  appState.charts.cadenas.destroy();
+            if(appState.charts.puestos)  appState.charts.puestos.destroy();
 
             const ctxDom = document.getElementById('chart-domains');
             if(ctxDom) {
@@ -1548,8 +1564,47 @@
                         cutout: '70%',
                         plugins: {
                             legend: { position: 'bottom' },
-                            tooltip: { enabled: !isEmpy } 
+                            tooltip: { enabled: !isEmpy }
                         }
+                    }
+                });
+            }
+
+            const PALETTE = ['#2563eb','#f59e0b','#ef4444','#10b981','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+
+            const ctxCad = document.getElementById('chart-cadenas');
+            if(ctxCad) {
+                const cad = data.encuestasPorCadena || { labels: [], data: [] };
+                appState.charts.cadenas = new Chart(ctxCad.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: cad.labels.length ? cad.labels : ['Sin datos'],
+                        datasets: [{ label: 'Encuestas', data: cad.data.length ? cad.data : [0],
+                            backgroundColor: PALETTE, borderRadius: 6 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+            }
+
+            const ctxPue = document.getElementById('chart-puestos');
+            if(ctxPue) {
+                const pue = data.encuestasPorPuesto || { labels: [], data: [] };
+                appState.charts.puestos = new Chart(ctxPue.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: pue.labels.length ? pue.labels : ['Sin datos'],
+                        datasets: [{ label: 'Encuestas', data: pue.data.length ? pue.data : [0],
+                            backgroundColor: '#8b5cf6', borderRadius: 6 }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
                     }
                 });
             }
