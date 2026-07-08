@@ -864,14 +864,14 @@
                         optionsHtml = `
                             <div class="grid grid-cols-2 gap-4 mt-4">
                                 <div class="relative">
-                                    <input type="radio" id="${radioSiId}" name="q_${q.id}" value="SI" required 
+                                    <input type="radio" id="${radioSiId}" name="q_${q.id}" value="SI"
                                         class="peer sr-only radio-custom" onchange="handleFilterChange(${q.id}, true)">
                                     <label for="${radioSiId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
                                         <span class="text-lg font-bold text-slate-700 block mb-1">Sí</span>
                                     </label>
                                 </div>
                                 <div class="relative">
-                                    <input type="radio" id="${radioNoId}" name="q_${q.id}" value="NO" required 
+                                    <input type="radio" id="${radioNoId}" name="q_${q.id}" value="NO"
                                         class="peer sr-only radio-custom" onchange="handleFilterChange(${q.id}, false)">
                                     <label for="${radioNoId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
                                         <span class="text-lg font-bold text-slate-700 block mb-1">No</span>
@@ -887,7 +887,7 @@
                             
                             optionsHtml += `
                                 <div class="relative">
-                                    <input type="radio" id="${radioId}" name="q_${q.id}" value="${actualValue}" required 
+                                    <input type="radio" id="${radioId}" name="q_${q.id}" value="${actualValue}"
                                         class="peer sr-only radio-custom">
                                     <label for="${radioId}" 
                                         class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
