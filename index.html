@@ -770,7 +770,7 @@
             const empData = loadedEmployees.find(e => e.id === empId);
             const nombre = empData?.name || empId;
             const sucursal = empData?.sucursal || '';
-            appState.user = { empId, branch, nombre, sucursal, role: 'empleado' };
+            appState.user = { empId, branch, nombre, sucursal, puesto: empData?.puesto || '', role: 'empleado' };
             showToast(`Bienvenido, ${nombre}`);
 
             document.getElementById('survey-user-info').innerText = `${empId} | ${branch}`;
