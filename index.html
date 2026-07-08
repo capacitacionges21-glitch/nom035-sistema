@@ -931,7 +931,14 @@
 
             const firmaDiv = document.getElementById('survey-firma-page');
             if (firmaDiv) {
-                if (isFirmaPage) { firmaDiv.classList.remove('hidden'); setupSignatureCanvas(); }
+                if (isFirmaPage) {
+                    firmaDiv.classList.remove('hidden');
+                    setupSignatureCanvas();
+                    const puestoInput = document.getElementById('firma-puesto');
+                    if (puestoInput && !puestoInput.value && appState.user?.puesto) {
+                        puestoInput.value = appState.user.puesto;
+                    }
+                }
                 else firmaDiv.classList.add('hidden');
             }
 
