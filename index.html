@@ -697,6 +697,11 @@
             { id: 16, title: "Evaluación de Efectos del Acontecimiento", desc: "Las siguientes preguntas hacen referencia al último mes. Contesta Sí o No en relación con el acontecimiento que reportaste.", start: 101, end: 114, traumaEval: true }
         ];
 
+        // Sucursales con acceso anticipado (antes de que abra su cadena completa)
+        const SUCURSAL_SCHEDULE = {
+            'SUBDIRECCION DE CAPITAL HUMANO': { inicio: '2026-07-09', fin: '2026-08-28' },
+        };
+
         // Calendario de acceso por cadena 2026
         const CADENA_SCHEDULE = {
             'ESTACIONES DE SERVICIO':   { inicio: '2026-07-13', fin: '2026-07-23' },
@@ -712,14 +717,25 @@
             'COUNTRY CLUB':             { inicio: '2026-08-10', fin: '2026-08-13' },
             'INMOBILIARIA':             { inicio: '2026-08-24', fin: '2026-08-27' },
             'TEISA':                    { inicio: '2026-08-24', fin: '2026-08-27' },
-            'ADMINISTRACION':           { inicio: '2026-07-09', fin: '2026-08-28' },
+            'ADMINISTRACION':           { inicio: '2026-08-24', fin: '2026-08-28' },
         };
         const SCHEDULE_DEFAULT_DESDE = '2026-08-28';
 
-        function checkCadenaAccess(cadena) {
+        function checkCadenaAccess(cadena, sucursal) {
             const today = new Date(); today.setHours(0,0,0,0);
             const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
             const fmt = iso => { const [,m,d] = iso.split('-').map(Number); return `${d} de ${MESES[m-1]}`; };
+
+            // Primero revisar si la sucursal tiene acceso anticipado específico
+            const sucKey = Object.keys(SUCURSAL_SCHEDULE).find(k => k === (sucursal || '').toUpperCase().trim());
+            if (sucKey) {
+                const s = SUCURSAL_SCHEDULE[sucKey];
+                const inicio = new Date(s.inicio + 'T00:00:00');
+                const fin    = new Date(s.fin    + 'T23:59:59');
+                if (today >= inicio && today <= fin) return { allowed: true };
+                if (today < inicio)  return { allowed: false, message: `Tu encuesta estará disponible el ${fmt(s.inicio)} de 2026.` };
+                return { allowed: false, message: `El período de tu sucursal ya finalizó. Contacta a Recursos Humanos.` };
+            }
 
             const key = Object.keys(CADENA_SCHEDULE).find(k => k === (cadena || '').toUpperCase().trim());
             if (key) {
@@ -1057,7 +1073,7 @@
             const sucursal = empData?.sucursal || '';
             const cadena   = empData?.cadena   || '';
 
-            const access = checkCadenaAccess(cadena);
+            const access = checkCadenaAccess(cadena, sucursal);
             if (!access.allowed) {
                 showToast(access.message, 'error');
                 return;
