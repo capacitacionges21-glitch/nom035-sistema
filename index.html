@@ -157,6 +157,7 @@
                     <a id="menu-dominios" onclick="switchDashTab('dominios')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-warning-circle text-lg mr-3"></i> Riesgos y Dominios</a>
                     <a id="menu-planes" onclick="switchDashTab('planes')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-briefcase text-lg mr-3"></i> Planes de Acción</a>
                     <a id="menu-reportes" onclick="switchDashTab('reportes')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-file-text text-lg mr-3"></i> Reportes STPS</a>
+                    <a id="menu-eventos" onclick="switchDashTab('eventos')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-warning-octagon text-lg mr-3"></i> Eventos Traumáticos</a>
                 </nav>
                 <div class="p-4 border-t border-slate-200">
                     <button onclick="logout()" class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="ph ph-sign-out text-lg mr-3"></i> Cerrar Sesión</button>
@@ -374,6 +375,23 @@
                     </div>
                 </div>
 
+                <!-- TAB: EVENTOS TRAUMÁTICOS -->
+                <div id="tab-eventos" class="fade-in hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800">Eventos Traumáticos Severos</h1>
+                            <p class="text-sm text-slate-500 mt-1">Colaboradores que reportaron haber vivido un acontecimiento traumático con motivo del trabajo.</p>
+                        </div>
+                        <button onclick="downloadEventosPDF()" class="shrink-0 flex items-center px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors shadow-sm">
+                            <i class="ph ph-file-pdf mr-2 text-base"></i> Descargar Reporte PDF
+                        </button>
+                    </div>
+                    <div id="eventos-kpis" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
+                    <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                        <div id="eventos-container" class="p-8 text-center text-slate-400 italic">Selecciona este panel para cargar datos...</div>
+                    </div>
+                </div>
+
             </main>
         </div>
 
@@ -525,7 +543,29 @@
             { id: 91, pregunta: "Le comunican tarde los asuntos de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
             { id: 92, pregunta: "Dificultan el logro de los resultados del trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
             { id: 93, pregunta: "Cooperan poco cuando se necesita", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
-            { id: 94, pregunta: "Ignoran las sugerencias para mejorar su trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false }
+            { id: 94, pregunta: "Ignoran las sugerencias para mejorar su trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            // ── Sección 15: Acontecimiento Traumático Severo – Filtro ──
+            { id: 95, pregunta: "Accidente que haya tenido como consecuencia la muerte, la pérdida de un miembro o una lesión grave", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 96, pregunta: "Asalto", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 97, pregunta: "Actos violentos que hayan derivado en lesiones graves", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 98, pregunta: "Secuestro", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 99, pregunta: "Amenazas", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 100, pregunta: "Cualquier otro acontecimiento que haya puesto en riesgo su vida y/o su salud", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            // ── Sección 16: Evaluación de efectos (Secciones II, III y IV) ──
+            { id: 101, pregunta: "¿Ha tenido recuerdos recurrentes sobre el acontecimiento que le provocan malestar?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Recuerdos persistentes", inversa: false },
+            { id: 102, pregunta: "¿Ha tenido sueños de carácter recurrente sobre el acontecimiento que le producen malestar?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Recuerdos persistentes", inversa: false },
+            { id: 103, pregunta: "¿Se ha esforzado por evitar todo tipo de sentimientos, conversaciones o situaciones que le puedan recordar el acontecimiento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 104, pregunta: "¿Se ha esforzado por evitar todo tipo de actividades, lugares o personas que le motivan recuerdos del acontecimiento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 105, pregunta: "¿Ha tenido dificultad para recordar alguna parte importante del evento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 106, pregunta: "¿Ha disminuido su interés en sus actividades cotidianas?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 107, pregunta: "¿Se ha sentido alejado o distante de los demás?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 108, pregunta: "¿Ha notado que tiene dificultad para expresar sus sentimientos?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 109, pregunta: "¿Ha tenido la impresión de que su vida se va a acortar, que va a morir antes que otras personas o que tiene un futuro limitado?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 110, pregunta: "¿Ha tenido usted dificultades para dormir?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 111, pregunta: "¿Ha estado particularmente irritable o le han dado arranques de coraje?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 112, pregunta: "¿Ha tenido dificultad para concentrarse?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 113, pregunta: "¿Ha estado nervioso o constantemente en alerta?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 114, pregunta: "¿Se ha sobresaltado fácilmente por cualquier cosa?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false }
         ];
 
         const scaleOptions = [
@@ -550,7 +590,9 @@
             { id: 11, title: "Sección 11", desc: "Las preguntas siguientes están relacionadas con la información que recibe sobre su rendimiento en el trabajo, el reconocimiento, el sentido de pertenencia y la estabilidad que le ofrece su trabajo.", start: 58, end: 76 },
             { id: 12, title: "Sección 12", desc: "Las preguntas siguientes están relacionadas con actos de violencia laboral (malos tratos, acoso, hostigamiento, acoso psicológico).", start: 77, end: 84 },
             { id: 13, title: "Sección 13", desc: "Las preguntas siguientes están relacionadas con la atención a clientes y usuarios.", start: 85, end: 89 },
-            { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 }
+            { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 },
+            { id: 15, title: "Acontecimiento Traumático Severo", desc: "¿Ha presenciado o sufrido alguna vez, durante o con motivo del trabajo, alguno de los siguientes acontecimientos? Responda Sí o No a cada opción.", start: 95, end: 100, traumaFiltro: true },
+            { id: 16, title: "Evaluación de Efectos del Acontecimiento", desc: "Las siguientes preguntas hacen referencia al último mes. Contesta Sí o No en relación con el acontecimiento que reportaste.", start: 101, end: 114, traumaEval: true }
         ];
 
         // Calendario de acceso por cadena 2026
@@ -591,7 +633,7 @@
         }
 
         let loadedEmployees = [];
-        let appState = { user: null, answers: {}, charts: {}, dashData: null };
+        let appState = { user: null, answers: {}, charts: {}, dashData: null, eventosData: [] };
         let currentSurveyPage = 1;
         let signatureDrawn = false;
 
@@ -642,17 +684,20 @@
         }
 
         function switchDashTab(tabId) {
-            ['resumen', 'sucursales', 'dominios', 'planes', 'reportes'].forEach(id => {
-                document.getElementById(`tab-${id}`).classList.add('hidden');
-                document.getElementById(`menu-${id}`).className = 'flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer';
+            ['resumen', 'sucursales', 'dominios', 'planes', 'reportes', 'eventos'].forEach(id => {
+                document.getElementById(`tab-${id}`)?.classList.add('hidden');
+                document.getElementById(`menu-${id}`)?.classList.remove('bg-blue-50', 'text-blue-700');
+                document.getElementById(`menu-${id}`)?.classList.add('text-slate-600');
             });
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            document.getElementById(`menu-${tabId}`).className = 'flex items-center px-4 py-3 text-sm font-medium bg-blue-50 text-blue-700 rounded-lg transition-colors cursor-pointer';
-            
+            document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
+            const menuEl = document.getElementById(`menu-${tabId}`);
+            if (menuEl) { menuEl.classList.remove('text-slate-600'); menuEl.classList.add('bg-blue-50', 'text-blue-700'); }
+
             if (tabId === 'planes') renderActionPlans();
             if (tabId === 'sucursales') renderSucursalesTab(appState.dashData);
             if (tabId === 'dominios') renderDominiosTab(appState.dashData);
             if (tabId === 'reportes') populateAcuseInlineSelect();
+            if (tabId === 'eventos') initEventosTraumaticos();
         }
 
         // ==========================================
@@ -953,6 +998,20 @@
             navigateTo('login-view');
         }
 
+        function handleTraumaFilterChange() {
+            const hasSi = [95, 96, 97, 98, 99, 100].some(id =>
+                document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
+            );
+            const extraFields = document.getElementById('trauma-extra-fields');
+            if (!extraFields) return;
+            if (hasSi) {
+                extraFields.classList.remove('hidden');
+                extraFields.classList.add('fade-in');
+            } else {
+                extraFields.classList.add('hidden');
+            }
+        }
+
         function handleFilterChange(filterId, isYes) {
             let targets = [];
             if (filterId === 85) targets = [86, 87, 88, 89];
@@ -983,25 +1042,61 @@
                 pageDiv.id = `survey-page-${block.id}`;
                 pageDiv.className = 'hidden space-y-6 fade-in pb-4';
                 
+                // Header especial para secciones traumáticas
                 const blockHeader = document.createElement('div');
-                blockHeader.className = 'bg-blue-50 rounded-2xl p-6 mb-6 border border-blue-100';
-                blockHeader.innerHTML = `
-                    <h2 class="text-xl font-bold text-blue-800 mb-2">${block.title}</h2>
-                    <p class="text-blue-900 font-medium">${block.desc}</p>
-                `;
+                if (block.traumaFiltro) {
+                    blockHeader.className = 'bg-amber-50 rounded-2xl p-6 mb-6 border border-amber-200';
+                    blockHeader.innerHTML = `
+                        <div class="flex items-start gap-3 mb-2">
+                            <div class="h-10 w-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0 mt-0.5"><i class="ph ph-warning text-xl"></i></div>
+                            <div>
+                                <h2 class="text-xl font-bold text-amber-800 mb-1">${block.title} — Sección I</h2>
+                                <p class="text-amber-700 text-sm">${block.desc}</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (block.traumaEval) {
+                    blockHeader.className = 'bg-amber-50 rounded-2xl p-6 mb-6 border border-amber-200';
+                    blockHeader.innerHTML = `
+                        <div class="flex items-start gap-3 mb-2">
+                            <div class="h-10 w-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0 mt-0.5"><i class="ph ph-brain text-xl"></i></div>
+                            <div>
+                                <h2 class="text-xl font-bold text-amber-800 mb-1">${block.title} — Secciones II, III y IV</h2>
+                                <p class="text-amber-700 text-sm">${block.desc}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    blockHeader.className = 'bg-blue-50 rounded-2xl p-6 mb-6 border border-blue-100';
+                    blockHeader.innerHTML = `
+                        <h2 class="text-xl font-bold text-blue-800 mb-2">${block.title}</h2>
+                        <p class="text-blue-900 font-medium">${block.desc}</p>
+                    `;
+                }
                 pageDiv.appendChild(blockHeader);
 
                 const blockQuestions = surveyQuestions.filter(q => q.id >= block.start && q.id <= block.end);
+                let lastDimension = null;
 
                 blockQuestions.forEach((q, index) => {
+                    // Sub-encabezados para sección 16
+                    if (q.categoria === 'TraumaEval' && q.dimension !== lastDimension) {
+                        lastDimension = q.dimension;
+                        const subHdr = document.createElement('div');
+                        subHdr.className = 'pt-2 pb-1 px-1';
+                        const subTitles = { 'Recuerdos persistentes': 'Sección II — Recuerdos persistentes sobre el acontecimiento', 'Esfuerzo por evitar': 'Sección III — Esfuerzo por evitar circunstancias asociadas', 'Afectación': 'Sección IV — Afectación' };
+                        subHdr.innerHTML = `<h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider border-b border-amber-200 pb-2">${subTitles[q.dimension] || q.dimension}</h3>`;
+                        pageDiv.appendChild(subHdr);
+                    }
+
                     const qCard = document.createElement('div');
                     qCard.id = `question-card-${q.id}`;
                     qCard.className = 'question-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow';
-                    
+
                     if ((q.id >= 86 && q.id <= 89) || (q.id >= 91 && q.id <= 94)) {
                         qCard.classList.add('hidden');
                     }
-                    
+
                     let optionsHtml = '';
 
                     if (q.categoria === 'Control') {
@@ -1025,17 +1120,59 @@
                                 </div>
                             </div>
                         `;
+                    } else if (q.categoria === 'TraumaFiltro') {
+                        const radioSiId = `q_${q.id}_v_si`;
+                        const radioNoId = `q_${q.id}_v_no`;
+                        optionsHtml = `
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div class="relative">
+                                    <input type="radio" id="${radioSiId}" name="q_${q.id}" value="SI"
+                                        class="peer sr-only radio-custom" onchange="handleTraumaFilterChange()">
+                                    <label for="${radioSiId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-amber-50 hover:border-amber-400 transition-all text-center h-full">
+                                        <span class="text-lg font-bold text-slate-700 block mb-1">Sí</span>
+                                    </label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" id="${radioNoId}" name="q_${q.id}" value="NO"
+                                        class="peer sr-only radio-custom" onchange="handleTraumaFilterChange()">
+                                    <label for="${radioNoId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
+                                        <span class="text-lg font-bold text-slate-700 block mb-1">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                        `;
+                    } else if (q.categoria === 'TraumaEval') {
+                        const radioSiId = `q_${q.id}_v_si`;
+                        const radioNoId = `q_${q.id}_v_no`;
+                        optionsHtml = `
+                            <div class="grid grid-cols-2 gap-4 mt-4">
+                                <div class="relative">
+                                    <input type="radio" id="${radioSiId}" name="q_${q.id}" value="SI"
+                                        class="peer sr-only radio-custom">
+                                    <label for="${radioSiId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-amber-50 hover:border-amber-400 transition-all text-center h-full">
+                                        <span class="text-lg font-bold text-slate-700 block mb-1">Sí</span>
+                                    </label>
+                                </div>
+                                <div class="relative">
+                                    <input type="radio" id="${radioNoId}" name="q_${q.id}" value="NO"
+                                        class="peer sr-only radio-custom">
+                                    <label for="${radioNoId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
+                                        <span class="text-lg font-bold text-slate-700 block mb-1">No</span>
+                                    </label>
+                                </div>
+                            </div>
+                        `;
                     } else {
                         optionsHtml = '<div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mt-4">';
                         scaleOptions.forEach(opt => {
                             const actualValue = q.inversa ? (4 - opt.value) : opt.value;
-                            const radioId = `q_${q.id}_v_${opt.value}`; 
-                            
+                            const radioId = `q_${q.id}_v_${opt.value}`;
+
                             optionsHtml += `
                                 <div class="relative">
                                     <input type="radio" id="${radioId}" name="q_${q.id}" value="${actualValue}"
                                         class="peer sr-only radio-custom">
-                                    <label for="${radioId}" 
+                                    <label for="${radioId}"
                                         class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
                                         <span class="text-sm font-medium text-slate-700 block mb-1">${opt.text}</span>
                                     </label>
@@ -1045,16 +1182,48 @@
                         optionsHtml += '</div>';
                     }
 
+                    const domainBadge = (q.categoria === 'TraumaFiltro' || q.categoria === 'TraumaEval')
+                        ? '<span class="text-xs font-medium text-amber-500">Sí / No</span>'
+                        : `<span class="text-xs font-medium text-slate-400">${q.dominio}</span>`;
+
                     qCard.innerHTML = `
                         <div class="mb-2 flex items-center justify-between">
                             <span class="text-xs font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded uppercase tracking-wider">Pregunta ${q.id}</span>
-                            <span class="text-xs font-medium text-slate-400">${q.dominio}</span>
+                            ${domainBadge}
                         </div>
                         <h3 class="text-lg font-medium text-slate-800 leading-relaxed mb-4">${q.pregunta}</h3>
                         ${optionsHtml}
                     `;
                     pageDiv.appendChild(qCard);
                 });
+
+                // Campos extra: solo después de la sección 15 (filtro)
+                if (block.traumaFiltro) {
+                    const extraFields = document.createElement('div');
+                    extraFields.id = 'trauma-extra-fields';
+                    extraFields.className = 'hidden bg-amber-50 border border-amber-200 p-6 rounded-2xl space-y-4 fade-in';
+                    const todayISO = new Date().toISOString().split('T')[0];
+                    extraFields.innerHTML = `
+                        <div class="flex items-center gap-2 mb-1">
+                            <i class="ph ph-info text-amber-600 text-xl"></i>
+                            <p class="text-amber-700 font-medium text-sm">Por favor proporciona información adicional sobre el acontecimiento.</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Fecha del acontecimiento <span class="text-red-500">*</span></label>
+                            <input type="date" id="trauma-fecha" max="${todayISO}" class="w-full sm:w-72 px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Personas involucradas</label>
+                            <input type="text" id="trauma-involucrados" placeholder="Ej. Compañero de trabajo, cliente, persona desconocida..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Descripción breve del acontecimiento</label>
+                            <textarea id="trauma-descripcion" rows="3" placeholder="Describe brevemente lo que ocurrió..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none resize-none bg-white"></textarea>
+                        </div>
+                    `;
+                    pageDiv.appendChild(extraFields);
+                }
+
                 container.appendChild(pageDiv);
             });
             
@@ -1126,6 +1295,33 @@
                     showToast('Por favor, responde todas las preguntas de este bloque para continuar.', 'error');
                     return;
                 }
+            }
+
+            // Saltar sección 16 si ninguna respuesta de sección 15 es "Sí"
+            const traumaIds = [95, 96, 97, 98, 99, 100];
+            const hasSiTrauma = () => traumaIds.some(id =>
+                document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
+            );
+
+            if (delta === 1 && currentSurveyPage === 15 && hasSiTrauma()) {
+                const fechaVal = document.getElementById('trauma-fecha')?.value;
+                if (!fechaVal) {
+                    showToast('Por favor indica la fecha del acontecimiento.', 'error');
+                    document.getElementById('trauma-fecha')?.focus();
+                    return;
+                }
+            }
+            if (delta === 1 && currentSurveyPage === 15 && !hasSiTrauma()) {
+                currentSurveyPage = totalBlocks + 1; // saltar directo a firma
+                updatePaginationUI();
+                updateProgress();
+                return;
+            }
+            if (delta === -1 && currentSurveyPage === totalBlocks + 1 && !hasSiTrauma()) {
+                currentSurveyPage = 15; // al ir atrás, regresar a sección 15
+                updatePaginationUI();
+                updateProgress();
+                return;
             }
 
             currentSurveyPage += delta;
@@ -1214,6 +1410,9 @@
             const firmaDataURL = getSignatureDataURL();
             const fechaFormato = new Date().toLocaleDateString('es-MX');
 
+            const eventoTraumatico = [95, 96, 97, 98, 99, 100].some(id =>
+                document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)) ? 'SI' : 'NO';
+
             const payload = {
                 action: 'saveSurvey',
                 timestamp: new Date().toISOString(),
@@ -1227,7 +1426,11 @@
                 firma: firmaDataURL,
                 respuestas: JSON.stringify(respuestas),
                 respuestasTexto: respuestasTexto,
-                puntajeTotal: puntajeTotal
+                puntajeTotal: puntajeTotal,
+                eventoTraumatico: eventoTraumatico,
+                eventoFecha: eventoTraumatico === 'SI' ? (document.getElementById('trauma-fecha')?.value || '') : '',
+                eventoInvolucrados: eventoTraumatico === 'SI' ? (document.getElementById('trauma-involucrados')?.value?.trim() || '') : '',
+                eventoDescripcion: eventoTraumatico === 'SI' ? (document.getElementById('trauma-descripcion')?.value?.trim() || '') : ''
             };
 
             const btn = document.getElementById('btn-submit-survey');
@@ -1530,9 +1733,7 @@
             doc.setFontSize(11);
             doc.setTextColor(51, 51, 51);
             doc.text('Encuesta NOM-035-STPS-2018', pageW / 2, y + 13, { align: 'center' });
-            doc.setFontSize(10);
-            doc.text('Eventos Traumáticos Severos', pageW / 2, y + 19, { align: 'center' });
-            y += 25;
+            y += 20;
 
             // Línea separadora
             doc.setDrawColor(203, 213, 225);
@@ -1615,6 +1816,141 @@
 
             doc.save(`Acuse_NOM035_${sucursal.replace(/\s+/g, '_')}.pdf`);
             showToast('Acuse PDF descargado con éxito.', 'success');
+        }
+
+        // ==========================================
+        // EVENTOS TRAUMÁTICOS SEVEROS — DASHBOARD
+        // ==========================================
+        async function initEventosTraumaticos() {
+            const container = document.getElementById('eventos-container');
+            const kpisEl = document.getElementById('eventos-kpis');
+            if (!container) return;
+            container.innerHTML = '<div class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl"></i><p class="mt-2 text-sm">Cargando datos...</p></div>';
+            try {
+                const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getEventosTraumaticos');
+                const result = await res.json();
+                const data = result.status === 'success' ? result.data : [];
+                appState.eventosData = data;
+                renderEventosKPIs(data, kpisEl);
+                renderEventosTab(data, container);
+            } catch(e) {
+                container.innerHTML = '<p class="p-8 text-center text-red-500 text-sm">Error al cargar los datos. Verifica la conexión con el servidor.</p>';
+            }
+        }
+
+        function renderEventosKPIs(data, el) {
+            if (!el) return;
+            const total = data.length;
+            const cadenas = [...new Set(data.map(d => d.cadena).filter(Boolean))].length;
+            const sucursales = [...new Set(data.map(d => d.sucursal).filter(Boolean))].length;
+            el.innerHTML = `
+                <div class="bg-white rounded-2xl border border-red-100 p-5 flex items-center gap-4">
+                    <div class="h-12 w-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-users text-2xl"></i></div>
+                    <div><p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Colaboradores afectados</p><p class="text-3xl font-bold text-slate-800">${total}</p></div>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4">
+                    <div class="h-12 w-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-buildings text-2xl"></i></div>
+                    <div><p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Cadenas involucradas</p><p class="text-3xl font-bold text-slate-800">${cadenas}</p></div>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4">
+                    <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-2xl"></i></div>
+                    <div><p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Sucursales</p><p class="text-3xl font-bold text-slate-800">${sucursales}</p></div>
+                </div>
+            `;
+        }
+
+        function renderEventosTab(data, container) {
+            if (!data || data.length === 0) {
+                container.innerHTML = `
+                    <div class="p-12 text-center">
+                        <div class="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-3xl"></i></div>
+                        <h3 class="text-lg font-bold text-slate-700 mb-1">Sin registros</h3>
+                        <p class="text-sm text-slate-500">No se han reportado eventos traumáticos severos hasta el momento.</p>
+                    </div>`;
+                return;
+            }
+            container.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">No. Colaborador</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Nombre</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Puesto</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Sucursal</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Cadena</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Fecha encuesta</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Fecha evento</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${data.map(r => `
+                            <tr class="hover:bg-red-50 transition-colors">
+                                <td class="px-5 py-3 font-mono text-slate-600 text-xs">${r.empId || '—'}</td>
+                                <td class="px-5 py-3 font-medium text-slate-800">${r.nombre || '—'}</td>
+                                <td class="px-5 py-3 text-slate-600">${r.puesto || '—'}</td>
+                                <td class="px-5 py-3 text-slate-600">${r.sucursal || '—'}</td>
+                                <td class="px-5 py-3 text-slate-500 text-xs">${r.cadena || '—'}</td>
+                                <td class="px-5 py-3 text-slate-500">${r.fecha || '—'}</td>
+                                <td class="px-5 py-3 text-slate-500">${r.eventoFecha || '—'}</td>
+                                <td class="px-5 py-3 text-slate-500 max-w-xs truncate" title="${(r.eventoDescripcion || '').replace(/"/g,'&quot;')}">${r.eventoDescripcion || '—'}</td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>`;
+        }
+
+        async function downloadEventosPDF() {
+            const data = appState.eventosData;
+            if (!data || data.length === 0) {
+                showToast('No hay colaboradores con eventos traumáticos para reportar.', 'error');
+                return;
+            }
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('landscape', 'mm', 'a4');
+            const pageW = 297, margin = 15, contentW = pageW - margin * 2;
+            let y = margin;
+
+            try { const g = await loadImgAsB64('logo-ges.png'); doc.addImage(g, 'PNG', margin, y, 22, 11); } catch(e) {}
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(30, 58, 138);
+            doc.text('Reporte — Eventos Traumáticos Severos', pageW / 2, y + 7, { align: 'center' });
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text('NOM-035-STPS-2018 | Generado: ' + new Date().toLocaleDateString('es-MX'), pageW / 2, y + 13, { align: 'center' });
+            y += 22;
+
+            doc.setDrawColor(203, 213, 225);
+            doc.line(margin, y, pageW - margin, y);
+            y += 6;
+
+            doc.setFontSize(9);
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`Total de colaboradores afectados: ${data.length}`, margin, y);
+            y += 8;
+
+            doc.autoTable({
+                startY: y,
+                head: [['No. Colaborador', 'Nombre', 'Puesto', 'Sucursal', 'Cadena', 'Fecha Encuesta', 'Fecha Evento', 'Involucrados', 'Descripción']],
+                body: data.map(r => [
+                    r.empId || '', r.nombre || '', r.puesto || '', r.sucursal || '',
+                    r.cadena || '', r.fecha || '', r.eventoFecha || '',
+                    r.eventoInvolucrados || '', r.eventoDescripcion || ''
+                ]),
+                styles: { fontSize: 7.5, cellPadding: 3, overflow: 'linebreak' },
+                headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [254, 242, 242] },
+                columnStyles: { 8: { cellWidth: 50 } },
+                margin: { left: margin, right: margin }
+            });
+
+            doc.save(`Reporte_EventosTraumaticos_${new Date().toLocaleDateString('es-MX').replace(/\//g,'-')}.pdf`);
+            showToast('Reporte PDF descargado.');
         }
 
         async function initDashboard() {
