@@ -745,7 +745,9 @@
             const fmt = iso => { const [,m,d] = iso.split('-').map(Number); return `${d} de ${MESES[m-1]}`; };
 
             // Primero revisar si la sucursal tiene acceso anticipado específico
-            const sucKey = Object.keys(SUCURSAL_SCHEDULE).find(k => k === (sucursal || '').toUpperCase().trim());
+            // Usa startsWith para cubrir variantes regionales (ej. "Subdirección de Capital Humano Tabasco")
+            const sucNorm = (sucursal || '').toUpperCase().trim();
+            const sucKey = Object.keys(SUCURSAL_SCHEDULE).find(k => sucNorm.startsWith(k));
             if (sucKey) {
                 const s = SUCURSAL_SCHEDULE[sucKey];
                 const inicio = new Date(s.inicio + 'T00:00:00');
