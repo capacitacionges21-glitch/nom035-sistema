@@ -2809,7 +2809,7 @@
                 const searchInput = document.getElementById('employee-search');
                 if(searchInput) searchInput.placeholder = "Sincronizando empleados...";
 
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getEmployees", {
+                const response = await fetch(GOOGLE_APPS_SCRIPT_URL + "?action=getEmpleados", {
                     method: 'GET',
                     redirect: 'follow'
                 });
@@ -2819,7 +2819,8 @@
                 const result = await response.json();
                 
                 if (result.status === 'success') {
-                    loadedEmployees = result.data;
+                    // Normalizar: GAS puede retornar 'nombre' o 'name'
+                    loadedEmployees = result.data.map(e => ({ ...e, name: e.name || e.nombre || '' }));
                     console.log("Empleados sincronizados:", loadedEmployees.length);
                     if(searchInput) searchInput.placeholder = "Escribe para buscar...";
                 } else {
