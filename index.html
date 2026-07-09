@@ -323,21 +323,39 @@
                 </div>
 
                 <div id="tab-planes" class="fade-in hidden">
-                    <div class="mb-8">
+                    <div class="mb-6">
                         <h1 class="text-2xl font-bold text-slate-900">Planes de Acción Correctiva</h1>
-                        <p class="text-sm text-slate-500 mt-1">Estrategias basadas en las Dimensiones de Mayor Riesgo detectadas</p>
+                        <p class="text-sm text-slate-500 mt-1">Genera planes sugeridos basados en los resultados NOM-035 por cadena o sucursal</p>
                     </div>
 
-                    <div id="no-risk-alert" class="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl mb-8 flex items-center text-emerald-800 hidden">
-                        <i class="ph ph-check-circle text-3xl mr-4"></i>
-                        <div>
-                            <p class="font-bold">¡Sin riesgos críticos!</p>
-                            <p class="text-sm opacity-90">No se han detectado dimensiones con riesgo Alto o Muy Alto que requieran plan de acción inmediato.</p>
+                    <!-- Selector de alcance -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 mb-6 shadow-sm">
+                        <h3 class="font-semibold text-slate-700 mb-4 flex items-center gap-2"><i class="ph ph-funnel text-blue-600"></i> Alcance del Plan</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Nivel</label>
+                                <select id="plan-scope-type" onchange="updatePlanScopeValues()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="cadena">Por Cadena</option>
+                                    <option value="sucursal">Por Sucursal</option>
+                                    <option value="general">General (todas las cadenas)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-500 mb-1">Seleccionar</label>
+                                <select id="plan-scope-value" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                    <option value="">— primero selecciona el nivel —</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button onclick="generateActionPlan()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
+                                    <i class="ph ph-magic-wand"></i> Generar Plan Sugerido
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Contenedor dinámico de planes de acción -->
-                    <div id="action-plan-container" class="space-y-8"></div>
+                    <div id="action-plan-container"></div>
                 </div>
 
                 <div id="tab-sucursales" class="fade-in hidden">
@@ -823,78 +841,267 @@
         }
 
         // ==========================================
-        // LÓGICA: PLANES DE ACCIÓN (ESTRUCTURA NUEVA)
+        // PLANES DE ACCIÓN — CATÁLOGO DE SUGERENCIAS NOM-035
         // ==========================================
-        function renderActionPlans() {
-            const container = document.getElementById('action-plan-container');
-            const alert = document.getElementById('no-risk-alert');
-            container.innerHTML = '';
-            
-            // Simulación de dimensiones en riesgo Alto/Muy Alto (Fase 2 conectará a Sheets)
-            const highRiskDimensions = [
-                { dimension: 'Carga mental', riesgo: 'Alto' },
-                { dimension: 'Cargas emocionales', riesgo: 'Muy Alto' },
-                { dimension: 'Jornadas de trabajo extensas', riesgo: 'Alto' }
-            ];
+        const PLAN_SUGGESTIONS = {
+            'Ambiente de trabajo': {
+                'Alto':     'Realizar evaluación ergonómica de los puestos de trabajo e implementar mejoras en iluminación, ventilación y temperatura.\nEstablecer programa de mantenimiento preventivo de equipos e instalaciones con registro mensual.\nProporcionar equipo de protección personal adecuado y verificar su uso mediante supervisión periódica.',
+                'Muy alto': 'Contratar especialista en seguridad e higiene para evaluación integral inmediata de las áreas de trabajo.\nSuspender o restringir actividades en zonas con condiciones de riesgo hasta su corrección documentada.\nConformar o reactivar el Comité de Seguridad e Higiene con reuniones quincenales y actas de seguimiento.',
+            },
+            'Carga de trabajo': {
+                'Alto':     'Revisar y redistribuir las cargas de trabajo considerando capacidades individuales y tiempos reales de ejecución.\nCapacitar al equipo en técnicas de gestión del tiempo, priorización de tareas y manejo del estrés laboral.\nImplementar herramienta de seguimiento de actividades para identificar cuellos de botella y sobrecargas.',
+                'Muy alto': 'Auditar de inmediato la descripción de puestos vs. funciones reales asignadas y documentar las brechas detectadas.\nEvaluar la contratación de personal adicional o redistribución entre áreas para equilibrar la carga de trabajo.\nEstablecer política de límite de horas extra con compensación obligatoria y monitoreo por Recursos Humanos.',
+            },
+            'Falta de control': {
+                'Alto':     'Promover autonomía en la toma de decisiones dentro del rol de cada colaborador, documentando sus alcances y límites.\nEstablecer reuniones periódicas de retroalimentación (1:1) entre líderes y colaboradores para alinear expectativas.\nDiseñar indicadores claros de desempeño que permitan al colaborador medir su propio avance de forma objetiva.',
+                'Muy alto': 'Implementar programa de empoderamiento con talleres de liderazgo situacional para todos los mandos medios.\nRevisar procesos de aprobación excesivamente centralizados y delegar facultades concretas a líderes de equipo.\nEstablecer buzón de sugerencias con respuesta garantizada dentro de 15 días hábiles y publicación de resultados.',
+            },
+            'Jornada de trabajo': {
+                'Alto':     'Revisar y ajustar los horarios de trabajo para garantizar cumplimiento de la normatividad (máx. 48 hrs/semana).\nEstablecer política formal de desconexión digital fuera del horario laboral y comunicarla al 100% del personal.\nProgramar y respetar pausas activas durante la jornada para reducir la fatiga física y mental acumulada.',
+                'Muy alto': 'Auditar registros de asistencia para identificar colaboradores con jornadas excesivas y tomar acción correctiva inmediata.\nImplementar sistema automatizado de control de jornada con alertas al acercarse al límite legal permitido.\nRevisar la plantilla y redistribuir turnos para evitar sobrecarga sostenida en grupos o áreas específicas.',
+            },
+            'Interferencia trabajo-familia': {
+                'Alto':     'Implementar política de flexibilidad horaria o trabajo híbrido en los puestos donde las operaciones lo permitan.\nCrear programa de apoyo para la conciliación trabajo-familia con orientación y recursos disponibles para el colaborador.\nRevisar la política de reuniones fuera de horario laboral y establecer límites claros de comunicación.',
+                'Muy alto': 'Realizar diagnóstico cualitativo mediante entrevistas o grupos focales para identificar las principales fuentes de conflicto.\nOfrecer acceso a servicio de orientación psicológica o trabajo social para colaboradores y sus familias.\nEstablecer programa de permisos especiales con procedimiento claro, accesible y sin represalia para situaciones familiares urgentes.',
+            },
+            'Liderazgo y relaciones': {
+                'Alto':     'Capacitar a todos los líderes en habilidades directivas: comunicación asertiva, retroalimentación efectiva y manejo de conflictos.\nImplementar evaluación 360° anual para identificar áreas de mejora en el estilo de liderazgo de cada jefe directo.\nEstablecer canales formales de comunicación ascendente donde el colaborador pueda expresar inquietudes sin represalia.',
+                'Muy alto': 'Aplicar de forma inmediata el protocolo de atención a conductas de acoso u hostigamiento laboral.\nContratar consultor externo para intervención en clima laboral y dinámicas de equipo disfuncionales.\nRevisar la estructura de reporte y considerar rotación de liderazgo en áreas con índices de conflicto más altos.',
+            },
+            'Violencia': {
+                'Alto':     'Difundir y capacitar al 100% del personal en el protocolo de prevención y atención a la violencia laboral de la NOM-035.\nEstablecer mecanismo de denuncia confidencial con garantía escrita de no represalia y seguimiento documentado.\nRevisar el Reglamento Interno de Trabajo para asegurar que incluya sanciones claras ante conductas de violencia.',
+                'Muy alto': 'Activar de inmediato el protocolo de atención a violencia laboral e iniciar investigación interna formal con apoyo legal.\nContratar especialista externo en prevención de violencia laboral para intervención urgente y sensibilización del equipo.\nReportar a la STPS si se confirman casos de violencia grave, cumpliendo las obligaciones establecidas en la NOM-035.',
+            },
+            'Reconocimiento y pertenencia': {
+                'Alto':     'Implementar programa formal de reconocimiento mensual: colaborador destacado, celebración de logros de equipo y área.\nEstablecer plan de desarrollo y crecimiento profesional con metas claras, acompañamiento y revisión semestral.\nOrganizar actividades de integración de equipo al menos una vez por trimestre con participación voluntaria.',
+                'Muy alto': 'Realizar diagnóstico de sentido de pertenencia mediante encuesta interna y grupos focales con representantes de cada área.\nDiseñar plan de carrera por área con beneficios tangibles vinculados al desempeño y la antigüedad.\nRevisar política de compensaciones y beneficios comparada con el mercado de la industria para cerrar brechas relevantes.',
+            },
+        };
 
-            if (highRiskDimensions.length === 0) {
-                alert.classList.remove('hidden');
+        const DOMINIO_THRESHOLDS = [
+            { label: 'Muy alto', min: 3.0 },
+            { label: 'Alto',     min: 2.0 },
+            { label: 'Medio',    min: 1.0 },
+            { label: 'Bajo',     min: 0.5 },
+            { label: 'Nulo',     min: 0   },
+        ];
+
+        function getRiesgoLabel(avg) {
+            for (const t of DOMINIO_THRESHOLDS) if (avg >= t.min) return t.label;
+            return 'Nulo';
+        }
+
+        function renderActionPlans() { updatePlanScopeValues(); }
+
+        function updatePlanScopeValues() {
+            const type = document.getElementById('plan-scope-type')?.value;
+            const sel  = document.getElementById('plan-scope-value');
+            if (!sel) return;
+            if (type === 'general') { sel.innerHTML = '<option value="__general__">Todas las cadenas</option>'; return; }
+            const values = [...new Set(_colabData.map(r => type === 'cadena' ? r.cadena : r.sucursal).filter(Boolean))].sort();
+            sel.innerHTML = values.length
+                ? values.map(v => `<option value="${v}">${v}</option>`).join('')
+                : '<option value="">— sin datos cargados aún —</option>';
+        }
+
+        function calcDomainScoresForScope(type, value) {
+            const DOMAINS = {
+                'Ambiente de trabajo':           [1,2,3,4,5,6,7,8,9,10],
+                'Carga de trabajo':              [11,12,13,14,15,16,17,18,19,20,21,86,87,88,89],
+                'Falta de control':              [28,29,30,31,32,33,34,35,36,37,38,39,40,41,42],
+                'Jornada de trabajo':            [22,23],
+                'Interferencia trabajo-familia': [24,25,26,27],
+                'Liderazgo y relaciones':        [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,91,92,93,94],
+                'Violencia':                     [77,78,79,80,81,82,83,84],
+                'Reconocimiento y pertenencia':  [58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76],
+            };
+            let rows = _colabData;
+            if (type === 'cadena')   rows = _colabData.filter(r => r.cadena   === value);
+            if (type === 'sucursal') rows = _colabData.filter(r => r.sucursal === value);
+            if (!rows.length) return null;
+            const acum = {};
+            Object.keys(DOMAINS).forEach(d => { acum[d] = { sum: 0, n: 0 }; });
+            rows.forEach(row => {
+                try {
+                    const resp = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
+                    Object.entries(DOMAINS).forEach(([domain, ids]) => {
+                        const scores = ids.map(id => parseFloat(resp[id])).filter(v => !isNaN(v));
+                        if (scores.length) { acum[domain].sum += scores.reduce((a,b)=>a+b,0); acum[domain].n += scores.length; }
+                    });
+                } catch(e) {}
+            });
+            return Object.entries(acum).map(([domain, a]) => ({
+                domain, avg: a.n > 0 ? a.sum/a.n : 0,
+                riesgo: getRiesgoLabel(a.n > 0 ? a.sum/a.n : 0), n: rows.length,
+            })).sort((a,b) => b.avg - a.avg);
+        }
+
+        function generateActionPlan() {
+            const type  = document.getElementById('plan-scope-type')?.value;
+            const value = document.getElementById('plan-scope-value')?.value;
+            if (!value) { showToast('Selecciona un alcance primero.', 'error'); return; }
+            if (!_colabData.length) {
+                showToast('Cargando datos... intenta en unos segundos.', 'info');
+                fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle')
+                    .then(r => r.json()).then(cr => { if (cr.status==='success') { _colabData = cr.data; generateActionPlan(); } })
+                    .catch(() => showToast('Error al cargar datos.', 'error'));
                 return;
             }
+            const scopeType  = type === 'general' ? 'general' : type;
+            const scopeValue = value === '__general__' ? null : value;
+            const scores = calcDomainScoresForScope(scopeType, scopeValue);
+            if (!scores) { showToast('No hay encuestas para el alcance seleccionado.', 'error'); return; }
+            const highRisk   = scores.filter(s => s.riesgo === 'Alto' || s.riesgo === 'Muy alto');
+            const scopeLabel = scopeType === 'general' ? 'Todas las cadenas'
+                             : scopeType === 'cadena'  ? `Cadena: ${scopeValue}` : `Sucursal: ${scopeValue}`;
+            const planKey = `plan_${scopeType}_${(scopeValue||'general').replace(/\s/g,'_')}`;
+            renderPlanTable(highRisk, scores, scopeLabel, planKey, loadPlanLocally(planKey));
+        }
 
-            alert.classList.add('hidden');
+        function renderPlanTable(highRisk, allScores, scopeLabel, planKey, saved) {
+            const container = document.getElementById('action-plan-container');
+            const total = allScores[0]?.n || 0;
+            if (!highRisk.length) {
+                container.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl flex items-center text-emerald-800">
+                    <i class="ph ph-check-circle text-3xl mr-4"></i>
+                    <div><p class="font-bold">¡Sin riesgos críticos para ${scopeLabel}!</p>
+                    <p class="text-sm opacity-90">No se detectaron dimensiones Alto/Muy Alto en ${total} encuesta(s) analizadas.</p></div></div>`;
+                return;
+            }
+            const riskBadge = r => r === 'Muy alto'
+                ? '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Muy Alto</span>'
+                : '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">Alto</span>';
+            const rows = highRisk.map((item, i) => {
+                const sug = PLAN_SUGGESTIONS[item.domain]?.[item.riesgo] || PLAN_SUGGESTIONS[item.domain]?.['Alto'] || '';
+                const s   = saved?.[i] || {};
+                return `<tr class="border-b border-slate-100 align-top hover:bg-slate-50/50">
+                    <td class="px-3 py-4 text-center text-slate-400 text-sm">${i+1}</td>
+                    <td class="px-4 py-4 min-w-[140px]">
+                        <p class="font-semibold text-slate-800 text-sm">${item.domain}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Promedio: ${item.avg.toFixed(2)}</p>
+                    </td>
+                    <td class="px-4 py-4 text-center">${riskBadge(item.riesgo)}</td>
+                    <td class="px-4 py-4 min-w-[230px]">
+                        <textarea data-idx="${i}" data-field="accion"
+                            class="plan-field w-full border border-blue-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-blue-400 outline-none resize-y bg-blue-50 hover:bg-white focus:bg-white transition-colors"
+                            rows="5">${s.accion !== undefined ? s.accion : sug}</textarea>
+                        <p class="text-xs text-blue-400 mt-0.5 flex items-center gap-1"><i class="ph ph-magic-wand"></i> Sugerencia editable</p>
+                    </td>
+                    <td class="px-4 py-4 min-w-[130px]">
+                        <input data-idx="${i}" data-field="fecha" type="date"
+                            class="plan-field w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-blue-400" value="${s.fecha||''}">
+                    </td>
+                    <td class="px-4 py-4 min-w-[130px]">
+                        <input data-idx="${i}" data-field="responsable" type="text"
+                            class="plan-field w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-blue-400"
+                            placeholder="Encargado" value="${s.responsable||''}">
+                    </td>
+                    <td class="px-4 py-4 min-w-[110px]">
+                        <select data-idx="${i}" data-field="estatus"
+                            class="plan-field w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-blue-400">
+                            <option ${(s.estatus||'Pendiente')==='Pendiente'?'selected':''}>Pendiente</option>
+                            <option ${(s.estatus||'')==='En Proceso'?'selected':''}>En Proceso</option>
+                            <option ${(s.estatus||'')==='Finalizado'?'selected':''}>Finalizado</option>
+                        </select>
+                    </td>
+                </tr>`;
+            }).join('');
+            container.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden fade-in">
+                    <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-bold text-slate-800">${scopeLabel}</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">${highRisk.length} dimensión(es) con riesgo Alto/Muy Alto · ${total} encuesta(s) analizadas</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="savePlanAction('${planKey}')"
+                                class="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors shadow-sm">
+                                <i class="ph ph-floppy-disk"></i> Guardar Plan
+                            </button>
+                            <button onclick="exportPlanPDF('${scopeLabel}','${planKey}')"
+                                class="flex items-center gap-1.5 px-4 py-2 bg-slate-700 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm">
+                                <i class="ph ph-file-pdf"></i> Exportar PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-[#1e3a8a] text-white">
+                                <tr>
+                                    <th class="px-3 py-3 text-center text-xs font-semibold tracking-wider w-8">N.</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">DIMENSIÓN</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold tracking-wider">RIESGO</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">ACCIÓN SUGERIDA (editable)</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">FECHA TÉRMINO</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">RESPONSABLE</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold tracking-wider">ESTATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">${rows}</tbody>
+                        </table>
+                    </div>
+                    <div class="px-6 py-3 bg-slate-50 border-t border-slate-100">
+                        <p class="text-xs text-slate-400"><i class="ph ph-info mr-1"></i>Las acciones pre-llenadas son sugerencias NOM-035. Modifícalas según el contexto antes de guardar.</p>
+                    </div>
+                </div>`;
+        }
 
-            const card = document.createElement('div');
-            card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden fade-in mb-8";
-            
-            let tableRows = '';
-            highRiskDimensions.forEach((item, index) => {
-                let riskColor = item.riesgo === 'Muy Alto' ? 'text-red-700 bg-red-100' : 'text-orange-700 bg-orange-100';
-                tableRows += `
-                    <tr>
-                        <td class="px-2 py-4 align-top text-slate-600 text-center">${index + 1}</td>
-                        <td class="px-4 py-4 align-top text-slate-800 font-medium">${item.dimension}</td>
-                        <td class="px-4 py-4 align-top text-center"><span class="px-2 py-1 rounded-full text-xs font-bold ${riskColor}">${item.riesgo}</span></td>
-                        <td class="px-4 py-4"><textarea class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-blue-500 outline-none" rows="2" placeholder="Define las acciones a seguir..."></textarea></td>
-                        <td class="px-4 py-4"><input type="date" class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none"></td>
-                        <td class="px-4 py-4"><input type="text" class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none" placeholder="Encargado"></td>
-                        <td class="px-4 py-4">
-                            <select class="w-full border border-slate-300 rounded-lg p-2 text-xs outline-none">
-                                <option>Pendiente</option>
-                                <option>En Proceso</option>
-                                <option>Finalizado</option>
-                            </select>
-                        </td>
-                    </tr>
-                `;
+        function savePlanAction(planKey) {
+            const data = {};
+            document.querySelectorAll('.plan-field').forEach(el => {
+                const idx = el.dataset.idx; const field = el.dataset.field;
+                if (!data[idx]) data[idx] = {};
+                data[idx][field] = el.value;
             });
+            localStorage.setItem(`nom035_${planKey}`, JSON.stringify(data));
+            showToast('Plan guardado correctamente.', 'success');
+        }
 
-            card.innerHTML = `
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border-collapse border border-slate-200 text-sm">
-                        <thead class="bg-[#1e3a8a] text-white">
-                            <tr>
-                                <th class="border-b border-slate-300 px-2 py-3 text-center font-semibold text-xs tracking-wider">N.</th>
-                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">DIMENSIÓN</th>
-                                <th class="border-b border-slate-300 px-4 py-3 text-center font-semibold text-xs tracking-wider">NIVEL DE RIESGO</th>
-                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">ACCIÓN</th>
-                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">FECHA DE TÉRMINO</th>
-                                <th class="border-b border-slate-300 px-4 py-3 text-left font-semibold text-xs tracking-wider">RESPONSABLE</th>
-                                <th class="border-b border-slate-300 px-4 py-3 text-center font-semibold text-xs tracking-wider">ESTATUS</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
-                            ${tableRows}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-4 bg-slate-50 flex justify-end border-t border-slate-200">
-                    <button onclick="showToast('Plan de acción guardado temporalmente', 'success')" class="bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-sm">
-                        <i class="ph ph-floppy-disk mr-2"></i> Guardar Plan
-                    </button>
-                </div>
-            `;
-            container.appendChild(card);
+        function loadPlanLocally(planKey) {
+            try { return JSON.parse(localStorage.getItem(`nom035_${planKey}`) || 'null'); } catch(e) { return null; }
+        }
+
+        function exportPlanPDF(scopeLabel, planKey) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const W = doc.internal.pageSize.getWidth();
+            doc.setFillColor(30,58,138); doc.rect(0,0,W,22,'F');
+            doc.setTextColor(255,255,255); doc.setFontSize(13); doc.setFont('helvetica','bold');
+            doc.text('PLAN DE ACCIÓN CORRECTIVA — NOM-035-STPS-2018', W/2, 9, { align:'center' });
+            doc.setFontSize(9); doc.setFont('helvetica','normal');
+            doc.text(scopeLabel, W/2, 16, { align:'center' });
+            doc.setTextColor(0,0,0);
+            doc.setFontSize(8);
+            doc.text(`Generado: ${new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}`, 14, 28);
+            const rows = [];
+            document.querySelectorAll('.plan-field[data-field="accion"]').forEach((el, i) => {
+                const tr = el.closest('tr');
+                rows.push([
+                    String(i+1),
+                    tr.querySelector('td:nth-child(2) p')?.textContent?.trim()||'',
+                    tr.querySelector('td:nth-child(3) span')?.textContent?.trim()||'',
+                    el.value||'',
+                    tr.querySelector('[data-field="fecha"]')?.value||'',
+                    tr.querySelector('[data-field="responsable"]')?.value||'',
+                    tr.querySelector('[data-field="estatus"]')?.value||'',
+                ]);
+            });
+            doc.autoTable({
+                startY: 32,
+                head: [['#','Dimensión','Riesgo','Acciones a Implementar','Fecha Término','Responsable','Estatus']],
+                body: rows,
+                styles: { fontSize: 8, cellPadding: 3, valign:'top', overflow:'linebreak' },
+                headStyles: { fillColor:[30,58,138], textColor:255, fontStyle:'bold' },
+                columnStyles: {
+                    0:{ cellWidth:8, halign:'center' }, 1:{ cellWidth:38 },
+                    2:{ cellWidth:20, halign:'center' }, 3:{ cellWidth:105 },
+                    4:{ cellWidth:24, halign:'center' }, 5:{ cellWidth:34 },
+                    6:{ cellWidth:22, halign:'center' },
+                },
+                alternateRowStyles: { fillColor:[248,250,252] },
+            });
+            doc.save(`PlanAccion_${scopeLabel.replace(/[^a-zA-Z0-9]/g,'_').substring(0,30)}_${new Date().toLocaleDateString('es-MX').replace(/\//g,'-')}.pdf`);
+            showToast('PDF exportado.', 'success');
         }
 
         // ==========================================
