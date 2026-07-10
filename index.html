@@ -1315,7 +1315,11 @@
                     if (result.status === 'success') _colabData = result.data;
                 } catch(e) { showToast('Error al cargar datos. Intenta de nuevo.', 'error'); return; }
             }
-            const rec = (_colabData || []).find(r => String(r.empId) === String(emp.id));
+            const _normId = s => String(s||'').replace(/^0+/,'') || '0';
+            const rec = (_colabData || []).find(r =>
+                _normId(r.empId) === _normId(emp.id) ||
+                String(r.empId).trim() === String(emp.id).trim()
+            );
 
             let resp = {};
             if (rec?.respuestas) {
