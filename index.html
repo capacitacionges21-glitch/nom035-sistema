@@ -1086,6 +1086,80 @@
             return { inicio: '—', fin: '—' };
         }
 
+        function _buildActionRow(dimIdx, actIdx, act, showDelete) {
+            const del = showDelete
+                ? `<button onclick="removePlanAction(${dimIdx},${actIdx})" title="Eliminar acción"
+                      class="shrink-0 mt-1 text-slate-300 hover:text-red-400 transition-colors"><i class="ph ph-trash text-base"></i></button>`
+                : `<div class="w-5 shrink-0"></div>`;
+            const estOpts = ['Pendiente','En Proceso','Finalizado']
+                .map(o => `<option ${(act.estatus||'Pendiente')===o?'selected':''}>${o}</option>`).join('');
+            return `<div class="action-row px-5 py-4 border-b border-slate-100 last:border-0" data-dim="${dimIdx}" data-act="${actIdx}">
+                <div class="flex gap-2 items-start mb-2">
+                    <textarea data-dim="${dimIdx}" data-act="${actIdx}" data-field="accion"
+                        class="plan-field flex-1 border border-blue-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-blue-400 outline-none resize-y bg-blue-50 hover:bg-white focus:bg-white transition-colors"
+                        rows="3">${act.accion||''}</textarea>
+                    ${del}
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Fecha inicio</label>
+                        <input data-dim="${dimIdx}" data-act="${actIdx}" data-field="fechaInicio" type="date"
+                            class="plan-field w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50" value="${act.fechaInicio||''}"></div>
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Fecha término</label>
+                        <input data-dim="${dimIdx}" data-act="${actIdx}" data-field="fecha" type="date"
+                            class="plan-field w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-blue-400" value="${act.fecha||''}"></div>
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Responsable</label>
+                        <input data-dim="${dimIdx}" data-act="${actIdx}" data-field="responsable" type="text"
+                            class="plan-field w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-blue-400"
+                            placeholder="Encargado" value="${act.responsable||''}"></div>
+                    <div><label class="text-xs text-slate-400 mb-0.5 block">Estatus</label>
+                        <select data-dim="${dimIdx}" data-act="${actIdx}" data-field="estatus"
+                            class="plan-field w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-blue-400">${estOpts}</select></div>
+                </div>
+            </div>`;
+        }
+
+        function addPlanAction(dimIdx) {
+            const container = document.getElementById(`dim-${dimIdx}-actions`);
+            if (!container) return;
+            const rows = container.querySelectorAll('.action-row');
+            const newIdx = rows.length;
+            // Show delete button on first row if this is the first addition
+            if (newIdx === 1) {
+                const firstRow = rows[0];
+                const placeholder = firstRow.querySelector('.w-5.shrink-0');
+                if (placeholder) {
+                    placeholder.outerHTML = `<button onclick="removePlanAction(${dimIdx},0)" title="Eliminar acción"
+                        class="shrink-0 mt-1 text-slate-300 hover:text-red-400 transition-colors"><i class="ph ph-trash text-base"></i></button>`;
+                }
+            }
+            const div = document.createElement('div');
+            div.innerHTML = _buildActionRow(dimIdx, newIdx,
+                { accion:'', fechaInicio:'', fecha:'', responsable:'', estatus:'Pendiente' }, true);
+            container.appendChild(div.firstElementChild);
+        }
+
+        function removePlanAction(dimIdx, actIdx) {
+            const container = document.getElementById(`dim-${dimIdx}-actions`);
+            if (!container) return;
+            const rows = [...container.querySelectorAll('.action-row')];
+            if (rows.length <= 1) return;
+            const target = rows.find(r => parseInt(r.dataset.act) === actIdx);
+            if (target) target.remove();
+            // Renumber
+            container.querySelectorAll('.action-row').forEach((row, newIdx) => {
+                row.dataset.act = newIdx;
+                row.querySelectorAll('[data-act]').forEach(el => el.dataset.act = newIdx);
+                const btn = row.querySelector('button[onclick^="removePlanAction"]');
+                if (btn) btn.setAttribute('onclick', `removePlanAction(${dimIdx},${newIdx})`);
+            });
+            // If only one left, hide delete button
+            const remaining = container.querySelectorAll('.action-row');
+            if (remaining.length === 1) {
+                const btn = remaining[0].querySelector('button[onclick^="removePlanAction"]');
+                if (btn) btn.outerHTML = '<div class="w-5 shrink-0"></div>';
+            }
+        }
+
         function renderPlanTable(highRisk, allScores, scopeLabel, planKey, saved, scopeType, scopeValue) {
             const container = document.getElementById('action-plan-container');
             const total = allScores[0]?.n || 0;
@@ -1100,45 +1174,40 @@
             const riskBadge = r => r === 'Muy alto'
                 ? '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Muy Alto</span>'
                 : '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">Alto</span>';
-            const rows = highRisk.map((item, i) => {
+            const defFechaInicio = CADENA_SCHEDULE[((scopeValue||'').toUpperCase().trim())]?.inicio || '';
+
+            const dimSections = highRisk.map((item, i) => {
                 const sug = getPlanSuggestion(item.domain, item.riesgo);
                 const s   = saved?.[i] || {};
-                return `<tr class="border-b border-slate-100 align-top hover:bg-slate-50/50">
-                    <td class="px-3 py-4 text-center text-slate-400 text-sm">${i+1}</td>
-                    <td class="px-4 py-4 min-w-[140px]">
-                        <p class="font-semibold text-slate-800 text-sm">${item.domain}</p>
-                        <p class="text-xs text-slate-400 mt-0.5">Promedio: ${item.avg.toFixed(2)}</p>
-                    </td>
-                    <td class="px-4 py-4 text-center">${riskBadge(item.riesgo)}</td>
-                    <td class="px-4 py-4 min-w-[230px]">
-                        <textarea data-idx="${i}" data-field="accion"
-                            class="plan-field w-full border border-blue-200 rounded-lg p-2 text-xs focus:ring-2 focus:ring-blue-400 outline-none resize-y bg-blue-50 hover:bg-white focus:bg-white transition-colors"
-                            rows="5">${s.accion !== undefined ? s.accion : sug}</textarea>
-                        <p class="text-xs text-blue-400 mt-0.5 flex items-center gap-1"><i class="ph ph-magic-wand"></i> Sugerencia editable</p>
-                    </td>
-                    <td class="px-4 py-4 min-w-[130px]">
-                        <input data-idx="${i}" data-field="fechaInicio" type="date"
-                            class="plan-field w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50" value="${s.fechaInicio || (CADENA_SCHEDULE[((scopeValue||'').toUpperCase().trim())]?.inicio || '')}">
-                    </td>
-                    <td class="px-4 py-4 min-w-[130px]">
-                        <input data-idx="${i}" data-field="fecha" type="date"
-                            class="plan-field w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-blue-400" value="${s.fecha||''}">
-                    </td>
-                    <td class="px-4 py-4 min-w-[130px]">
-                        <input data-idx="${i}" data-field="responsable" type="text"
-                            class="plan-field w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-blue-400"
-                            placeholder="Encargado" value="${s.responsable||''}">
-                    </td>
-                    <td class="px-4 py-4 min-w-[110px]">
-                        <select data-idx="${i}" data-field="estatus"
-                            class="plan-field w-full border border-slate-200 rounded-lg p-2 text-xs outline-none focus:ring-2 focus:ring-blue-400">
-                            <option ${(s.estatus||'Pendiente')==='Pendiente'?'selected':''}>Pendiente</option>
-                            <option ${(s.estatus||'')==='En Proceso'?'selected':''}>En Proceso</option>
-                            <option ${(s.estatus||'')==='Finalizado'?'selected':''}>Finalizado</option>
-                        </select>
-                    </td>
-                </tr>`;
+                // Backward compat: old format {accion,...} → new format {actions:[...]}
+                let actions;
+                if (s.actions?.length) {
+                    actions = s.actions;
+                } else if (s.accion !== undefined) {
+                    actions = [{ accion: s.accion, fechaInicio: s.fechaInicio||'', fecha: s.fecha||'', responsable: s.responsable||'', estatus: s.estatus||'Pendiente' }];
+                } else {
+                    actions = [{ accion: sug, fechaInicio: defFechaInicio, fecha:'', responsable:'', estatus:'Pendiente' }];
+                }
+                const actionRows = actions.map((act, j) => _buildActionRow(i, j, act, actions.length > 1)).join('');
+                return `<div class="dim-section border border-slate-200 rounded-xl overflow-hidden mb-4">
+                    <div class="flex items-center gap-3 px-5 py-3 bg-slate-50 border-b border-slate-200">
+                        <span class="shrink-0 w-6 h-6 bg-slate-200 text-slate-600 rounded-full text-xs font-bold flex items-center justify-center">${i+1}</span>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-slate-800 text-sm">${item.domain}</p>
+                            <p class="text-xs text-slate-400">Promedio: ${item.avg.toFixed(2)}</p>
+                        </div>
+                        ${riskBadge(item.riesgo)}
+                    </div>
+                    <div id="dim-${i}-actions">${actionRows}</div>
+                    <div class="px-5 py-2 bg-slate-50 border-t border-slate-100">
+                        <button onclick="addPlanAction(${i})"
+                            class="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                            <i class="ph ph-plus-circle text-sm"></i> Agregar otra acción
+                        </button>
+                    </div>
+                </div>`;
             }).join('');
+
             container.innerHTML = `
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden fade-in">
                     <div class="px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1158,23 +1227,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-[#1e3a8a] text-white">
-                                <tr>
-                                    <th class="px-3 py-3 text-center text-xs font-semibold tracking-wider w-8">N.</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">DIMENSIÓN</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold tracking-wider">RIESGO</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">ACCIÓN SUGERIDA (editable)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">FECHA INICIO</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">FECHA TÉRMINO</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold tracking-wider">RESPONSABLE</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold tracking-wider">ESTATUS</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-50">${rows}</tbody>
-                        </table>
-                    </div>
+                    <div class="p-6">${dimSections}</div>
                     <div class="px-6 py-3 bg-slate-50 border-t border-slate-100">
                         <p class="text-xs text-slate-400"><i class="ph ph-info mr-1"></i>Las acciones pre-llenadas son sugerencias NOM-035. Modifícalas según el contexto antes de guardar.</p>
                     </div>
@@ -1184,9 +1237,11 @@
         function savePlanAction(planKey) {
             const data = {};
             document.querySelectorAll('.plan-field').forEach(el => {
-                const idx = el.dataset.idx; const field = el.dataset.field;
-                if (!data[idx]) data[idx] = {};
-                data[idx][field] = el.value;
+                const dim = el.dataset.dim; const act = el.dataset.act; const field = el.dataset.field;
+                if (dim === undefined || act === undefined) return;
+                if (!data[dim]) data[dim] = { actions: [] };
+                while (data[dim].actions.length <= parseInt(act)) data[dim].actions.push({});
+                data[dim].actions[act][field] = el.value;
             });
             localStorage.setItem(`nom035_${planKey}`, JSON.stringify(data));
             showToast('Plan guardado correctamente.', 'success');
@@ -1208,30 +1263,36 @@
             doc.setTextColor(0,0,0);
             doc.setFontSize(8);
             doc.text(`Generado: ${new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'})}`, 14, 28);
-            const rows = [];
-            document.querySelectorAll('.plan-field[data-field="accion"]').forEach((el, i) => {
-                const tr = el.closest('tr');
-                rows.push([
-                    String(i+1),
-                    tr.querySelector('td:nth-child(2) p')?.textContent?.trim()||'',
-                    tr.querySelector('td:nth-child(3) span')?.textContent?.trim()||'',
-                    el.value||'',
-                    tr.querySelector('[data-field="fecha"]')?.value||'',
-                    tr.querySelector('[data-field="responsable"]')?.value||'',
-                    tr.querySelector('[data-field="estatus"]')?.value||'',
-                ]);
+            const pdfRows = [];
+            let n = 0;
+            document.querySelectorAll('.dim-section').forEach(section => {
+                const dimName = section.querySelector('.font-semibold.text-slate-800')?.textContent?.trim() || '';
+                const riesgo  = section.querySelector('[class*="bg-red-100"],[class*="bg-orange-100"]')?.textContent?.trim() || '';
+                section.querySelectorAll('.action-row').forEach((row, j) => {
+                    n++;
+                    pdfRows.push([
+                        String(n),
+                        j === 0 ? dimName : '↳',
+                        j === 0 ? riesgo  : '',
+                        row.querySelector('[data-field="accion"]')?.value || '',
+                        row.querySelector('[data-field="fechaInicio"]')?.value || '',
+                        row.querySelector('[data-field="fecha"]')?.value || '',
+                        row.querySelector('[data-field="responsable"]')?.value || '',
+                        row.querySelector('[data-field="estatus"]')?.value || '',
+                    ]);
+                });
             });
             doc.autoTable({
                 startY: 32,
-                head: [['#','Dimensión','Riesgo','Acciones a Implementar','Fecha Término','Responsable','Estatus']],
-                body: rows,
-                styles: { fontSize: 8, cellPadding: 3, valign:'top', overflow:'linebreak' },
+                head: [['#','Dimensión','Riesgo','Acción a Implementar','Fecha Inicio','Fecha Término','Responsable','Estatus']],
+                body: pdfRows,
+                styles: { fontSize: 7.5, cellPadding: 2.5, valign:'top', overflow:'linebreak' },
                 headStyles: { fillColor:[30,58,138], textColor:255, fontStyle:'bold' },
                 columnStyles: {
-                    0:{ cellWidth:8, halign:'center' }, 1:{ cellWidth:38 },
-                    2:{ cellWidth:20, halign:'center' }, 3:{ cellWidth:105 },
-                    4:{ cellWidth:24, halign:'center' }, 5:{ cellWidth:34 },
-                    6:{ cellWidth:22, halign:'center' },
+                    0:{ cellWidth:8, halign:'center' }, 1:{ cellWidth:34 },
+                    2:{ cellWidth:18, halign:'center' }, 3:{ cellWidth:95 },
+                    4:{ cellWidth:22, halign:'center' }, 5:{ cellWidth:22, halign:'center' },
+                    6:{ cellWidth:34 }, 7:{ cellWidth:22, halign:'center' },
                 },
                 alternateRowStyles: { fillColor:[248,250,252] },
             });
