@@ -478,6 +478,17 @@
                             <h1 class="text-2xl font-bold text-slate-800">Resultados por Colaborador</h1>
                             <p class="text-sm text-slate-500 mt-1">Haz clic en cualquier fila para ver el detalle de respuestas y nivel de riesgo individual.</p>
                         </div>
+                    </div>
+                    <div class="mb-5 bg-blue-50 border border-blue-100 rounded-xl px-5 py-4 text-sm text-slate-700">
+                        <p class="font-semibold text-blue-800 mb-1">¿Por qué un colaborador puede tener dominios en Alto pero Riesgo Global Bajo?</p>
+                        <p class="mb-2">Son dos mediciones distintas que se calculan de forma independiente:</p>
+                        <ul class="list-disc list-inside space-y-1 mb-2">
+                            <li><span class="font-medium">Riesgo Global</span> — suma el puntaje de <em>todas</em> las preguntas del cuestionario. Refleja la carga psicosocial general del colaborador (escala: &lt;50 Nulo · 50–74 Bajo · 75–98 Medio · 99–139 Alto · ≥140 Muy alto).</li>
+                            <li><span class="font-medium">Riesgo por Dominio</span> — calcula el promedio de las preguntas de un área específica (liderazgo, carga de trabajo, etc.) en escala 0–4. Si en ese dominio las respuestas fueron frecuentes, el nivel sube aunque el resto del cuestionario haya sido bajo.</li>
+                        </ul>
+                        <p class="text-slate-500 italic text-xs">Nota NOM-035: aunque el riesgo global sea Bajo o Nulo, si algún dominio resulta en Alto o Muy alto se debe implementar un plan de acción correctiva para ese dominio específico.</p>
+                    </div>
+                    <div class="flex justify-end mb-2">
                         <div class="flex gap-2">
                             <input id="colab-search" type="text" placeholder="Buscar colaborador..." oninput="filterColaboradoresTable()"
                                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 w-52">
