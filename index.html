@@ -2092,13 +2092,14 @@
             const labels = d.riesgoPorDominio?.labels || [];
             const scores = d.riesgoPorDominio?.data || [];
 
+            // Escala 0–4 (promedio por dominio), NO escala de puntaje total
             const nivelColor = (s) => {
-                if (!s) return { texto: '—', cls: 'text-slate-400' };
-                if (s < 20) return { texto: 'Nulo', cls: 'text-slate-500' };
-                if (s < 45) return { texto: 'Bajo', cls: 'text-green-600' };
-                if (s < 79) return { texto: 'Medio', cls: 'text-yellow-600' };
-                if (s < 113) return { texto: 'Alto', cls: 'text-orange-600' };
-                return { texto: 'Muy Alto', cls: 'text-red-600' };
+                if (s === undefined || s === null || s === '') return { texto: '—', cls: 'text-slate-400' };
+                if (s >= 3.0) return { texto: 'Muy alto', cls: 'text-red-600 font-semibold' };
+                if (s >= 2.0) return { texto: 'Alto',     cls: 'text-orange-600 font-semibold' };
+                if (s >= 1.0) return { texto: 'Medio',    cls: 'text-yellow-600 font-semibold' };
+                if (s >= 0.5) return { texto: 'Bajo',     cls: 'text-blue-600' };
+                return { texto: 'Nulo',     cls: 'text-slate-400' };
             };
 
             tbody.innerHTML = labels.map((label, i) => {
