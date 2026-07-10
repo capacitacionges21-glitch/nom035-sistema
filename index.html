@@ -388,12 +388,12 @@
                     <h1 class="text-2xl font-bold mb-2">Riesgos y Dominios NOM-035</h1>
                     <div class="mb-4 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-600 items-center">
                         <span class="font-semibold text-blue-800">¿Cómo leer el puntaje promedio?</span>
-                        <span>Escala <strong>0 a 4</strong> por dominio. <strong>Mayor puntaje = mayor exposición al factor de riesgo.</strong></span>
-                        <span class="text-green-600 font-medium">0–0.49 Nulo</span>
-                        <span class="text-blue-600 font-medium">0.5–0.99 Bajo</span>
-                        <span class="text-yellow-600 font-medium">1–1.99 Medio</span>
-                        <span class="text-orange-600 font-medium">2–2.99 Alto</span>
-                        <span class="text-red-600 font-medium">≥3 Muy alto</span>
+                        <span>Escala <strong>0 a 4</strong> por dominio. <strong>Mayor puntaje = mayor exposición al factor de riesgo.</strong> Los umbrales varían por dominio según la Guía II NOM-035 (rango aprox.):</span>
+                        <span class="text-green-600 font-medium">Nulo &lt;~1.0</span>
+                        <span class="text-blue-600 font-medium">Bajo ~1.0–1.4</span>
+                        <span class="text-yellow-600 font-medium">Medio ~1.4–1.9</span>
+                        <span class="text-orange-600 font-medium">Alto ~1.9–2.5</span>
+                        <span class="text-red-600 font-medium">Muy alto ≥~2.2–3.0</span>
                     </div>
                     <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                         <table class="min-w-full text-sm">
@@ -908,26 +908,78 @@
             },
         };
 
-        const DOMINIO_THRESHOLDS = [
-            { label: 'Muy alto', min: 3.0 },
-            { label: 'Alto',     min: 2.0 },
-            { label: 'Medio',    min: 1.0 },
-            { label: 'Bajo',     min: 0.5 },
-            { label: 'Nulo',     min: 0   },
-        ];
+        // Mapeo de nombre completo (surveyQuestions.dominio) → clave en PLAN_SUGGESTIONS
+        const DOMAIN_PLAN_KEY = {
+            'Condiciones en el ambiente de trabajo':          'Ambiente de trabajo',
+            'Carga de trabajo':                               'Carga de trabajo',
+            'Falta de control sobre el trabajo':              'Falta de control',
+            'Jornada de trabajo':                             'Jornada de trabajo',
+            'Interferencia en la relación trabajo-familia':   'Interferencia trabajo-familia',
+            'Liderazgo':                                      'Liderazgo y relaciones',
+            'Relaciones en el trabajo':                       'Liderazgo y relaciones',
+            'Violencia':                                      'Violencia',
+            'Reconocimiento del desempeño':                   'Reconocimiento y pertenencia',
+            'Insuficiente sentido de pertenencia e inestabilidad': 'Reconocimiento y pertenencia',
+        };
+        function getPlanSuggestion(domain, riesgo) {
+            const key = DOMAIN_PLAN_KEY[domain] || domain;
+            return PLAN_SUGGESTIONS[key]?.[riesgo] || PLAN_SUGGESTIONS[key]?.['Alto'] || '';
+        }
 
-        function getRiesgoLabel(avg) {
-            for (const t of DOMINIO_THRESHOLDS) if (avg >= t.min) return t.label;
+        // Umbrales por dominio derivados de la Guía de referencia II NOM-035.
+        // Convertidos a escala 0–4 (promedio = umbral_crudo_oficial / n_items_oficial)
+        // para que funcionen correctamente con cualquier número de preguntas por dominio.
+        // Formato: [Muy alto, Alto, Medio, Bajo]
+        const DOMINIO_THRESHOLDS_POR_NOMBRE = {
+            // Nombres completos (surveyQuestions.dominio)
+            'Condiciones en el ambiente de trabajo':          [2.80, 2.20, 1.80, 1.00], // 14/5, 11/5, 9/5, 5/5
+            'Carga de trabajo':                               [2.47, 1.80, 1.40, 1.00], // 37/15, 27/15, 21/15, 15/15
+            'Falta de control sobre el trabajo':              [2.50, 2.10, 1.60, 1.10], // 25/10, 21/10, 16/10, 11/10
+            'Jornada de trabajo':                             [3.00, 2.00, 1.00, 0.50], // 6/2, 4/2, 2/2, 1/2
+            'Interferencia en la relación trabajo-familia':   [2.50, 2.00, 1.50, 1.00], // 10/4, 8/4, 6/4, 4/4
+            'Liderazgo':                                      [2.22, 1.78, 1.33, 1.00], // 20/9, 16/9, 12/9, 9/9
+            'Relaciones en el trabajo':                       [2.33, 1.89, 1.44, 1.11], // 21/9, 17/9, 13/9, 10/9
+            'Violencia':                                      [2.00, 1.63, 1.25, 0.88], // 16/8, 13/8, 10/8, 7/8
+            'Reconocimiento del desempeño':                   [3.00, 2.33, 1.67, 1.00], // 18/6, 14/6, 10/6, 6/6
+            'Insuficiente sentido de pertenencia e inestabilidad': [2.50, 2.00, 1.50, 1.00], // 10/4, 8/4, 6/4, 4/4
+            // Nombres abreviados (etiquetas del GAS en riesgoPorDominio)
+            'Ambiente de trabajo':           [2.80, 2.20, 1.80, 1.00],
+            'Falta de control':              [2.50, 2.10, 1.60, 1.10],
+            'Jornada':                       [3.00, 2.00, 1.00, 0.50],
+            'Interferencia':                 [2.50, 2.00, 1.50, 1.00],
+            'Interferencia trabajo-familia': [2.50, 2.00, 1.50, 1.00],
+            'Relaciones':                    [2.33, 1.89, 1.44, 1.11],
+            'Reconocimiento':                [3.00, 2.33, 1.67, 1.00],
+            'Pertenencia':                   [2.50, 2.00, 1.50, 1.00],
+            'Reconocimiento y pertenencia':  [2.75, 2.17, 1.58, 1.00], // promedio ponderado de los dos
+            'Liderazgo y relaciones':        [2.27, 1.83, 1.38, 1.05], // promedio ponderado Liderazgo+Relaciones
+        };
+
+        // Fallback genérico (promedio de los umbrales oficiales por dominio)
+        const DOMINIO_THRESHOLDS_FALLBACK = [2.40, 1.90, 1.45, 1.00];
+
+        function getDomainNivel(dominio, avg) {
+            const [ma, a, m, b] = DOMINIO_THRESHOLDS_POR_NOMBRE[dominio] || DOMINIO_THRESHOLDS_FALLBACK;
+            if (avg >= ma) return 'Muy alto';
+            if (avg >= a)  return 'Alto';
+            if (avg >= m)  return 'Medio';
+            if (avg >= b)  return 'Bajo';
             return 'Nulo';
         }
 
-        // Riesgo global por puntaje total NOM-035 Guía de referencia II (>50 trabajadores)
+        function getRiesgoLabel(avg, dominio) {
+            return getDomainNivel(dominio || '', avg);
+        }
+
+        // Puntaje total — Guía de referencia II NOM-035 (cuestionario de 72 reactivos oficial)
+        // Nota: esta encuesta tiene reactivos adicionales en algunos dominios; los umbrales
+        // se mantienen de la norma como referencia oficial de clasificación.
         function calcRiesgoGlobal(puntaje) {
             const p = parseInt(puntaje) || 0;
-            if (p >= 114) return 'Muy alto';
-            if (p >= 80)  return 'Alto';
-            if (p >= 46)  return 'Medio';
-            if (p >= 21)  return 'Bajo';
+            if (p >= 140) return 'Muy alto';
+            if (p >= 99)  return 'Alto';
+            if (p >= 75)  return 'Medio';
+            if (p >= 50)  return 'Bajo';
             return 'Nulo o despreciable';
         }
 
@@ -945,16 +997,14 @@
         }
 
         function calcDomainScoresForScope(type, value) {
-            const DOMAINS = {
-                'Ambiente de trabajo':           [1,2,3,4,5,6,7,8,9,10],
-                'Carga de trabajo':              [11,12,13,14,15,16,17,18,19,20,21,86,87,88,89],
-                'Falta de control':              [28,29,30,31,32,33,34,35,36,37,38,39,40,41,42],
-                'Jornada de trabajo':            [22,23],
-                'Interferencia trabajo-familia': [24,25,26,27],
-                'Liderazgo y relaciones':        [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,91,92,93,94],
-                'Violencia':                     [77,78,79,80,81,82,83,84],
-                'Reconocimiento y pertenencia':  [58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76],
-            };
+            // Agrupa preguntas por dominio oficial usando surveyQuestions (nombres exactos de la norma)
+            const DOMAINS = {};
+            surveyQuestions
+                .filter(q => q.dominio && !q.dominio.includes('(no puntúa)') && !q.dominio.includes('traumático') && !q.dominio.includes('Acontecimiento'))
+                .forEach(q => {
+                    if (!DOMAINS[q.dominio]) DOMAINS[q.dominio] = [];
+                    if (!DOMAINS[q.dominio].includes(q.id)) DOMAINS[q.dominio].push(q.id);
+                });
             let rows = _colabData;
             if (type === 'cadena')   rows = _colabData.filter(r => r.cadena   === value);
             if (type === 'sucursal') rows = _colabData.filter(r => r.sucursal === value);
@@ -963,17 +1013,19 @@
             Object.keys(DOMAINS).forEach(d => { acum[d] = { sum: 0, n: 0 }; });
             rows.forEach(row => {
                 try {
-                    const resp = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
+                    let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    const resp = parsed || {};
                     Object.entries(DOMAINS).forEach(([domain, ids]) => {
                         const scores = ids.map(id => parseFloat(resp[id])).filter(v => !isNaN(v));
                         if (scores.length) { acum[domain].sum += scores.reduce((a,b)=>a+b,0); acum[domain].n += scores.length; }
                     });
                 } catch(e) {}
             });
-            return Object.entries(acum).map(([domain, a]) => ({
-                domain, avg: a.n > 0 ? a.sum/a.n : 0,
-                riesgo: getRiesgoLabel(a.n > 0 ? a.sum/a.n : 0), n: rows.length,
-            })).sort((a,b) => b.avg - a.avg);
+            return Object.entries(acum).map(([domain, a]) => {
+                const avg = a.n > 0 ? a.sum / a.n : 0;
+                return { domain, avg, riesgo: getDomainNivel(domain, avg), n: rows.length };
+            }).sort((a,b) => b.avg - a.avg);
         }
 
         function generateActionPlan() {
@@ -1028,7 +1080,7 @@
                 ? '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">Muy Alto</span>'
                 : '<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700">Alto</span>';
             const rows = highRisk.map((item, i) => {
-                const sug = PLAN_SUGGESTIONS[item.domain]?.[item.riesgo] || PLAN_SUGGESTIONS[item.domain]?.['Alto'] || '';
+                const sug = getPlanSuggestion(item.domain, item.riesgo);
                 const s   = saved?.[i] || {};
                 return `<tr class="border-b border-slate-100 align-top hover:bg-slate-50/50">
                     <td class="px-3 py-4 text-center text-slate-400 text-sm">${i+1}</td>
@@ -1244,16 +1296,14 @@
         }
 
         function generateAndDownloadPDF(emp) {
-            const domainQMap = {
-                'Ambiente de trabajo':           [1,2,3,4,5,6,7,8,9,10],
-                'Carga de trabajo':              [11,12,13,14,15,16,17,18,19,20,21,86,87,88,89],
-                'Falta de control':              [28,29,30,31,32,33,34,35,36,37,38,39,40,41,42],
-                'Jornada de trabajo':            [22,23],
-                'Interferencia trabajo-familia': [24,25,26,27],
-                'Liderazgo y relaciones':        [43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,91,92,93,94],
-                'Violencia':                     [77,78,79,80,81,82,83,84],
-                'Reconocimiento y pertenencia':  [58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76]
-            };
+            // Agrupa preguntas por dominio oficial usando surveyQuestions
+            const domainQMap = {};
+            surveyQuestions
+                .filter(q => q.dominio && !q.dominio.includes('(no puntúa)') && !q.dominio.includes('traumático') && !q.dominio.includes('Acontecimiento'))
+                .forEach(q => {
+                    if (!domainQMap[q.dominio]) domainQMap[q.dominio] = [];
+                    if (!domainQMap[q.dominio].includes(q.id)) domainQMap[q.dominio].push(q.id);
+                });
 
             // Buscar datos reales del colaborador en _colabData
             const rec = (_colabData || []).find(r => String(r.empId) === String(emp.id));
@@ -1267,12 +1317,8 @@
                         const scores = ids.map(id => parseFloat(resp[id] !== undefined ? resp[id] : resp[String(id)])).filter(v => !isNaN(v));
                         if (!scores.length) return;
                         const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
-                        let riesgo = 'Nulo';
-                        if (avg >= 3) riesgo = 'Muy alto';
-                        else if (avg >= 2) riesgo = 'Alto';
-                        else if (avg >= 1) riesgo = 'Medio';
-                        else if (avg >= 0.5) riesgo = 'Bajo';
-                        if (avg >= 2) highRiskDomains.push({ domain, avg: avg.toFixed(2), riesgo });
+                        const riesgo = getDomainNivel(domain, avg);
+                        if (riesgo === 'Alto' || riesgo === 'Muy alto') highRiskDomains.push({ domain, avg: avg.toFixed(2), riesgo });
                     });
                 } catch(e) {}
             }
@@ -1281,7 +1327,7 @@
             const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
             const fechaActual = new Date().toLocaleDateString('es-MX');
             const puntaje = rec?.puntajeTotal || '—';
-            const riesgoGlob = rec ? (rec.riesgoGlobal || calcRiesgoGlobal(rec.puntajeTotal)) : '—';
+            const riesgoGlob = rec?.puntajeTotal ? calcRiesgoGlobal(rec.puntajeTotal) : (rec?.riesgoGlobal || '—');
 
             doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
             doc.text('PLAN DE ACCIÓN CORRECTIVA — NOM-035-STPS-2018', 40, 40);
@@ -1296,7 +1342,7 @@
             const tableRows = highRiskDomains.length
                 ? highRiskDomains.map((d, i) => [
                     i + 1, d.domain, d.avg, d.riesgo,
-                    PLAN_SUGGESTIONS[d.domain]?.[d.riesgo] || PLAN_SUGGESTIONS[d.domain]?.['Alto'] || '',
+                    getPlanSuggestion(d.domain, d.riesgo),
                     '', '', 'Pendiente'
                   ])
                 : [['—', 'Sin dominios en riesgo Alto/Muy alto', '', '', '', '', '', '']];
@@ -2092,19 +2138,23 @@
             const labels = d.riesgoPorDominio?.labels || [];
             const scores = d.riesgoPorDominio?.data || [];
 
-            // Escala 0–4 (promedio por dominio), NO escala de puntaje total
-            const nivelColor = (s) => {
+            // Umbrales por dominio según Guía de referencia II NOM-035
+            const nivelColor = (label, s) => {
                 if (s === undefined || s === null || s === '') return { texto: '—', cls: 'text-slate-400' };
-                if (s >= 3.0) return { texto: 'Muy alto', cls: 'text-red-600 font-semibold' };
-                if (s >= 2.0) return { texto: 'Alto',     cls: 'text-orange-600 font-semibold' };
-                if (s >= 1.0) return { texto: 'Medio',    cls: 'text-yellow-600 font-semibold' };
-                if (s >= 0.5) return { texto: 'Bajo',     cls: 'text-blue-600' };
-                return { texto: 'Nulo',     cls: 'text-slate-400' };
+                const nivel = getDomainNivel(label, parseFloat(s));
+                const clsMap = {
+                    'Muy alto': 'text-red-600 font-semibold',
+                    'Alto':     'text-orange-600 font-semibold',
+                    'Medio':    'text-yellow-600 font-semibold',
+                    'Bajo':     'text-blue-600',
+                    'Nulo':     'text-slate-400',
+                };
+                return { texto: nivel, cls: clsMap[nivel] || 'text-slate-400' };
             };
 
             tbody.innerHTML = labels.map((label, i) => {
                 const s = scores[i] || 0;
-                const { texto, cls } = nivelColor(s);
+                const { texto, cls } = nivelColor(label, s);
                 return `<tr class="border-b border-slate-100 hover:bg-slate-50">
                     <td class="px-5 py-3 font-medium text-slate-700">${label}</td>
                     <td class="px-5 py-3 text-center text-slate-600">${s || '—'}</td>
@@ -2486,7 +2536,8 @@
             document.getElementById('modal-colab-info').textContent =
                 `${rec.puesto||'—'} · ${rec.sucursal||'—'} · ${rec.cadena||'—'} · Fecha: ${rec.fecha||'—'}`;
 
-            const riesgoGlobalMostrar = rec.riesgoGlobal || calcRiesgoGlobal(rec.puntajeTotal);
+            // Siempre recalcula con los umbrales actuales (ignora el valor almacenado que puede estar desactualizado)
+            const riesgoGlobalMostrar = rec.puntajeTotal ? calcRiesgoGlobal(rec.puntajeTotal) : (rec.riesgoGlobal || '—');
             const c = getRiskStyle(riesgoGlobalMostrar);
             const domainQMap = {
                 'Ambiente de trabajo':          [1,2,3,4,5,6,7,8,9,10],
@@ -2541,12 +2592,12 @@
                     </div>
                 </div>
                 <div class="mb-4 bg-slate-50 rounded-lg px-4 py-2 text-xs text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
-                    <span><strong>Escala de puntaje total:</strong> Mayor puntaje = mayor riesgo psicosocial</span>
-                    <span class="text-green-600">0–20 Nulo</span>
-                    <span class="text-blue-600">21–45 Bajo</span>
-                    <span class="text-yellow-600">46–79 Medio</span>
-                    <span class="text-orange-600">80–113 Alto</span>
-                    <span class="text-red-600">≥114 Muy alto</span>
+                    <span><strong>Escala de puntaje total (Guía II NOM-035):</strong> Mayor puntaje = mayor riesgo psicosocial</span>
+                    <span class="text-green-600">&lt;50 Nulo</span>
+                    <span class="text-blue-600">50–74 Bajo</span>
+                    <span class="text-yellow-600">75–98 Medio</span>
+                    <span class="text-orange-600">99–139 Alto</span>
+                    <span class="text-red-600">≥140 Muy alto</span>
                 </div>
                 <h4 class="font-semibold text-slate-700 mb-1 text-sm uppercase tracking-wide">Detalle por dominio NOM-035</h4>
                 <p class="text-xs text-slate-400 mb-3">Promedio por dominio (0–4): mayor valor = mayor exposición al factor de riesgo</p>
