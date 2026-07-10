@@ -1827,6 +1827,13 @@
         async function submitSurvey(event) {
             event.preventDefault();
 
+            // Validar que la sesión siga activa y tenga empId
+            if (!appState.user?.empId) {
+                showToast('Sesión expirada. Por favor vuelve a ingresar tu número de colaborador.', 'error');
+                navigateTo('employee-login');
+                return;
+            }
+
             const puesto = document.getElementById('firma-puesto')?.value.trim();
             if (!puesto) {
                 showToast('Por favor ingresa tu puesto antes de enviar.', 'error');
