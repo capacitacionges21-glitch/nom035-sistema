@@ -290,14 +290,14 @@
                             <div class="relative h-64 w-full"><canvas id="chart-domains"></canvas></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">Distribución por Sucursal</h3>
+                            <h3 id="title-branches" class="text-lg font-bold text-slate-800 mb-4">Distribución por Sucursal</h3>
                             <div class="relative h-64 w-full"><canvas id="chart-branches"></canvas></div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">Encuestas por Cadena</h3>
+                            <h3 id="title-cadenas" class="text-lg font-bold text-slate-800 mb-4">Encuestas por Cadena</h3>
                             <div class="relative h-64 w-full"><canvas id="chart-cadenas"></canvas></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -2360,6 +2360,7 @@
                 renderTable(data.semaforoCategorias);
                 renderSucursalesTab(data);
                 renderDominiosTab(data);
+                renderContextualCharts(selCad, selSuc, totalCad, totalSuc);
                 if (_colabData.length) filterColaboradoresTable();
             } catch { showToast('Error al aplicar filtros.', 'error'); }
         }
@@ -2374,6 +2375,8 @@
             document.getElementById('filter-status').textContent = '';
             document.getElementById('lbl-filter-cadena').textContent  = 'Cadena';
             document.getElementById('lbl-filter-sucursal').textContent = 'Sucursal';
+            const tc = document.getElementById('title-cadenas');   if (tc) tc.textContent = 'Encuestas por Cadena';
+            const tb = document.getElementById('title-branches');  if (tb) tb.textContent = 'Distribución por Sucursal';
             if (_colabData.length) filterColaboradoresTable();
             initDashboard();
         }
@@ -3102,6 +3105,84 @@
                         plugins: { legend: { display: false } },
                         scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
                     }
+                });
+            }
+        }
+
+        // Drill-down contextual: sin filtro=cadena, filtro cadena=sucursal, filtro sucursal=colaborador
+        function renderContextualCharts(selCad, selSuc, totalCad, totalSuc) {
+            if (!_colabData.length) return;
+            const PALETTE = ['#2563eb','#f59e0b','#ef4444','#10b981','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'];
+            const cadFiltered = totalCad > 0 && selCad.length < totalCad;
+            const sucFiltered = totalSuc > 0 && selSuc.length < totalSuc;
+
+            let subset = _colabData;
+            if (cadFiltered) subset = subset.filter(r => selCad.includes(r.cadena));
+            if (sucFiltered) subset = subset.filter(r => selSuc.includes(r.sucursal));
+
+            let barLabels, barData, barTitle, donutLabels, donutData, donutTitle;
+
+            if (sucFiltered) {
+                // Nivel colaborador: encuestas por nombre
+                const byColab = {};
+                subset.forEach(r => {
+                    const key = r.nombre || r.empId || '—';
+                    byColab[key] = (byColab[key] || 0) + 1;
+                });
+                const sorted = Object.entries(byColab).sort((a,b) => b[1]-a[1]).slice(0,15);
+                barLabels = sorted.map(([k]) => k.length > 22 ? k.substring(0,21)+'…' : k);
+                barData   = sorted.map(([,v]) => v);
+                barTitle  = 'Encuestas por Colaborador';
+                // donut: por puesto dentro de esas sucursales
+                const byPuesto = {};
+                subset.forEach(r => { const k = r.puesto||'Sin puesto'; byPuesto[k]=(byPuesto[k]||0)+1; });
+                const sp = Object.entries(byPuesto).sort((a,b)=>b[1]-a[1]).slice(0,10);
+                donutLabels = sp.map(([k])=>k); donutData = sp.map(([,v])=>v);
+                donutTitle  = 'Distribución por Colaborador';
+            } else if (cadFiltered) {
+                // Nivel sucursal: encuestas por sucursal dentro de cadenas seleccionadas
+                const bySuc = {};
+                subset.forEach(r => { const k = r.sucursal||'Sin sucursal'; bySuc[k]=(bySuc[k]||0)+1; });
+                const sorted = Object.entries(bySuc).sort((a,b)=>b[1]-a[1]);
+                barLabels = sorted.map(([k]) => k.length > 20 ? k.substring(0,19)+'…' : k);
+                barData   = sorted.map(([,v]) => v);
+                barTitle  = 'Encuestas por Sucursal';
+                donutLabels = sorted.map(([k])=>k); donutData = sorted.map(([,v])=>v);
+                donutTitle  = 'Distribución por Sucursal';
+            } else {
+                return; // sin filtro activo: renderCharts ya pintó por cadena con datos de GAS
+            }
+
+            // Actualizar título del bar chart
+            const titleCad = document.getElementById('title-cadenas');
+            if (titleCad) titleCad.textContent = barTitle;
+            const titleBranch = document.getElementById('title-branches');
+            if (titleBranch) titleBranch.textContent = donutTitle;
+
+            // Re-pintar bar chart cadenas
+            if (appState.charts.cadenas) appState.charts.cadenas.destroy();
+            const ctxCad = document.getElementById('chart-cadenas');
+            if (ctxCad) {
+                appState.charts.cadenas = new Chart(ctxCad.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels: barLabels, datasets: [{ label: 'Encuestas', data: barData,
+                        backgroundColor: PALETTE, borderRadius: 6 }] },
+                    options: { responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                });
+            }
+
+            // Re-pintar donut
+            if (appState.charts.branches) appState.charts.branches.destroy();
+            const ctxBranch = document.getElementById('chart-branches');
+            if (ctxBranch) {
+                appState.charts.branches = new Chart(ctxBranch.getContext('2d'), {
+                    type: 'doughnut',
+                    data: { labels: donutLabels, datasets: [{ data: donutData,
+                        backgroundColor: PALETTE, borderWidth: 0, hoverOffset: 4 }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%',
+                        plugins: { legend: { position: 'bottom' } } }
                 });
             }
         }
