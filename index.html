@@ -488,8 +488,18 @@
                         </ul>
                         <p class="text-slate-500 italic text-xs">Nota NOM-035: aunque el riesgo global sea Bajo o Nulo, si algún dominio resulta en Alto o Muy alto se debe implementar un plan de acción correctiva para ese dominio específico.</p>
                     </div>
-                    <div class="flex justify-end mb-2">
-                        <div class="flex gap-2">
+                    <div class="flex justify-between items-center mb-2 gap-2 flex-wrap">
+                        <span id="colab-filter-count" class="text-xs text-slate-400"></span>
+                        <div class="flex gap-2 items-center">
+                            <select id="colab-riesgo-filter" onchange="filterColaboradoresTable()"
+                                class="px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="">Todos los riesgos</option>
+                                <option value="Muy alto">Muy alto</option>
+                                <option value="Alto">Alto</option>
+                                <option value="Medio">Medio</option>
+                                <option value="Bajo">Bajo</option>
+                                <option value="Nulo">Nulo</option>
+                            </select>
                             <input id="colab-search" type="text" placeholder="Buscar colaborador..." oninput="filterColaboradoresTable()"
                                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 w-52">
                         </div>
@@ -2350,6 +2360,7 @@
                 renderTable(data.semaforoCategorias);
                 renderSucursalesTab(data);
                 renderDominiosTab(data);
+                if (_colabData.length) filterColaboradoresTable();
             } catch { showToast('Error al aplicar filtros.', 'error'); }
         }
 
@@ -2363,6 +2374,7 @@
             document.getElementById('filter-status').textContent = '';
             document.getElementById('lbl-filter-cadena').textContent  = 'Cadena';
             document.getElementById('lbl-filter-sucursal').textContent = 'Sucursal';
+            if (_colabData.length) filterColaboradoresTable();
             initDashboard();
         }
 
@@ -2559,7 +2571,7 @@
                 const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle');
                 const result = await res.json();
                 _colabData = result.status === 'success' ? result.data : [];
-                renderColaboradoresTab(_colabData, container);
+                filterColaboradoresTable();
                 renderMissingChart(_colabData.map(d => d.empId));
             } catch(e) {
                 container.innerHTML = '<p class="p-8 text-center text-red-500 text-sm">Error al cargar los datos.</p>';
@@ -2580,6 +2592,7 @@
                 container.innerHTML = '<p class="p-8 text-center text-slate-400 italic">No hay encuestas registradas aún.</p>';
                 return;
             }
+            const sorted = [...data].sort((a,b) => (b.puntajeTotal||0) - (a.puntajeTotal||0));
             container.innerHTML = `
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm" id="colab-table">
@@ -2596,7 +2609,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            ${data.map(r => {
+                            ${sorted.map(r => {
                                 const c = getRiskStyle(r.riesgoGlobal);
                                 return `<tr class="hover:bg-blue-50 cursor-pointer transition-colors" onclick="openColabDetail('${(r.empId||'').replace(/'/g,"\\'")}')">
                                     <td class="px-4 py-3 font-mono text-slate-500 text-xs">${r.empId||'—'}</td>
@@ -2615,13 +2628,37 @@
         }
 
         function filterColaboradoresTable() {
-            const query = (document.getElementById('colab-search')?.value || '').toLowerCase();
-            const filtered = _colabData.filter(r =>
-                (r.nombre||'').toLowerCase().includes(query) ||
-                (r.empId||'').toLowerCase().includes(query) ||
-                (r.sucursal||'').toLowerCase().includes(query) ||
-                (r.cadena||'').toLowerCase().includes(query)
-            );
+            const query  = (document.getElementById('colab-search')?.value || '').toLowerCase();
+            const riesgo = document.getElementById('colab-riesgo-filter')?.value || '';
+
+            // Filtros globales activos (cadena/sucursal)
+            const selCad = [...document.querySelectorAll('.filter-cadena-cb:checked')].map(cb => cb.value);
+            const selSuc = [...document.querySelectorAll('.filter-sucursal-cb:checked')].map(cb => cb.value);
+            const totalCad = document.querySelectorAll('.filter-cadena-cb').length;
+            const totalSuc = document.querySelectorAll('.filter-sucursal-cb').length;
+            const cadFiltered = totalCad > 0 && selCad.length < totalCad;
+            const sucFiltered = totalSuc > 0 && selSuc.length < totalSuc;
+
+            const filtered = _colabData.filter(r => {
+                if (cadFiltered && !selCad.includes(r.cadena)) return false;
+                if (sucFiltered && !selSuc.includes(r.sucursal)) return false;
+                if (riesgo) {
+                    const rg = r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : (r.riesgoGlobal || '');
+                    if (rg !== riesgo) return false;
+                }
+                if (query) {
+                    return (r.nombre||'').toLowerCase().includes(query) ||
+                           (r.empId||'').toLowerCase().includes(query) ||
+                           (r.sucursal||'').toLowerCase().includes(query) ||
+                           (r.cadena||'').toLowerCase().includes(query);
+                }
+                return true;
+            });
+
+            const countEl = document.getElementById('colab-filter-count');
+            if (countEl) countEl.textContent = filtered.length < _colabData.length
+                ? `${filtered.length} de ${_colabData.length} colaboradores` : '';
+
             const container = document.getElementById('colaboradores-container');
             if (container) renderColaboradoresTab(filtered, container);
         }
@@ -2719,7 +2756,8 @@
                 const c = (e.cadena || 'Sin cadena').trim();
                 if (!cadenaCounts[c]) cadenaCounts[c] = { total: 0, submitted: 0 };
                 cadenaCounts[c].total++;
-                if (submittedIds.map(String).includes(String(e.id))) cadenaCounts[c].submitted++;
+                const _norm = s => String(s||'').replace(/^0+/,'') || '0';
+                if (submittedIds.some(sid => _norm(sid) === _norm(e.id))) cadenaCounts[c].submitted++;
             });
             const labels = Object.keys(cadenaCounts).sort((a,b) => cadenaCounts[b].total - cadenaCounts[a].total);
             const completados = labels.map(k => cadenaCounts[k].submitted);
