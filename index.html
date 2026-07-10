@@ -1295,7 +1295,15 @@
             closePdfModal();
         }
 
-        function generateAndDownloadPDF(emp) {
+        async function generateAndDownloadPDF(emp) {
+            if (!_colabData || !_colabData.length) {
+                showToast('Cargando datos del colaborador...', 'info');
+                try {
+                    const res    = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle');
+                    const result = await res.json();
+                    if (result.status === 'success') _colabData = result.data;
+                } catch(e) { showToast('Error al cargar datos. Intenta de nuevo.', 'error'); return; }
+            }
             const rec = (_colabData || []).find(r => String(r.empId) === String(emp.id));
 
             let resp = {};
