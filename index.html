@@ -308,15 +308,15 @@
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-1">Pendientes por responder</h3>
-                            <p class="text-xs text-slate-400 mb-4">Colaboradores que aún no han completado la encuesta</p>
+                            <h3 id="title-faltantes" class="text-lg font-bold text-slate-800 mb-1">Pendientes por responder</h3>
+                            <p id="subtitle-faltantes" class="text-xs text-slate-400 mb-4">Colaboradores que aún no han completado la encuesta</p>
                             <div class="relative h-56 w-full"><canvas id="chart-faltantes"></canvas></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                             <div class="flex items-center justify-between mb-1">
-                                <h3 class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
+                                <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
                             </div>
-                            <p class="text-xs text-slate-400 mb-4">% de participación en cada cadena</p>
+                            <p id="subtitle-avance" class="text-xs text-slate-400 mb-4">% de participación en cada cadena</p>
                             <div id="avance-cadenas-list" class="space-y-3 overflow-y-auto max-h-52"></div>
                         </div>
                     </div>
@@ -2422,6 +2422,14 @@
                 renderSucursalesTab(data);
                 renderDominiosTab(data);
                 renderContextualCharts(selCad, selSuc, totalCad, totalSuc);
+                // Pendientes/Avance: agrupar por sucursal si hay filtro de cadena activo
+                if (_colabData.length) {
+                    const cadFiltered = selCad.length < totalCad;
+                    const missingOpts = cadFiltered
+                        ? { groupBy: 'sucursal', filterCadenas: selCad }
+                        : { groupBy: 'cadena' };
+                    renderMissingChart(_colabData.map(d => d.empId), missingOpts);
+                }
                 if (_colabData.length) filterColaboradoresTable();
             } catch { showToast('Error al aplicar filtros.', 'error'); }
         }
@@ -2436,8 +2444,12 @@
             document.getElementById('filter-status').textContent = '';
             document.getElementById('lbl-filter-cadena').textContent  = 'Cadena';
             document.getElementById('lbl-filter-sucursal').textContent = 'Sucursal';
-            const tc = document.getElementById('title-cadenas');   if (tc) tc.textContent = 'Encuestas por Cadena';
-            const tb = document.getElementById('title-branches');  if (tb) tb.textContent = 'Distribución por Sucursal';
+            const tc = document.getElementById('title-cadenas');    if (tc) tc.textContent = 'Encuestas por Cadena';
+            const tb = document.getElementById('title-branches');   if (tb) tb.textContent = 'Distribución por Sucursal';
+            const tf = document.getElementById('title-faltantes');  if (tf) tf.textContent = 'Pendientes por responder';
+            const sf = document.getElementById('subtitle-faltantes'); if (sf) sf.textContent = 'Colaboradores que aún no han completado la encuesta';
+            const ta = document.getElementById('title-avance');     if (ta) ta.textContent = 'Avance por Cadena';
+            const sa = document.getElementById('subtitle-avance');  if (sa) sa.textContent = '% de participación en cada cadena';
             if (_colabData.length) filterColaboradoresTable();
             initDashboard();
         }
@@ -2813,24 +2825,47 @@
             document.getElementById('colab-detail-modal')?.classList.add('hidden');
         }
 
-        function renderMissingChart(submittedIds) {
+        function renderMissingChart(submittedIds, opts) {
+            // opts: { groupBy: 'cadena'|'sucursal', filterCadenas: [...], filterSucursales: [...] }
             if (!loadedEmployees?.length) return;
-            const cadenaCounts = {};
-            loadedEmployees.forEach(e => {
-                const c = (e.cadena || 'Sin cadena').trim();
-                if (!cadenaCounts[c]) cadenaCounts[c] = { total: 0, submitted: 0 };
-                cadenaCounts[c].total++;
-                const _norm = s => String(s||'').replace(/^0+/,'') || '0';
-                if (submittedIds.some(sid => _norm(sid) === _norm(e.id))) cadenaCounts[c].submitted++;
+            const groupBy        = opts?.groupBy || 'cadena';
+            const filterCadenas  = opts?.filterCadenas  || null;
+            const filterSucursales = opts?.filterSucursales || null;
+
+            const counts = {};
+            const _norm = s => String(s||'').replace(/^0+/,'') || '0';
+            let employees = loadedEmployees;
+            if (filterCadenas)   employees = employees.filter(e => filterCadenas.includes(e.cadena));
+            if (filterSucursales) employees = employees.filter(e => filterSucursales.includes(e.sucursal));
+
+            employees.forEach(e => {
+                const key = groupBy === 'sucursal'
+                    ? (e.sucursal || 'Sin sucursal').trim()
+                    : (e.cadena   || 'Sin cadena').trim();
+                if (!counts[key]) counts[key] = { total: 0, submitted: 0 };
+                counts[key].total++;
+                if (submittedIds.some(sid => _norm(sid) === _norm(e.id))) counts[key].submitted++;
             });
-            const labels = Object.keys(cadenaCounts).sort((a,b) => cadenaCounts[b].total - cadenaCounts[a].total);
-            const completados = labels.map(k => cadenaCounts[k].submitted);
-            const pendientes  = labels.map(k => cadenaCounts[k].total - cadenaCounts[k].submitted);
+
+            const isSucursal = groupBy === 'sucursal';
+            const titleLabel    = isSucursal ? 'Pendientes por sucursal' : 'Pendientes por responder';
+            const subtitleLabel = isSucursal ? 'Colaboradores por sucursal que aún no han completado' : 'Colaboradores que aún no han completado la encuesta';
+            const avanceTitulo  = isSucursal ? 'Avance por Sucursal'     : 'Avance por Cadena';
+            const avanceSubtitle= isSucursal ? '% de participación en cada sucursal' : '% de participación en cada cadena';
+
+            const tf = document.getElementById('title-faltantes');   if (tf) tf.textContent = titleLabel;
+            const sf = document.getElementById('subtitle-faltantes'); if (sf) sf.textContent = subtitleLabel;
+            const ta = document.getElementById('title-avance');       if (ta) ta.textContent = avanceTitulo;
+            const sa = document.getElementById('subtitle-avance');    if (sa) sa.textContent = avanceSubtitle;
+
+            const labels = Object.keys(counts).sort((a,b) => counts[b].total - counts[a].total);
+            const completados = labels.map(k => counts[k].submitted);
+            const pendientes  = labels.map(k => counts[k].total - counts[k].submitted);
 
             const avanceEl = document.getElementById('avance-cadenas-list');
             if (avanceEl) {
                 avanceEl.innerHTML = labels.map(k => {
-                    const d = cadenaCounts[k];
+                    const d = counts[k];
                     const pct = d.total > 0 ? Math.round(d.submitted / d.total * 100) : 0;
                     const barC = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-400' : 'bg-red-400';
                     return `<div>
