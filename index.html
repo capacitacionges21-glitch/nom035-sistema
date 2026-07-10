@@ -493,7 +493,7 @@
             </header>
 
             <main class="max-w-4xl mx-auto px-4 mt-8">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-6">
+                <div id="survey-main-intro" class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 mb-6">
                     <h2 class="text-3xl font-bold text-slate-800 mb-4 pb-4 border-b border-slate-200 text-center">Bienvenidos a Encuesta NOM-035<br><span class="text-2xl text-blue-700">Factores de Riesgo Psicosocial</span></h2>
                     <p class="text-slate-600 leading-relaxed mb-3">Con el objetivo de cumplir con lo establecido en la <span class="font-bold text-slate-800">NOM-035-STPS-2018</span>, te invitamos a responder el siguiente cuestionario para la identificación de <strong>factores de riesgo psicosocial</strong> en tu centro de trabajo.</p>
                     <p class="text-slate-600 leading-relaxed mb-3">Este instrumento es <strong>confidencial</strong> y tiene como propósito <strong>mejorar las condiciones laborales</strong> y promover un ambiente de trabajo saludable.</p>
@@ -1631,6 +1631,13 @@
                 navContainer.innerHTML += `<button type="button" onclick="openConfirmSubmitModal()" id="btn-submit-survey" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg shadow-sm hover:bg-emerald-700 transition-colors"><i class="ph ph-paper-plane-right mr-2"></i> Finalizar y Enviar</button>`;
             } else {
                 navContainer.innerHTML += `<button type="button" onclick="changeSurveyPage(1)" class="w-full sm:w-auto flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg shadow-sm hover:bg-blue-700 transition-colors">Siguiente <i class="ph ph-arrow-right ml-2"></i></button>`;
+            }
+
+            // Mostrar intro solo en la primera sección
+            const mainIntro = document.getElementById('survey-main-intro');
+            if (mainIntro) {
+                if (currentSurveyPage === 1 && !isFirmaPage) mainIntro.classList.remove('hidden');
+                else mainIntro.classList.add('hidden');
             }
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
