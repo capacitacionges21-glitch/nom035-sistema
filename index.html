@@ -416,10 +416,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
-                            <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-file-xls text-3xl"></i></div>
-                            <h3 class="text-xl font-bold mb-2">Base de Datos Maestra</h3>
-                            <p class="text-sm text-slate-500 mb-6">Accede a la sábana completa de respuestas en Google Sheets para análisis global.</p>
-                            <a href="https://docs.google.com/spreadsheets/d/1O0EIf0QoT8xYQhA-Wp2j154i1n9XvHn9z5P9a_yK_bE/" target="_blank" class="inline-flex px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"><i class="ph ph-download-simple mr-2"></i> Abrir Sheets</a>
+                            <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-microsoft-excel-logo text-3xl"></i></div>
+                            <h3 class="text-xl font-bold mb-2">Reporte Excel</h3>
+                            <p class="text-sm text-slate-500 mb-6">Descarga la base de datos completa de respuestas en formato Excel (.xlsx).</p>
+                            <a href="https://docs.google.com/spreadsheets/d/1O0EIf0QoT8xYQhA-Wp2j154i1n9XvHn9z5P9a_yK_bE/export?format=xlsx" target="_blank" class="inline-flex px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium items-center"><i class="ph ph-download-simple mr-2"></i> Descargar Excel</a>
                         </div>
 
                         <!-- Botón para PDF -->
@@ -1296,7 +1296,18 @@
         }
 
         function generateAndDownloadPDF(emp) {
-            // Agrupa preguntas por dominio oficial usando surveyQuestions
+            const rec = (_colabData || []).find(r => String(r.empId) === String(emp.id));
+
+            let resp = {};
+            if (rec?.respuestas) {
+                try {
+                    let p = typeof rec.respuestas === 'string' ? JSON.parse(rec.respuestas) : rec.respuestas;
+                    if (typeof p === 'string') p = JSON.parse(p);
+                    resp = p || {};
+                } catch(e) {}
+            }
+
+            // Agrupa preguntas por dominio
             const domainQMap = {};
             surveyQuestions
                 .filter(q => q.dominio && !q.dominio.includes('(no puntúa)') && !q.dominio.includes('traumático') && !q.dominio.includes('Acontecimiento'))
@@ -1305,68 +1316,131 @@
                     if (!domainQMap[q.dominio].includes(q.id)) domainQMap[q.dominio].push(q.id);
                 });
 
-            // Buscar datos reales del colaborador en _colabData
-            const rec = (_colabData || []).find(r => String(r.empId) === String(emp.id));
-            let highRiskDomains = [];
-            if (rec) {
-                try {
-                    let parsed = typeof rec.respuestas === 'string' ? JSON.parse(rec.respuestas) : (rec.respuestas || {});
-                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
-                    const resp = parsed || {};
-                    Object.entries(domainQMap).forEach(([domain, ids]) => {
-                        const scores = ids.map(id => parseFloat(resp[id] !== undefined ? resp[id] : resp[String(id)])).filter(v => !isNaN(v));
-                        if (!scores.length) return;
-                        const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
-                        const riesgo = getDomainNivel(domain, avg);
-                        if (riesgo === 'Alto' || riesgo === 'Muy alto') highRiskDomains.push({ domain, avg: avg.toFixed(2), riesgo });
-                    });
-                } catch(e) {}
-            }
+            const ESCALA_PDF = {0:'Nunca',1:'Rara vez',2:'A veces',3:'Frecuentemente',4:'Siempre'};
+            const riesgoColor = (r) => {
+                if (r==='Muy alto') return [220,38,38];
+                if (r==='Alto')     return [234,88,12];
+                if (r==='Medio')    return [161,98,7];
+                if (r==='Bajo')     return [37,99,235];
+                return [22,163,74];
+            };
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+            const W = doc.internal.pageSize.getWidth();
             const fechaActual = new Date().toLocaleDateString('es-MX');
-            const puntaje = rec?.puntajeTotal || '—';
-            const riesgoGlob = rec?.puntajeTotal ? calcRiesgoGlobal(rec.puntajeTotal) : (rec?.riesgoGlobal || '—');
+            const puntaje   = rec?.puntajeTotal || 0;
+            const riesgoGlob = puntaje ? calcRiesgoGlobal(puntaje) : (rec?.riesgoGlobal || '—');
+            const nombre    = rec?.nombre || emp.name || emp.nombre || '—';
 
-            doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
-            doc.text('PLAN DE ACCIÓN CORRECTIVA — NOM-035-STPS-2018', 40, 40);
-            doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-            doc.text(`Fecha de emisión: ${fechaActual}`, 40, 58);
-            doc.text(`Colaborador: ${emp.name || emp.nombre || ''} (${emp.id})`, 40, 70);
-            doc.text(`Puesto: ${emp.puesto || rec?.puesto || '—'}`, 40, 82);
-            doc.text(`Sucursal: ${emp.sucursal || '—'}   Cadena: ${emp.cadena || '—'}`, 40, 94);
-            doc.text(`Puntaje total: ${puntaje}   Riesgo global: ${riesgoGlob}`, 40, 106);
+            // ── Encabezado ──
+            doc.setFillColor(30,58,138); doc.rect(0,0,W,20,'F');
+            doc.setTextColor(255,255,255);
+            doc.setFont('helvetica','bold'); doc.setFontSize(11);
+            doc.text('RESULTADOS DE ENCUESTA NOM-035-STPS-2018', W/2, 9, {align:'center'});
+            doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+            doc.text('Cuestionario para identificar factores de riesgo psicosocial', W/2, 16, {align:'center'});
+            doc.setTextColor(0,0,0);
 
-            const tableColumn = ['N.', 'DOMINIO', 'PROM.', 'RIESGO', 'ACCIÓN SUGERIDA', 'FECHA TÉRMINO', 'RESPONSABLE', 'ESTATUS'];
-            const tableRows = highRiskDomains.length
-                ? highRiskDomains.map((d, i) => [
-                    i + 1, d.domain, d.avg, d.riesgo,
-                    getPlanSuggestion(d.domain, d.riesgo),
-                    '', '', 'Pendiente'
-                  ])
-                : [['—', 'Sin dominios en riesgo Alto/Muy alto', '', '', '', '', '', '']];
+            // ── Datos del colaborador ──
+            let y = 26;
+            doc.setFillColor(241,245,249); doc.rect(10, y, W-20, 24, 'F');
+            doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+            doc.text('DATOS DEL COLABORADOR', 13, y+6);
+            doc.setFont('helvetica','normal'); doc.setFontSize(8);
+            doc.text(`Nombre: ${nombre}   No. Colaborador: ${emp.id || rec?.empId || '—'}`, 13, y+12);
+            doc.text(`Puesto: ${rec?.puesto || emp.puesto || '—'}`, 13, y+18);
+            doc.text(`Sucursal: ${rec?.sucursal || emp.sucursal || '—'}   Cadena: ${rec?.cadena || emp.cadena || '—'}   Fecha: ${rec?.fecha || '—'}`, 13, y+23.5);
 
-            doc.autoTable({
-                head: [tableColumn], body: tableRows, startY: 118,
-                theme: 'grid',
-                headStyles: { fillColor: [30, 58, 138], textColor: [255,255,255], fontStyle: 'bold', fontSize: 8 },
-                columnStyles: {
-                    0: { cellWidth: 22, halign: 'center' },
-                    1: { cellWidth: 110 },
-                    2: { cellWidth: 35, halign: 'center' },
-                    3: { cellWidth: 55, halign: 'center' },
-                    4: { cellWidth: 200 },
-                    5: { cellWidth: 75 },
-                    6: { cellWidth: 90 },
-                    7: { cellWidth: 65, halign: 'center' }
-                },
-                styles: { fontSize: 8, minCellHeight: 30, valign: 'middle', overflow: 'linebreak' },
-                margin: { left: 30, right: 30 }
+            // ── Resultado global ──
+            y += 30;
+            const rc = riesgoColor(riesgoGlob);
+            doc.setFillColor(...rc); doc.rect(10, y, 45, 18, 'F');
+            doc.setTextColor(255,255,255);
+            doc.setFont('helvetica','bold'); doc.setFontSize(20);
+            doc.text(String(puntaje), 32.5, y+11, {align:'center'});
+            doc.setFontSize(6.5);
+            doc.text('PUNTAJE TOTAL', 32.5, y+16.5, {align:'center'});
+
+            doc.setFillColor(248,250,252); doc.rect(57, y, 80, 18, 'F');
+            doc.setDrawColor(...rc); doc.setLineWidth(0.5); doc.rect(57, y, 80, 18, 'S');
+            doc.setTextColor(...rc);
+            doc.setFontSize(13); doc.setFont('helvetica','bold');
+            doc.text(riesgoGlob.toUpperCase(), 97, y+9, {align:'center'});
+            doc.setFontSize(6.5); doc.setTextColor(100,116,139);
+            doc.text('RIESGO GLOBAL', 97, y+15.5, {align:'center'});
+            doc.setTextColor(0,0,0); doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+
+            doc.setFontSize(6.5); doc.setTextColor(120,120,120);
+            doc.text('Escala (Guía II NOM-035): <50 Nulo  50–74 Bajo  75–98 Medio  99–139 Alto  ≥140 Muy alto', 10, y+24);
+            doc.setTextColor(0,0,0);
+
+            // ── Tabla resumen por dominio ──
+            y += 30;
+            const domSummary = Object.entries(domainQMap).map(([domain, ids]) => {
+                const scores = ids.map(id => {
+                    const v = resp[id] !== undefined ? resp[id] : resp[String(id)];
+                    return parseFloat(v);
+                }).filter(v => !isNaN(v));
+                if (!scores.length) return [domain, '—', '—'];
+                const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+                return [domain, avg.toFixed(2), getDomainNivel(domain, avg)];
             });
 
-            doc.save(`Plan_NOM035_${emp.id}_${emp.name || ''}.pdf`);
-            showToast(`PDF de ${emp.name || emp.id} generado.`, 'success');
+            doc.autoTable({
+                startY: y,
+                head: [['DOMINIO', 'PROMEDIO (0–4)', 'NIVEL DE RIESGO']],
+                body: domSummary,
+                headStyles: { fillColor:[30,58,138], textColor:[255,255,255], fontStyle:'bold', fontSize:7.5, cellPadding:2.5 },
+                bodyStyles: { fontSize:7.5, cellPadding:2.5 },
+                columnStyles: { 0:{cellWidth:115}, 1:{cellWidth:30,halign:'center'}, 2:{cellWidth:35,halign:'center'} },
+                didParseCell(data) {
+                    if (data.section === 'body' && data.column.index === 2) {
+                        const r = data.cell.raw;
+                        const c = riesgoColor(r);
+                        data.cell.styles.textColor = c;
+                        data.cell.styles.fontStyle  = 'bold';
+                    }
+                },
+                margin:{left:10, right:10}
+            });
+
+            // ── Respuestas por dominio ──
+            doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+            doc.text('DETALLE DE RESPUESTAS POR DOMINIO', 10, doc.lastAutoTable.finalY + 8);
+
+            Object.entries(domainQMap).forEach(([domain, ids]) => {
+                const qs = surveyQuestions.filter(q => ids.includes(q.id) && q.pregunta);
+                if (!qs.length) return;
+
+                const rows = qs.map(q => {
+                    const v   = resp[q.id] !== undefined ? resp[q.id] : resp[String(q.id)];
+                    const n   = parseInt(v);
+                    const txt = !isNaN(n) ? `${ESCALA_PDF[n] || '—'} (${n})` : 'Sin respuesta';
+                    return [`P${q.id}`, q.pregunta, txt];
+                });
+
+                doc.autoTable({
+                    startY: doc.lastAutoTable.finalY + 4,
+                    head: [[{content: domain, colSpan:3, styles:{fillColor:[51,65,85],textColor:[255,255,255],fontStyle:'bold',fontSize:7.5,cellPadding:2}}]],
+                    body: rows,
+                    headStyles: {cellPadding:2},
+                    bodyStyles: {fontSize:7, cellPadding:1.8, overflow:'linebreak'},
+                    columnStyles: {0:{cellWidth:12,halign:'center'}, 1:{cellWidth:130}, 2:{cellWidth:38,halign:'center'}},
+                    margin:{left:10,right:10}
+                });
+            });
+
+            // ── Pie de página ──
+            const total = doc.internal.getNumberOfPages();
+            for (let i=1; i<=total; i++) {
+                doc.setPage(i);
+                doc.setFontSize(6.5); doc.setTextColor(160,160,160);
+                doc.text(`NOM-035-STPS-2018 — ${nombre} — Pág. ${i} de ${total} — Emitido: ${fechaActual}`, W/2, 292, {align:'center'});
+            }
+
+            doc.save(`Encuesta_NOM035_${emp.id}_${nombre.replace(/\s+/g,'_')}.pdf`);
+            showToast(`PDF de ${nombre} generado.`, 'success');
         }
 
         // ==========================================
