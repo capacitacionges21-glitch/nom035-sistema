@@ -97,13 +97,13 @@
                             <option value="cadena">Por Cadena</option>
                             <option value="sucursal">Por Sucursal</option>
                         </select>
-                        <select id="pdf-mass-valor" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                        <select id="pdf-mass-valor" onchange="updatePdfMassInfo()" class="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                             <option value="">Seleccionar...</option>
                         </select>
                     </div>
-                    <p class="text-xs text-blue-700 mb-3">Genera un PDF por colaborador para todos los que pertenezcan al grupo seleccionado.</p>
+                    <p id="pdf-mass-info" class="text-xs text-blue-700 mb-3">Solo se descargan los colaboradores que ya completaron la encuesta.</p>
                     <button onclick="downloadMassPDF()" class="w-full flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                        <i class="ph ph-download mr-2"></i> Descargar todos (ZIP simulado)
+                        <i class="ph ph-download mr-2"></i> Descargar PDFs completados
                     </button>
                 </div>
             </div>
@@ -1345,6 +1345,24 @@
                 : [...new Set(_pdfAllEmployees.map(e => e.sucursal).filter(Boolean))].sort();
             sel.innerHTML = '<option value="">Seleccionar...</option>' +
                 items.map(v => `<option value="${v}">${v}</option>`).join('');
+            updatePdfMassInfo();
+        }
+
+        function updatePdfMassInfo() {
+            const tipo  = document.getElementById('pdf-mass-tipo').value;
+            const valor = document.getElementById('pdf-mass-valor').value;
+            const infoEl = document.getElementById('pdf-mass-info');
+            if (!infoEl) return;
+            if (!valor) { infoEl.textContent = 'Solo se descargan los colaboradores que ya completaron la encuesta.'; return; }
+            const _norm = s => String(s||'').replace(/^0+/,'') || '0';
+            const completadosIds = new Set((_colabData||[]).map(d => _norm(d.empId)));
+            const total     = _pdfAllEmployees.filter(e => tipo === 'cadena' ? e.cadena === valor : e.sucursal === valor).length;
+            const completados = _pdfAllEmployees.filter(e =>
+                (tipo === 'cadena' ? e.cadena === valor : e.sucursal === valor) && completadosIds.has(_norm(e.id))).length;
+            infoEl.textContent = `${completados} de ${total} colaboradores han completado la encuesta — se descargarán ${completados} PDF(s).`;
+            infoEl.className   = completados > 0
+                ? 'text-xs text-emerald-700 mb-3 font-medium'
+                : 'text-xs text-red-600 mb-3 font-medium';
         }
 
         function closePdfModal() {
@@ -1355,16 +1373,27 @@
             const tipo  = document.getElementById('pdf-mass-tipo').value;
             const valor = document.getElementById('pdf-mass-valor').value;
             if (!valor) { showToast('Selecciona una ' + (tipo === 'cadena' ? 'cadena' : 'sucursal'), 'error'); return; }
-            const grupo = _pdfAllEmployees.filter(e =>
+
+            const _norm = s => String(s||'').replace(/^0+/,'') || '0';
+            const completadosIds = new Set((_colabData||[]).map(d => _norm(d.empId)));
+
+            const grupoTotal = _pdfAllEmployees.filter(e =>
                 tipo === 'cadena' ? e.cadena === valor : e.sucursal === valor);
-            if (!grupo.length) { showToast('No hay colaboradores en ese grupo', 'error'); return; }
-            showToast(`Generando ${grupo.length} PDF(s) para ${valor}...`, 'info');
+            // Solo los que tienen encuesta respondida
+            const grupo = grupoTotal.filter(e => completadosIds.has(_norm(e.id)));
+
+            if (!grupoTotal.length) { showToast('No hay colaboradores en ese grupo', 'error'); return; }
+            if (!grupo.length) {
+                showToast(`Ningún colaborador de "${valor}" ha completado la encuesta aún.`, 'error');
+                return;
+            }
+            showToast(`Descargando ${grupo.length} PDF(s) de ${grupoTotal.length} colaboradores en ${valor}...`, 'info');
             let idx = 0;
             function next() {
                 if (idx >= grupo.length) { showToast(`✓ ${grupo.length} PDF(s) descargados`, 'success'); return; }
                 const emp = grupo[idx++];
                 generateAndDownloadPDF(emp);
-                setTimeout(next, 800);
+                setTimeout(next, 900);
             }
             next();
         }
