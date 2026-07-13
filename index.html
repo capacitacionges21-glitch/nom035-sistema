@@ -434,6 +434,16 @@
                             </button>
                         </div>
 
+                        <!-- Reporte Pendientes -->
+                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
+                            <div class="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-clock-countdown text-3xl"></i></div>
+                            <h3 class="text-xl font-bold mb-2">Colaboradores Pendientes</h3>
+                            <p class="text-sm text-slate-500 mb-6">Lista de colaboradores que aún no han completado la encuesta NOM-035.</p>
+                            <button onclick="downloadPendientesExcel()" id="btn-pendientes" class="inline-flex px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium items-center">
+                                <i class="ph ph-download-simple mr-2"></i> Descargar Excel
+                            </button>
+                        </div>
+
                         <!-- Acuse por Sucursal -->
                         <div class="bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-shadow md:col-span-2">
                             <div class="flex items-center gap-4 mb-5">
@@ -884,6 +894,13 @@
             document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
             const menuEl = document.getElementById(`menu-${tabId}`);
             if (menuEl) { menuEl.classList.remove('text-slate-600'); menuEl.classList.add('bg-blue-50', 'text-blue-700'); }
+
+            // Ocultar filtros en pestañas donde no aplican
+            const filterBar = document.getElementById('filter-bar');
+            if (filterBar) {
+                const sinFiltros = ['reportes','eventos'];
+                filterBar.style.display = sinFiltros.includes(tabId) ? 'none' : '';
+            }
 
             if (tabId === 'planes') renderActionPlans();
             if (tabId === 'sucursales') renderSucursalesTab(appState.dashData);
@@ -2453,12 +2470,18 @@
                 renderSucursalesTab(data);
                 renderDominiosTab(data);
                 renderContextualCharts(selCad, selSuc, totalCad, totalSuc);
-                // Pendientes/Avance: agrupar por sucursal si hay filtro de cadena activo
+                // Pendientes/Avance: drill-down según nivel de filtro activo
                 if (_colabData.length) {
                     const cadFiltered = selCad.length < totalCad;
-                    const missingOpts = cadFiltered
-                        ? { groupBy: 'sucursal', filterCadenas: selCad }
-                        : { groupBy: 'cadena' };
+                    const sucFiltered = selSuc.length < totalSuc;
+                    let missingOpts;
+                    if (sucFiltered) {
+                        missingOpts = { groupBy: 'colaborador', filterCadenas: cadFiltered ? selCad : null, filterSucursales: selSuc };
+                    } else if (cadFiltered) {
+                        missingOpts = { groupBy: 'sucursal', filterCadenas: selCad };
+                    } else {
+                        missingOpts = { groupBy: 'cadena' };
+                    }
                     renderMissingChart(_colabData.map(d => d.empId), missingOpts);
                 }
                 if (_colabData.length) filterColaboradoresTable();
@@ -2516,6 +2539,41 @@
                 }
             } catch (err) {
                 showToast('Error al obtener datos.', 'error');
+            }
+        }
+
+        async function downloadPendientesExcel() {
+            const btn = document.getElementById('btn-pendientes');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-2"></i> Generando...';
+            btn.disabled = true;
+            try {
+                if (!loadedEmployees?.length) { showToast('Cargando lista de colaboradores...', 'info'); return; }
+                // Asegurar _colabData cargado
+                if (!_colabData.length) {
+                    const r = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle');
+                    const cr = await r.json();
+                    if (cr.status === 'success') _colabData = cr.data;
+                }
+                const _norm = s => String(s||'').replace(/^0+/,'') || '0';
+                const completados = new Set(_colabData.map(d => _norm(d.empId)));
+                const pendientes = loadedEmployees.filter(e => !completados.has(_norm(e.id)));
+                if (!pendientes.length) { showToast('¡Todos los colaboradores han completado la encuesta!', 'success'); return; }
+
+                const rows = [['No. Colaborador','Nombre','Puesto','Sucursal','Cadena']];
+                pendientes.forEach(e => rows.push([e.id, e.name, e.puesto||'', e.sucursal||'', e.cadena||'']));
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{wch:16},{wch:40},{wch:30},{wch:35},{wch:25}];
+                XLSX.utils.book_append_sheet(wb, ws, 'Pendientes');
+                const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
+                XLSX.writeFile(wb, `Pendientes_NOM035_${fecha}.xlsx`);
+                showToast(`Excel generado: ${pendientes.length} colaboradores pendientes.`, 'success');
+            } catch(e) {
+                showToast('Error al generar el reporte.', 'error');
+            } finally {
+                btn.innerHTML = orig;
+                btn.disabled = false;
             }
         }
 
@@ -2882,18 +2940,62 @@
         }
 
         function renderMissingChart(submittedIds, opts) {
-            // opts: { groupBy: 'cadena'|'sucursal', filterCadenas: [...], filterSucursales: [...] }
             if (!loadedEmployees?.length) return;
-            const groupBy        = opts?.groupBy || 'cadena';
-            const filterCadenas  = opts?.filterCadenas  || null;
+            const groupBy          = opts?.groupBy || 'cadena';
+            const filterCadenas    = opts?.filterCadenas    || null;
             const filterSucursales = opts?.filterSucursales || null;
-
-            const counts = {};
             const _norm = s => String(s||'').replace(/^0+/,'') || '0';
+
             let employees = loadedEmployees;
-            if (filterCadenas)   employees = employees.filter(e => filterCadenas.includes(e.cadena));
+            if (filterCadenas)    employees = employees.filter(e => filterCadenas.includes(e.cadena));
             if (filterSucursales) employees = employees.filter(e => filterSucursales.includes(e.sucursal));
 
+            // Nivel colaborador: tabla de estado individual
+            if (groupBy === 'colaborador') {
+                const tf = document.getElementById('title-faltantes');   if (tf) tf.textContent = 'Estado por colaborador';
+                const sf = document.getElementById('subtitle-faltantes'); if (sf) sf.textContent = 'Quién completó y quién está pendiente';
+                const ta = document.getElementById('title-avance');       if (ta) ta.textContent = 'Colaboradores pendientes';
+                const sa = document.getElementById('subtitle-avance');    if (sa) sa.textContent = 'Lista individual de pendientes';
+
+                const submittedSet = new Set(submittedIds.map(_norm));
+                const avanceEl = document.getElementById('avance-cadenas-list');
+                if (avanceEl) {
+                    const pendList = employees.filter(e => !submittedSet.has(_norm(e.id)));
+                    avanceEl.innerHTML = pendList.length === 0
+                        ? '<p class="text-xs text-emerald-600 font-medium">✓ Todos completaron la encuesta</p>'
+                        : pendList.map(e => `<div class="flex items-center gap-2 text-xs py-1 border-b border-slate-100">
+                            <i class="ph ph-x-circle text-red-400 shrink-0"></i>
+                            <span class="font-medium text-slate-700 truncate" title="${e.name}">${e.name}</span>
+                            <span class="text-slate-400 shrink-0 ml-auto">${e.puesto||''}</span>
+                          </div>`).join('');
+                }
+
+                // Gráfica: completados vs pendientes como dona resumen
+                const total = employees.length;
+                const comp  = employees.filter(e => submittedSet.has(_norm(e.id))).length;
+                const pend  = total - comp;
+                if (appState.charts?.faltantes) appState.charts.faltantes.destroy();
+                const ctx = document.getElementById('chart-faltantes');
+                if (!ctx) return;
+                appState.charts.faltantes = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Completaron','Pendientes'],
+                        datasets: [{ data:[comp, pend], backgroundColor:['#10b981','#f59e0b'], borderWidth:0, hoverOffset:4 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout:'65%',
+                        plugins: {
+                            legend: { position:'bottom', labels:{ font:{ size:11 }, padding:12 } },
+                            tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} de ${total}` } }
+                        }
+                    }
+                });
+                return;
+            }
+
+            // Nivel cadena o sucursal: agrupación
+            const counts = {};
             employees.forEach(e => {
                 const key = groupBy === 'sucursal'
                     ? (e.sucursal || 'Sin sucursal').trim()
@@ -2904,35 +3006,24 @@
             });
 
             const isSucursal = groupBy === 'sucursal';
-            const titleLabel    = isSucursal ? 'Pendientes por sucursal' : 'Pendientes por responder';
-            const subtitleLabel = isSucursal ? 'Colaboradores por sucursal que aún no han completado' : 'Colaboradores que aún no han completado la encuesta';
-            const avanceTitulo  = isSucursal ? 'Avance por Sucursal'     : 'Avance por Cadena';
-            const avanceSubtitle= isSucursal ? '% de participación en cada sucursal' : '% de participación en cada cadena';
-
-            const tf = document.getElementById('title-faltantes');   if (tf) tf.textContent = titleLabel;
-            const sf = document.getElementById('subtitle-faltantes'); if (sf) sf.textContent = subtitleLabel;
-            const ta = document.getElementById('title-avance');       if (ta) ta.textContent = avanceTitulo;
-            const sa = document.getElementById('subtitle-avance');    if (sa) sa.textContent = avanceSubtitle;
+            const tf = document.getElementById('title-faltantes');   if (tf) tf.textContent = isSucursal ? 'Pendientes por sucursal' : 'Pendientes por responder';
+            const sf = document.getElementById('subtitle-faltantes'); if (sf) sf.textContent = isSucursal ? 'Colaboradores por sucursal que aún no han completado' : 'Colaboradores que aún no han completado la encuesta';
+            const ta = document.getElementById('title-avance');       if (ta) ta.textContent = isSucursal ? 'Avance por Sucursal' : 'Avance por Cadena';
+            const sa = document.getElementById('subtitle-avance');    if (sa) sa.textContent = isSucursal ? '% de participación en cada sucursal' : '% de participación en cada cadena';
 
             const labels = Object.keys(counts).sort((a,b) => counts[b].total - counts[a].total);
-            const completados = labels.map(k => counts[k].submitted);
-            const pendientes  = labels.map(k => counts[k].total - counts[k].submitted);
-
             const avanceEl = document.getElementById('avance-cadenas-list');
             if (avanceEl) {
                 avanceEl.innerHTML = labels.map(k => {
                     const d = counts[k];
                     const pct = d.total > 0 ? Math.round(d.submitted / d.total * 100) : 0;
                     const barC = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-400' : 'bg-red-400';
-                    return `<div>
-                        <div class="flex justify-between text-xs mb-1">
-                            <span class="text-slate-600 font-medium truncate max-w-[65%]" title="${k}">${k}</span>
-                            <span class="text-slate-400 shrink-0 ml-1">${d.submitted}/${d.total} · ${pct}%</span>
-                        </div>
-                        <div class="w-full bg-slate-100 rounded-full h-1.5">
-                            <div class="${barC} h-1.5 rounded-full" style="width:${pct}%"></div>
-                        </div>
-                    </div>`;
+                    return `<div><div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-600 font-medium truncate max-w-[65%]" title="${k}">${k}</span>
+                        <span class="text-slate-400 shrink-0 ml-1">${d.submitted}/${d.total} · ${pct}%</span>
+                    </div><div class="w-full bg-slate-100 rounded-full h-1.5">
+                        <div class="${barC} h-1.5 rounded-full" style="width:${pct}%"></div>
+                    </div></div>`;
                 }).join('');
             }
 
@@ -2944,17 +3035,14 @@
                 data: {
                     labels: labels.map(l => l.length > 16 ? l.substring(0,15)+'…' : l),
                     datasets: [
-                        { label: 'Completaron', data: completados, backgroundColor: '#10b981', borderRadius: 4 },
-                        { label: 'Pendientes',  data: pendientes,  backgroundColor: '#f59e0b', borderRadius: 4 }
+                        { label: 'Completaron', data: labels.map(k=>counts[k].submitted), backgroundColor:'#10b981', borderRadius:4 },
+                        { label: 'Pendientes',  data: labels.map(k=>counts[k].total-counts[k].submitted), backgroundColor:'#f59e0b', borderRadius:4 }
                     ]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } } },
-                    scales: {
-                        x: { stacked: true, ticks: { font: { size: 9 } } },
-                        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
-                    }
+                    plugins: { legend: { position:'bottom', labels:{ font:{ size:11 }, padding:12 } } },
+                    scales: { x:{ stacked:true, ticks:{ font:{ size:9 } } }, y:{ stacked:true, beginAtZero:true, ticks:{ stepSize:1 } } }
                 }
             });
         }
