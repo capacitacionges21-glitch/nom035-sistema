@@ -415,6 +415,28 @@
                 <!-- TAB 4: REPORTES STPS ACTUALIZADO -->
                 <div id="tab-reportes" class="fade-in hidden">
                     <h1 class="text-2xl font-bold mb-6">Centro de Reportes y Descargas</h1>
+
+                    <!-- Filtro propio para Reportes STPS -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 flex flex-wrap items-end gap-3">
+                        <div class="flex items-center gap-2 text-slate-500 text-sm font-medium mr-1">
+                            <i class="ph ph-funnel text-base"></i> Filtrar descargas:
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Cadena</label>
+                            <select id="rep-filter-cadena" onchange="onRepCadenaChange()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[160px]">
+                                <option value="">Todas las cadenas</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Sucursal</label>
+                            <select id="rep-filter-sucursal" onchange="updateRepFilterInfo()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[180px]">
+                                <option value="">Todas las sucursales</option>
+                            </select>
+                        </div>
+                        <button onclick="clearRepFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
+                        <span id="rep-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         
                         <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
@@ -905,7 +927,7 @@
             if (tabId === 'planes') renderActionPlans();
             if (tabId === 'sucursales') renderSucursalesTab(appState.dashData);
             if (tabId === 'dominios') renderDominiosTab(appState.dashData);
-            if (tabId === 'reportes') populateAcuseInlineSelect();
+            if (tabId === 'reportes') { populateAcuseInlineSelect(); populateReportesFilters(); }
             if (tabId === 'eventos') initEventosTraumaticos();
             if (tabId === 'colaboradores') initColaboradoresTab();
         }
@@ -2517,6 +2539,55 @@
             });
         });
 
+        // ── FILTROS PROPIOS DE REPORTES STPS ──────
+        function populateReportesFilters() {
+            if (!loadedEmployees?.length) return;
+            const cadSel = document.getElementById('rep-filter-cadena');
+            if (!cadSel) return;
+            const cadenas = [...new Set(loadedEmployees.map(e => e.cadena).filter(Boolean))].sort();
+            const prevCad = cadSel.value;
+            cadSel.innerHTML = '<option value="">Todas las cadenas</option>' +
+                cadenas.map(c => `<option value="${c}"${c===prevCad?' selected':''}>${c}</option>`).join('');
+            onRepCadenaChange();
+        }
+
+        function onRepCadenaChange() {
+            const cadena = document.getElementById('rep-filter-cadena')?.value || '';
+            const sucSel = document.getElementById('rep-filter-sucursal');
+            if (!sucSel || !loadedEmployees?.length) return;
+            const base = cadena
+                ? loadedEmployees.filter(e => e.cadena === cadena)
+                : loadedEmployees;
+            const sucursales = [...new Set(base.map(e => e.sucursal).filter(Boolean))].sort();
+            sucSel.innerHTML = '<option value="">Todas las sucursales</option>' +
+                sucursales.map(s => `<option value="${s}">${s}</option>`).join('');
+            updateRepFilterInfo();
+        }
+
+        function updateRepFilterInfo() {
+            const cadena   = document.getElementById('rep-filter-cadena')?.value || '';
+            const sucursal = document.getElementById('rep-filter-sucursal')?.value || '';
+            const infoEl   = document.getElementById('rep-filter-info');
+            if (!infoEl || !loadedEmployees?.length) return;
+            let subset = loadedEmployees;
+            if (cadena)   subset = subset.filter(e => e.cadena   === cadena);
+            if (sucursal) subset = subset.filter(e => e.sucursal === sucursal);
+            const _norm = s => String(s||'').replace(/^0+/,'') || '0';
+            const completados = new Set((_colabData||[]).map(d => _norm(d.empId)));
+            const pend = subset.filter(e => !completados.has(_norm(e.id))).length;
+            infoEl.textContent = (cadena || sucursal)
+                ? `${subset.length} colaboradores · ${pend} pendientes`
+                : '';
+        }
+
+        function clearRepFilters() {
+            const c = document.getElementById('rep-filter-cadena');
+            const s = document.getElementById('rep-filter-sucursal');
+            if (c) c.value = '';
+            if (s) onRepCadenaChange();
+            updateRepFilterInfo();
+        }
+
         // ── ACUSE INLINE ───────────────────────────
         function populateAcuseInlineSelect() {
             const select = document.getElementById('acuse-inline-select');
@@ -2557,9 +2628,15 @@
                 }
                 const _norm = s => String(s||'').replace(/^0+/,'') || '0';
                 const completados = new Set(_colabData.map(d => _norm(d.empId)));
-                const pendientes = loadedEmployees.filter(e => !completados.has(_norm(e.id)));
-                if (!pendientes.length) { showToast('¡Todos los colaboradores han completado la encuesta!', 'success'); return; }
+                const filterCadena   = document.getElementById('rep-filter-cadena')?.value   || '';
+                const filterSucursal = document.getElementById('rep-filter-sucursal')?.value || '';
+                let base = loadedEmployees;
+                if (filterCadena)   base = base.filter(e => e.cadena   === filterCadena);
+                if (filterSucursal) base = base.filter(e => e.sucursal === filterSucursal);
+                const pendientes = base.filter(e => !completados.has(_norm(e.id)));
+                if (!pendientes.length) { showToast('¡Todos los colaboradores de este filtro han completado la encuesta!', 'success'); return; }
 
+                const sufijo = filterSucursal ? `_${filterSucursal}` : filterCadena ? `_${filterCadena}` : '';
                 const rows = [['No. Colaborador','Nombre','Puesto','Sucursal','Cadena']];
                 pendientes.forEach(e => rows.push([e.id, e.name, e.puesto||'', e.sucursal||'', e.cadena||'']));
                 const wb = XLSX.utils.book_new();
@@ -2567,7 +2644,7 @@
                 ws['!cols'] = [{wch:16},{wch:40},{wch:30},{wch:35},{wch:25}];
                 XLSX.utils.book_append_sheet(wb, ws, 'Pendientes');
                 const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
-                XLSX.writeFile(wb, `Pendientes_NOM035_${fecha}.xlsx`);
+                XLSX.writeFile(wb, `Pendientes_NOM035${sufijo}_${fecha}.xlsx`);
                 showToast(`Excel generado: ${pendientes.length} colaboradores pendientes.`, 'success');
             } catch(e) {
                 showToast('Error al generar el reporte.', 'error');
