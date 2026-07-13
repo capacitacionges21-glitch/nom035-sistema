@@ -13,6 +13,8 @@
     <!-- Librerías para generación de PDF (jsPDF y AutoTable) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS para generación de Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
@@ -419,7 +421,7 @@
                             <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-microsoft-excel-logo text-3xl"></i></div>
                             <h3 class="text-xl font-bold mb-2">Reporte Excel</h3>
                             <p class="text-sm text-slate-500 mb-6">Descarga la base de datos completa de respuestas en formato Excel (.xlsx).</p>
-                            <a href="https://docs.google.com/spreadsheets/d/1O0EIf0QoT8xYQhA-Wp2j154i1n9XvHn9z5P9a_yK_bE/export?format=xlsx" target="_blank" class="inline-flex px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium items-center"><i class="ph ph-download-simple mr-2"></i> Descargar Excel</a>
+                            <button onclick="downloadRespuestasExcel()" id="btn-excel" class="inline-flex px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium items-center"><i class="ph ph-download-simple mr-2"></i> Descargar Excel</button>
                         </div>
 
                         <!-- Botón para PDF -->
@@ -2514,6 +2516,31 @@
                 }
             } catch (err) {
                 showToast('Error al obtener datos.', 'error');
+            }
+        }
+
+        async function downloadRespuestasExcel() {
+            const btn = document.getElementById('btn-excel');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-2"></i> Generando...';
+            btn.disabled = true;
+            try {
+                const res    = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getRespuestasTexto');
+                const result = await res.json();
+                if (result.status !== 'success' || !result.data?.length) {
+                    showToast('No hay datos para exportar.', 'error'); return;
+                }
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(result.data);
+                XLSX.utils.book_append_sheet(wb, ws, 'Respuestas_Texto');
+                const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
+                XLSX.writeFile(wb, `Respuestas_NOM035_${fecha}.xlsx`);
+                showToast('Excel descargado correctamente.', 'success');
+            } catch(e) {
+                showToast('Error al generar el Excel. Verifica la conexión.', 'error');
+            } finally {
+                btn.innerHTML = orig;
+                btn.disabled = false;
             }
         }
 
