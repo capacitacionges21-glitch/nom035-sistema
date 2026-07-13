@@ -490,7 +490,7 @@
 
                 <!-- TAB: EVENTOS TRAUMÁTICOS -->
                 <div id="tab-eventos" class="fade-in hidden">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <div>
                             <h1 class="text-2xl font-bold text-slate-800">Eventos Traumáticos Severos</h1>
                             <p class="text-sm text-slate-500 mt-1">Colaboradores que reportaron haber vivido un acontecimiento traumático con motivo del trabajo.</p>
@@ -498,6 +498,26 @@
                         <button onclick="downloadEventosPDF()" class="shrink-0 flex items-center px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors shadow-sm">
                             <i class="ph ph-file-pdf mr-2 text-base"></i> Descargar Reporte PDF
                         </button>
+                    </div>
+                    <!-- Filtros Eventos -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-5 flex flex-wrap items-end gap-3">
+                        <div class="flex items-center gap-2 text-slate-500 text-sm font-medium mr-1">
+                            <i class="ph ph-funnel text-base"></i> Filtrar:
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Cadena</label>
+                            <select id="ev-filter-cadena" onchange="onEvCadenaChange()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-red-400 min-w-[160px]">
+                                <option value="">Todas las cadenas</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Sucursal</label>
+                            <select id="ev-filter-sucursal" onchange="applyEventosFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-red-400 min-w-[180px]">
+                                <option value="">Todas las sucursales</option>
+                            </select>
+                        </div>
+                        <button onclick="clearEventosFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
+                        <span id="ev-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
                     <div id="eventos-kpis" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
                     <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -3131,17 +3151,66 @@
             const container = document.getElementById('eventos-container');
             const kpisEl = document.getElementById('eventos-kpis');
             if (!container) return;
+            // Si ya hay datos cargados, solo re-aplicar filtros
+            if (appState.eventosData) {
+                populateEventosFilters();
+                applyEventosFilters();
+                return;
+            }
             container.innerHTML = '<div class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl"></i><p class="mt-2 text-sm">Cargando datos...</p></div>';
             try {
                 const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getEventosTraumaticos');
                 const result = await res.json();
-                const data = result.status === 'success' ? result.data : [];
-                appState.eventosData = data;
-                renderEventosKPIs(data, kpisEl);
-                renderEventosTab(data, container);
+                appState.eventosData = result.status === 'success' ? result.data : [];
+                populateEventosFilters();
+                applyEventosFilters();
             } catch(e) {
                 container.innerHTML = '<p class="p-8 text-center text-red-500 text-sm">Error al cargar los datos. Verifica la conexión con el servidor.</p>';
             }
+        }
+
+        function populateEventosFilters() {
+            const data = appState.eventosData || [];
+            const cadSel = document.getElementById('ev-filter-cadena');
+            if (!cadSel) return;
+            const prevCad = cadSel.value;
+            const cadenas = [...new Set(data.map(d => d.cadena).filter(Boolean))].sort();
+            cadSel.innerHTML = '<option value="">Todas las cadenas</option>' +
+                cadenas.map(c => `<option value="${c}"${c===prevCad?' selected':''}>${c}</option>`).join('');
+            onEvCadenaChange(true);
+        }
+
+        function onEvCadenaChange(keepSuc = false) {
+            const data    = appState.eventosData || [];
+            const cadena  = document.getElementById('ev-filter-cadena')?.value || '';
+            const sucSel  = document.getElementById('ev-filter-sucursal');
+            if (!sucSel) return;
+            const prevSuc = keepSuc ? sucSel.value : '';
+            const base    = cadena ? data.filter(d => d.cadena === cadena) : data;
+            const sucs    = [...new Set(base.map(d => d.sucursal).filter(Boolean))].sort();
+            sucSel.innerHTML = '<option value="">Todas las sucursales</option>' +
+                sucs.map(s => `<option value="${s}"${s===prevSuc?' selected':''}>${s}</option>`).join('');
+            applyEventosFilters();
+        }
+
+        function applyEventosFilters() {
+            const data     = appState.eventosData || [];
+            const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
+            const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
+            let subset = data;
+            if (cadena)   subset = subset.filter(d => d.cadena   === cadena);
+            if (sucursal) subset = subset.filter(d => d.sucursal === sucursal);
+            const infoEl = document.getElementById('ev-filter-info');
+            if (infoEl) infoEl.textContent = (cadena || sucursal) ? `${subset.length} de ${data.length} registros` : '';
+            renderEventosKPIs(subset, document.getElementById('eventos-kpis'));
+            renderEventosTab(subset, document.getElementById('eventos-container'));
+        }
+
+        function clearEventosFilters() {
+            const c = document.getElementById('ev-filter-cadena');
+            const s = document.getElementById('ev-filter-sucursal');
+            if (c) c.value = '';
+            onEvCadenaChange();
         }
 
         function renderEventosKPIs(data, el) {
@@ -3208,7 +3277,12 @@
         }
 
         async function downloadEventosPDF() {
-            const data = appState.eventosData;
+            const allData  = appState.eventosData || [];
+            const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
+            const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
+            let data = allData;
+            if (cadena)   data = data.filter(d => d.cadena   === cadena);
+            if (sucursal) data = data.filter(d => d.sucursal === sucursal);
             if (!data || data.length === 0) {
                 showToast('No hay colaboradores con eventos traumáticos para reportar.', 'error');
                 return;
