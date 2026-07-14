@@ -363,7 +363,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-slate-500 mb-1">Seleccionar</label>
-                                <select id="plan-scope-value" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <select id="plan-scope-value" onchange="generateActionPlan()" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                                     <option value="">— primero selecciona el nivel —</option>
                                 </select>
                             </div>
@@ -1065,17 +1065,24 @@
             return 'Nulo';
         }
 
-        function renderActionPlans() { updatePlanScopeValues(); }
+        function renderActionPlans() {
+            updatePlanScopeValues();
+        }
 
         function updatePlanScopeValues() {
             const type = document.getElementById('plan-scope-type')?.value;
             const sel  = document.getElementById('plan-scope-value');
             if (!sel) return;
-            if (type === 'general') { sel.innerHTML = '<option value="__general__">Todas las cadenas</option>'; return; }
+            if (type === 'general') {
+                sel.innerHTML = '<option value="__general__">Todas las cadenas</option>';
+                generateActionPlan();
+                return;
+            }
             const values = [...new Set(_colabData.map(r => type === 'cadena' ? r.cadena : r.sucursal).filter(Boolean))].sort();
             sel.innerHTML = values.length
                 ? values.map(v => `<option value="${v}">${v}</option>`).join('')
                 : '<option value="">— sin datos cargados aún —</option>';
+            if (values.length) generateActionPlan();
         }
 
         function calcDomainScoresForScope(type, value) {
