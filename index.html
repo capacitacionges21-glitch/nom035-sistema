@@ -2322,8 +2322,25 @@
 
             const btn = document.getElementById('btn-submit-survey');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-2 shrink-0"></i> Guardando...';
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-2 shrink-0"></i> Verificando...';
             btn.disabled = true;
+
+            // Verificación de duplicado justo antes de guardar
+            try {
+                const recheck = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=checkSurveyStatus&empId=${encodeURIComponent(payload.empId)}`);
+                const recheckData = await recheck.json();
+                if (recheckData.status === 'success' && recheckData.submitted) {
+                    showToast('Tu encuesta ya fue registrada anteriormente. No es posible enviar nuevamente.', 'error');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    setTimeout(() => logout(), 3000);
+                    return;
+                }
+            } catch(e) {
+                // Si falla la verificación previa, continuar con el envío
+            }
+
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-2 shrink-0"></i> Guardando...';
 
             try {
                 await fetch(GOOGLE_APPS_SCRIPT_URL, {
