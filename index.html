@@ -3584,7 +3584,17 @@
                         cutout: '70%',
                         plugins: {
                             legend: { position: 'bottom' },
-                            tooltip: { enabled: !isEmpy }
+                            tooltip: {
+                                enabled: !isEmpy,
+                                callbacks: {
+                                    title: ctx => ctx[0].label,
+                                    label: ctx => {
+                                        const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                                        const pct = total > 0 ? Math.round(ctx.raw/total*100) : 0;
+                                        return ` ${ctx.raw} colaboradores completaron · ${pct}% del total`;
+                                    }
+                                }
+                            }
                         }
                     }
                 });
@@ -3604,7 +3614,21 @@
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: ctx => ctx[0].label,
+                                    label: ctx => {
+                                        const cadena = ctx.label;
+                                        const totalEmp = (loadedEmployees||[]).filter(e => e.cadena === cadena).length;
+                                        return totalEmp > 0
+                                            ? ` ${ctx.raw} de ${totalEmp} colaboradores completaron (${Math.round(ctx.raw/totalEmp*100)}%)`
+                                            : ` ${ctx.raw} colaboradores completaron`;
+                                    }
+                                }
+                            }
+                        },
                         scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                     }
                 });
@@ -3623,7 +3647,21 @@
                     options: {
                         indexAxis: 'y',
                         responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: ctx => ctx[0].label,
+                                    label: ctx => {
+                                        const puesto = ctx.label;
+                                        const totalEmp = (loadedEmployees||[]).filter(e => e.puesto === puesto).length;
+                                        return totalEmp > 0
+                                            ? ` ${ctx.raw} de ${totalEmp} con este puesto completaron (${Math.round(ctx.raw/totalEmp*100)}%)`
+                                            : ` ${ctx.raw} colaboradores de este puesto completaron`;
+                                    }
+                                }
+                            }
+                        },
                         scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
                     }
                 });
@@ -3689,7 +3727,23 @@
                     data: { labels: barLabels, datasets: [{ label: 'Encuestas', data: barData,
                         backgroundColor: PALETTE, borderRadius: 6 }] },
                     options: { responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: ctx => ctx[0].label,
+                                    label: ctx => {
+                                        const key = ctx.label;
+                                        const totalEmp = sucFiltered
+                                            ? (loadedEmployees||[]).filter(e => (e.nombre||e.name||'') === key || (e.sucursal||'') === key).length
+                                            : (loadedEmployees||[]).filter(e => e.sucursal === key).length;
+                                        return totalEmp > 0
+                                            ? ` ${ctx.raw} de ${totalEmp} colaboradores completaron (${Math.round(ctx.raw/totalEmp*100)}%)`
+                                            : ` ${ctx.raw} colaboradores completaron`;
+                                    }
+                                }
+                            }
+                        },
                         scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
                 });
             }
@@ -3703,7 +3757,19 @@
                     data: { labels: donutLabels, datasets: [{ data: donutData,
                         backgroundColor: PALETTE, borderWidth: 0, hoverOffset: 4 }] },
                     options: { responsive: true, maintainAspectRatio: false, cutout: '70%',
-                        plugins: { legend: { position: 'bottom' } } }
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    title: ctx => ctx[0].label,
+                                    label: ctx => {
+                                        const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+                                        const pct = total > 0 ? Math.round(ctx.raw/total*100) : 0;
+                                        return ` ${ctx.raw} colaboradores completaron · ${pct}% del total`;
+                                    }
+                                }
+                            }
+                        } }
                 });
             }
         }
