@@ -349,10 +349,13 @@
 
                         <!-- Avance por Cadena — ancho completo -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <div class="flex items-center justify-between mb-1">
-                                <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
+                            <div class="flex items-start justify-between mb-1">
+                                <div>
+                                    <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
+                                    <p id="subtitle-avance" class="text-xs text-slate-400 mt-0.5 mb-5">% de participación en cada cadena</p>
+                                </div>
+                                <button onclick="downloadAvanceChart()" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
                             </div>
-                            <p id="subtitle-avance" class="text-xs text-slate-400 mb-5">% de participación en cada cadena</p>
                             <div id="avance-cadenas-list" class="space-y-3"></div>
                         </div>
                     </div>
@@ -2757,6 +2760,57 @@
             }
         }
 
+        function downloadAvanceChart() {
+            const data = appState.avanceData;
+            if (!data?.labels?.length) { showToast('No hay datos para descargar.', 'error'); return; }
+            const { labels, counts, title } = data;
+            const padL = 280, padR = 180, padT = 70, padB = 40, rowH = 44;
+            const W = 1100, H = padT + labels.length * rowH + padB;
+            const chartW = W - padL - padR;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, W, H);
+            // Title
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(title || 'Avance', padL, 38);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '13px Arial';
+            ctx.fillText('% de participación', padL, 56);
+            // Rows
+            labels.forEach((k, i) => {
+                const d = counts[k];
+                const pct = d.total > 0 ? Math.round(d.submitted / d.total * 100) : 0;
+                const y = padT + i * rowH;
+                const midY = y + rowH / 2;
+                // Label
+                ctx.fillStyle = '#475569';
+                ctx.font = '13px Arial';
+                ctx.textAlign = 'right';
+                const lbl = k.length > 38 ? k.slice(0, 37) + '…' : k;
+                ctx.fillText(lbl, padL - 14, midY + 5);
+                // Bar bg
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillRect(padL, midY - 7, chartW, 14);
+                // Bar fill
+                ctx.fillStyle = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#f87171';
+                if (pct > 0) ctx.fillRect(padL, midY - 7, Math.max(chartW * pct / 100, 4), 14);
+                // Value
+                ctx.fillStyle = '#64748b';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${d.submitted}/${d.total} · ${pct}%`, padL + chartW + 12, midY + 5);
+            });
+            const a = document.createElement('a');
+            a.download = (title || 'Avance').replace(/\s+/g,'_') + '.png';
+            a.href = cv.toDataURL('image/png');
+            a.click();
+            showToast('Gráfico descargado.', 'success');
+        }
+
         function downloadChart(canvasId, filename) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) { showToast('Gráfico no disponible.', 'error'); return; }
@@ -3184,6 +3238,7 @@
             const sa = document.getElementById('subtitle-avance');    if (sa) sa.textContent = isSucursal ? '% de participación en cada sucursal' : '% de participación en cada cadena';
 
             const labels = Object.keys(counts).sort((a,b) => counts[b].total - counts[a].total);
+            appState.avanceData = { labels, counts, title: isSucursal ? 'Avance por Sucursal' : 'Avance por Cadena' };
             const avanceEl = document.getElementById('avance-cadenas-list');
             if (avanceEl) {
                 avanceEl.innerHTML = labels.map(k => {
