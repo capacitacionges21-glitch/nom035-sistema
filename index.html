@@ -335,25 +335,25 @@
                             <div class="relative w-full" style="height:360px"><canvas id="chart-puestos"></canvas></div>
                         </div>
 
-                        <!-- Pendientes + Avance — dos columnas (relacionados) -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                <div class="flex items-start justify-between mb-1">
-                                    <div>
-                                        <h3 id="title-faltantes" class="text-lg font-bold text-slate-800">Pendientes por responder</h3>
-                                        <p id="subtitle-faltantes" class="text-xs text-slate-400 mt-0.5 mb-4">Colaboradores que aún no han completado la encuesta</p>
-                                    </div>
-                                    <button onclick="downloadChart('chart-faltantes','Pendientes_por_Responder')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
+                        <!-- Pendientes — ancho completo -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-start justify-between mb-1">
+                                <div>
+                                    <h3 id="title-faltantes" class="text-lg font-bold text-slate-800">Pendientes por responder</h3>
+                                    <p id="subtitle-faltantes" class="text-xs text-slate-400 mt-0.5 mb-4">Colaboradores que aún no han completado la encuesta</p>
                                 </div>
-                                <div class="relative w-full" style="height:320px"><canvas id="chart-faltantes"></canvas></div>
+                                <button onclick="downloadChart('chart-faltantes','Pendientes_por_Responder')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
                             </div>
-                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                                <div class="flex items-center justify-between mb-1">
-                                    <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
-                                </div>
-                                <p id="subtitle-avance" class="text-xs text-slate-400 mb-4">% de participación en cada cadena</p>
-                                <div id="avance-cadenas-list" class="space-y-3 overflow-y-auto" style="max-height:300px"></div>
+                            <div class="relative w-full" style="height:380px"><canvas id="chart-faltantes"></canvas></div>
+                        </div>
+
+                        <!-- Avance por Cadena — ancho completo -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
                             </div>
+                            <p id="subtitle-avance" class="text-xs text-slate-400 mb-5">% de participación en cada cadena</p>
+                            <div id="avance-cadenas-list" class="space-y-3"></div>
                         </div>
                     </div>
 
