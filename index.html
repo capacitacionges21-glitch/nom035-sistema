@@ -2764,22 +2764,24 @@
             const data = appState.avanceData;
             if (!data?.labels?.length) { showToast('No hay datos para descargar.', 'error'); return; }
             const { labels, counts, title } = data;
-            const padL = 280, padR = 180, padT = 70, padB = 40, rowH = 44;
-            const W = 1100, H = padT + labels.length * rowH + padB;
+            const SC = 3; // 3× resolución para impresión/reportes
+            const padL = 280, padR = 200, padT = 80, padB = 50, rowH = 48;
+            const W = 1200, H = padT + labels.length * rowH + padB;
             const chartW = W - padL - padR;
             const cv = document.createElement('canvas');
-            cv.width = W; cv.height = H;
+            cv.width = W * SC; cv.height = H * SC;
             const ctx = cv.getContext('2d');
+            ctx.scale(SC, SC);
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, W, H);
             // Title
             ctx.fillStyle = '#1e293b';
-            ctx.font = 'bold 20px Arial';
+            ctx.font = 'bold 22px Arial';
             ctx.textAlign = 'left';
-            ctx.fillText(title || 'Avance', padL, 38);
+            ctx.fillText(title || 'Avance', padL, 42);
             ctx.fillStyle = '#94a3b8';
-            ctx.font = '13px Arial';
-            ctx.fillText('% de participación', padL, 56);
+            ctx.font = '14px Arial';
+            ctx.fillText('% de participación', padL, 62);
             // Rows
             labels.forEach((k, i) => {
                 const d = counts[k];
@@ -2790,19 +2792,19 @@
                 ctx.fillStyle = '#475569';
                 ctx.font = '13px Arial';
                 ctx.textAlign = 'right';
-                const lbl = k.length > 38 ? k.slice(0, 37) + '…' : k;
+                const lbl = k.length > 40 ? k.slice(0, 39) + '…' : k;
                 ctx.fillText(lbl, padL - 14, midY + 5);
                 // Bar bg
                 ctx.fillStyle = '#f1f5f9';
-                ctx.fillRect(padL, midY - 7, chartW, 14);
+                ctx.fillRect(padL, midY - 8, chartW, 16);
                 // Bar fill
                 ctx.fillStyle = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#f87171';
-                if (pct > 0) ctx.fillRect(padL, midY - 7, Math.max(chartW * pct / 100, 4), 14);
+                if (pct > 0) ctx.fillRect(padL, midY - 8, Math.max(chartW * pct / 100, 4), 16);
                 // Value
-                ctx.fillStyle = '#64748b';
+                ctx.fillStyle = '#475569';
                 ctx.font = '12px Arial';
                 ctx.textAlign = 'left';
-                ctx.fillText(`${d.submitted}/${d.total} · ${pct}%`, padL + chartW + 12, midY + 5);
+                ctx.fillText(`${d.submitted}/${d.total} · ${pct}%`, padL + chartW + 14, midY + 5);
             });
             const a = document.createElement('a');
             a.download = (title || 'Avance').replace(/\s+/g,'_') + '.png';
@@ -2811,21 +2813,51 @@
             showToast('Gráfico descargado.', 'success');
         }
 
+        // Mapa canvasId → clave en appState.charts
+        const _CHART_KEYS = {
+            'chart-domains':'domains','chart-branches':'branches',
+            'chart-cadenas':'cadenas','chart-puestos':'puestos','chart-faltantes':'faltantes'
+        };
+
         function downloadChart(canvasId, filename) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) { showToast('Gráfico no disponible.', 'error'); return; }
-            const tmp = document.createElement('canvas');
-            tmp.width  = canvas.width;
-            tmp.height = canvas.height;
-            const ctx = tmp.getContext('2d');
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, tmp.width, tmp.height);
-            ctx.drawImage(canvas, 0, 0);
-            const a = document.createElement('a');
-            a.download = filename + '.png';
-            a.href = tmp.toDataURL('image/png');
-            a.click();
-            showToast('Gráfico descargado.', 'success');
+            const chart = appState.charts?.[_CHART_KEYS[canvasId]];
+            const SC = 3; // 3× resolución para reportes ejecutivos
+
+            if (chart) {
+                // Re-renderizar a alta resolución usando Chart.js resize
+                const cssW = canvas.offsetWidth  || 900;
+                const cssH = canvas.offsetHeight || 400;
+                chart.resize(cssW * SC, cssH * SC);
+                const tmp = document.createElement('canvas');
+                tmp.width  = canvas.width;
+                tmp.height = canvas.height;
+                const ctx2 = tmp.getContext('2d');
+                ctx2.fillStyle = '#ffffff';
+                ctx2.fillRect(0, 0, tmp.width, tmp.height);
+                ctx2.drawImage(canvas, 0, 0);
+                const a = document.createElement('a');
+                a.download = filename + '.png';
+                a.href = tmp.toDataURL('image/png');
+                a.click();
+                // Restaurar tamaño original
+                chart.resize(cssW, cssH);
+                showToast('Gráfico descargado en alta resolución.', 'success');
+            } else {
+                // Fallback: capturar el canvas tal cual
+                const tmp = document.createElement('canvas');
+                tmp.width = canvas.width; tmp.height = canvas.height;
+                const ctx2 = tmp.getContext('2d');
+                ctx2.fillStyle = '#ffffff';
+                ctx2.fillRect(0, 0, tmp.width, tmp.height);
+                ctx2.drawImage(canvas, 0, 0);
+                const a = document.createElement('a');
+                a.download = filename + '.png';
+                a.href = tmp.toDataURL('image/png');
+                a.click();
+                showToast('Gráfico descargado.', 'success');
+            }
         }
 
         async function downloadAcuseInline() {
