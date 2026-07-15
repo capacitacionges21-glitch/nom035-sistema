@@ -286,40 +286,74 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="grid grid-cols-1 gap-6 mb-8">
+                        <!-- Riesgo por Dominio — ancho completo -->
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">Riesgo por Dominio</h3>
-                            <div class="relative h-64 w-full"><canvas id="chart-domains"></canvas></div>
-                        </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 id="title-branches" class="text-lg font-bold text-slate-800 mb-4">Distribución por Sucursal</h3>
-                            <div class="relative h-64 w-full"><canvas id="chart-branches"></canvas></div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 id="title-cadenas" class="text-lg font-bold text-slate-800 mb-4">Encuestas por Cadena</h3>
-                            <div class="relative h-64 w-full"><canvas id="chart-cadenas"></canvas></div>
-                        </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">Encuestas por Puesto</h3>
-                            <div class="relative h-64 w-full"><canvas id="chart-puestos"></canvas></div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <h3 id="title-faltantes" class="text-lg font-bold text-slate-800 mb-1">Pendientes por responder</h3>
-                            <p id="subtitle-faltantes" class="text-xs text-slate-400 mb-4">Colaboradores que aún no han completado la encuesta</p>
-                            <div class="relative h-56 w-full"><canvas id="chart-faltantes"></canvas></div>
-                        </div>
-                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                            <div class="flex items-center justify-between mb-1">
-                                <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-800">Riesgo por Dominio</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Promedio por área psicosocial (escala 0–4)</p>
+                                </div>
+                                <button onclick="downloadChart('chart-domains','Riesgo_por_Dominio')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
                             </div>
-                            <p id="subtitle-avance" class="text-xs text-slate-400 mb-4">% de participación en cada cadena</p>
-                            <div id="avance-cadenas-list" class="space-y-3 overflow-y-auto max-h-52"></div>
+                            <div class="relative w-full" style="height:420px"><canvas id="chart-domains"></canvas></div>
+                        </div>
+
+                        <!-- Distribución por Sucursal — ancho completo -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 id="title-branches" class="text-lg font-bold text-slate-800">Distribución por Sucursal</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Participación relativa de cada sucursal</p>
+                                </div>
+                                <button onclick="downloadChart('chart-branches','Distribucion_por_Sucursal')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
+                            </div>
+                            <div class="relative w-full" style="height:420px"><canvas id="chart-branches"></canvas></div>
+                        </div>
+
+                        <!-- Encuestas por Cadena — ancho completo -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 id="title-cadenas" class="text-lg font-bold text-slate-800">Encuestas por Cadena</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Total de respuestas recibidas por cadena</p>
+                                </div>
+                                <button onclick="downloadChart('chart-cadenas','Encuestas_por_Cadena')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
+                            </div>
+                            <div class="relative w-full" style="height:360px"><canvas id="chart-cadenas"></canvas></div>
+                        </div>
+
+                        <!-- Encuestas por Puesto — ancho completo -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-bold text-slate-800">Encuestas por Puesto</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Top 10 puestos con mayor participación</p>
+                                </div>
+                                <button onclick="downloadChart('chart-puestos','Encuestas_por_Puesto')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
+                            </div>
+                            <div class="relative w-full" style="height:360px"><canvas id="chart-puestos"></canvas></div>
+                        </div>
+
+                        <!-- Pendientes + Avance — dos columnas (relacionados) -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                <div class="flex items-start justify-between mb-1">
+                                    <div>
+                                        <h3 id="title-faltantes" class="text-lg font-bold text-slate-800">Pendientes por responder</h3>
+                                        <p id="subtitle-faltantes" class="text-xs text-slate-400 mt-0.5 mb-4">Colaboradores que aún no han completado la encuesta</p>
+                                    </div>
+                                    <button onclick="downloadChart('chart-faltantes','Pendientes_por_Responder')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
+                                </div>
+                                <div class="relative w-full" style="height:320px"><canvas id="chart-faltantes"></canvas></div>
+                            </div>
+                            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                <div class="flex items-center justify-between mb-1">
+                                    <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
+                                </div>
+                                <p id="subtitle-avance" class="text-xs text-slate-400 mb-4">% de participación en cada cadena</p>
+                                <div id="avance-cadenas-list" class="space-y-3 overflow-y-auto" style="max-height:300px"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -2721,6 +2755,23 @@
                 btn.innerHTML = orig;
                 btn.disabled = false;
             }
+        }
+
+        function downloadChart(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) { showToast('Gráfico no disponible.', 'error'); return; }
+            const tmp = document.createElement('canvas');
+            tmp.width  = canvas.width;
+            tmp.height = canvas.height;
+            const ctx = tmp.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, tmp.width, tmp.height);
+            ctx.drawImage(canvas, 0, 0);
+            const a = document.createElement('a');
+            a.download = filename + '.png';
+            a.href = tmp.toDataURL('image/png');
+            a.click();
+            showToast('Gráfico descargado.', 'success');
         }
 
         async function downloadAcuseInline() {
