@@ -1255,10 +1255,34 @@
             const total = allScores[0]?.n || 0;
             const periodo = getPeriodoDates(scopeType, scopeValue);
             if (!highRisk.length) {
-                container.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl flex items-center text-emerald-800">
-                    <i class="ph ph-check-circle text-3xl mr-4"></i>
-                    <div><p class="font-bold">¡Sin riesgos críticos para ${scopeLabel}!</p>
-                    <p class="text-sm opacity-90">No se detectaron dimensiones Alto/Muy Alto en ${total} encuesta(s) analizadas.</p></div></div>`;
+                // Contar colaboradores individuales con riesgo global Alto o Muy alto en el alcance
+                let scopeRows = _colabData;
+                if (scopeType === 'cadena')   scopeRows = _colabData.filter(r => r.cadena   === scopeValue);
+                if (scopeType === 'sucursal') scopeRows = _colabData.filter(r => r.sucursal === scopeValue);
+                const indAlto    = scopeRows.filter(r => { const rg = r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : ''); return rg === 'Alto'; }).length;
+                const indMuyAlto = scopeRows.filter(r => { const rg = r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : ''); return rg === 'Muy alto'; }).length;
+                const indAlert = (indAlto + indMuyAlto) > 0
+                    ? `<div class="mt-3 pt-3 border-t border-emerald-200">
+                        <p class="text-sm font-semibold text-amber-700 mb-1"><i class="ph ph-warning mr-1"></i>Atención individual requerida:</p>
+                        <p class="text-sm text-amber-800">
+                            ${indMuyAlto > 0 ? `<span class="font-bold">${indMuyAlto} colaborador(es) con Riesgo Global Muy alto</span>` : ''}
+                            ${indMuyAlto > 0 && indAlto > 0 ? ' · ' : ''}
+                            ${indAlto > 0 ? `<span class="font-bold">${indAlto} colaborador(es) con Riesgo Global Alto</span>` : ''}
+                        </p>
+                        <p class="text-xs text-amber-700 mt-1">El promedio grupal por dominio no supera los umbrales NOM-035, pero estos colaboradores requieren seguimiento individual. Revísalos en la sección <strong>Por Colaborador</strong>.</p>
+                      </div>`
+                    : '';
+                container.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl text-emerald-800">
+                    <div class="flex items-start gap-4">
+                        <i class="ph ph-check-circle text-3xl shrink-0 mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="font-bold">Sin riesgos críticos a nivel grupal para ${scopeLabel}</p>
+                            <p class="text-sm opacity-90 mt-0.5">No se detectaron dimensiones con promedio Alto/Muy Alto en ${total} encuesta(s) analizadas.</p>
+                            <p class="text-xs text-emerald-700 mt-1 opacity-80">El análisis grupal promedia las respuestas de todos los colaboradores por dominio. Un promedio bajo no descarta riesgos en personas específicas.</p>
+                            ${indAlert}
+                        </div>
+                    </div>
+                </div>`;
                 return;
             }
             const riskBadge = r => r === 'Muy alto'
