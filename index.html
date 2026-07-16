@@ -3954,22 +3954,34 @@
 
             const ctxDom = document.getElementById('chart-domains');
             if(ctxDom) {
+                const NIVEL_COLOR = { 'Nulo': '#94a3b8', 'Bajo': '#3b82f6', 'Medio': '#f59e0b', 'Alto': '#f97316', 'Muy alto': '#ef4444' };
+                const domLabels = data.riesgoPorDominio.labels;
+                const domData   = data.riesgoPorDominio.data;
+                const domColors = domLabels.map((lbl, i) => NIVEL_COLOR[getDomainNivel(lbl, domData[i])] || '#3b82f6');
+                const domNiveles = domLabels.map((lbl, i) => getDomainNivel(lbl, domData[i]));
                 appState.charts.domains = new Chart(ctxDom.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: data.riesgoPorDominio.labels,
+                        labels: domLabels,
                         datasets: [{
                             label: 'Puntaje Promedio',
-                            data: data.riesgoPorDominio.data,
-                            backgroundColor: '#3b82f6', 
+                            data: domData,
+                            backgroundColor: domColors,
                             borderRadius: 6
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => ` Promedio: ${ctx.raw}  |  Nivel: ${domNiveles[ctx.dataIndex]}`
+                                }
+                            }
+                        },
+                        scales: { y: { beginAtZero: true, max: 4 } }
                     }
                 });
             }
