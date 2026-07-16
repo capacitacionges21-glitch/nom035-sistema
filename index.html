@@ -2111,27 +2111,40 @@
                 }
             }
 
-            // Saltar sección 16 si ninguna respuesta de sección 15 es "Sí"
+            // Saltar sección 16 si menos de 3 respuestas de sección 15 son "Sí" (NOM-035)
             const traumaIds = [95, 96, 97, 98, 99, 100];
-            const hasSiTrauma = () => traumaIds.some(id =>
+            const getSiCount = () => traumaIds.filter(id =>
                 document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
-            );
+            ).length;
+            const hasSiTrauma = () => getSiCount() > 0;
 
             if (delta === 1 && currentSurveyPage === 15 && hasSiTrauma()) {
                 const fechaVal = document.getElementById('trauma-fecha')?.value;
+                const involucradosVal = document.getElementById('trauma-involucrados')?.value?.trim();
+                const descripcionVal = document.getElementById('trauma-descripcion')?.value?.trim();
                 if (!fechaVal) {
-                    showToast('Por favor indica la fecha del acontecimiento.', 'error');
+                    showToast('Por favor indica la fecha del acontecimiento traumático.', 'error');
                     document.getElementById('trauma-fecha')?.focus();
                     return;
                 }
+                if (!involucradosVal) {
+                    showToast('Por favor indica las personas involucradas en el acontecimiento.', 'error');
+                    document.getElementById('trauma-involucrados')?.focus();
+                    return;
+                }
+                if (!descripcionVal) {
+                    showToast('Por favor proporciona una descripción breve del acontecimiento.', 'error');
+                    document.getElementById('trauma-descripcion')?.focus();
+                    return;
+                }
             }
-            if (delta === 1 && currentSurveyPage === 15 && !hasSiTrauma()) {
-                currentSurveyPage = totalBlocks + 1; // saltar directo a firma
+            if (delta === 1 && currentSurveyPage === 15 && getSiCount() < 3) {
+                currentSurveyPage = totalBlocks + 1; // saltar directo a firma (menos de 3 SI)
                 updatePaginationUI();
                 updateProgress();
                 return;
             }
-            if (delta === -1 && currentSurveyPage === totalBlocks + 1 && !hasSiTrauma()) {
+            if (delta === -1 && currentSurveyPage === totalBlocks + 1 && getSiCount() < 3) {
                 currentSurveyPage = 15; // al ir atrás, regresar a sección 15
                 updatePaginationUI();
                 updateProgress();
@@ -3607,7 +3620,8 @@
                 try { resp = JSON.parse(r.respuestas || '{}'); } catch(e) {}
 
                 const ev = eventosMap[String(r.empId || '').trim()] || {};
-                const tieneSI = ATS_PREGUNTAS.some(q => String(resp[String(q.id)] || '').toUpperCase() === 'SI');
+                const siCount = ATS_PREGUNTAS.filter(q => String(resp[String(q.id)] || '').toUpperCase() === 'SI').length;
+                const tieneSI = siCount >= 3;
 
                 let y = MG;
 
