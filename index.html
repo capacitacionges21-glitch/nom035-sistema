@@ -1129,8 +1129,7 @@
             if (values.length) generateActionPlan();
         }
 
-        function calcDomainScoresForScope(type, value) {
-            // Agrupa preguntas por dominio oficial usando surveyQuestions (nombres exactos de la norma)
+        function _buildDomainMap() {
             const DOMAINS = {};
             surveyQuestions
                 .filter(q => q.dominio && !q.dominio.includes('(no puntúa)') && !q.dominio.includes('traumático') && !q.dominio.includes('Acontecimiento'))
@@ -1138,10 +1137,12 @@
                     if (!DOMAINS[q.dominio]) DOMAINS[q.dominio] = [];
                     if (!DOMAINS[q.dominio].includes(q.id)) DOMAINS[q.dominio].push(q.id);
                 });
-            let rows = _colabData;
-            if (type === 'cadena')   rows = _colabData.filter(r => r.cadena   === value);
-            if (type === 'sucursal') rows = _colabData.filter(r => r.sucursal === value);
-            if (!rows.length) return null;
+            return DOMAINS;
+        }
+
+        function _calcDomainScoresFromRows(rows) {
+            if (!rows.length) return [];
+            const DOMAINS = _buildDomainMap();
             const acum = {};
             Object.keys(DOMAINS).forEach(d => { acum[d] = { sum: 0, n: 0 }; });
             rows.forEach(row => {
@@ -1159,6 +1160,14 @@
                 const avg = a.n > 0 ? a.sum / a.n : 0;
                 return { domain, avg, riesgo: getDomainNivel(domain, avg), n: rows.length };
             }).sort((a,b) => b.avg - a.avg);
+        }
+
+        function calcDomainScoresForScope(type, value) {
+            let rows = _colabData;
+            if (type === 'cadena')   rows = _colabData.filter(r => r.cadena   === value);
+            if (type === 'sucursal') rows = _colabData.filter(r => r.sucursal === value);
+            if (!rows.length) return null;
+            return _calcDomainScoresFromRows(rows);
         }
 
         function generateActionPlan() {
@@ -2705,11 +2714,63 @@
                 const result = await res.json();
                 const data = result.status === 'success' ? result.data : getEmptyDashboardData();
                 appState.dashData = data;
-                updateKPIs(data);
-                renderCharts(data);
+
+                // Si hay filtro de cadena activo, recalcular KPIs y dominios en cliente
+                const cadFiltered2 = selCad.length < totalCad;
+                const sucFiltered2 = selSuc.length < totalSuc;
+                if ((cadFiltered2 || sucFiltered2) && _colabData.length) {
+                    let filteredColab = _colabData;
+                    if (cadFiltered2) filteredColab = filteredColab.filter(r => selCad.includes(r.cadena));
+                    if (sucFiltered2) filteredColab = filteredColab.filter(r => selSuc.includes(r.sucursal));
+                    const domScores = _calcDomainScoresFromRows(filteredColab);
+                    const criticos  = domScores.filter(s => s.riesgo === 'Alto' || s.riesgo === 'Muy alto').length;
+                    const avgPuntaje = filteredColab.length
+                        ? filteredColab.reduce((s,r) => s + (parseInt(r.puntajeTotal)||0), 0) / filteredColab.length : 0;
+                    const riesgoKPI = filteredColab.length ? calcRiesgoGlobal(Math.round(avgPuntaje)) : 'Sin datos';
+                    const partEl = document.getElementById('kpi-participation');
+                    if (partEl) partEl.innerText = `${filteredColab.length} respuestas`;
+                    const riskEl = document.getElementById('kpi-risk');
+                    if (riskEl) riskEl.innerText = riesgoKPI;
+                    const domEl  = document.getElementById('kpi-domains');
+                    if (domEl)  domEl.innerText  = criticos;
+                    // Actualizar gráfica de dominios con datos filtrados
+                    const NIVEL_COLOR = { 'Nulo': '#94a3b8', 'Bajo': '#3b82f6', 'Medio': '#f59e0b', 'Alto': '#f97316', 'Muy alto': '#ef4444' };
+                    if (appState.charts.domains) appState.charts.domains.destroy();
+                    const ctxDom = document.getElementById('chart-domains');
+                    if (ctxDom && domScores.length) {
+                        const dLabels  = domScores.map(s => s.domain);
+                        const dData    = domScores.map(s => parseFloat(s.avg.toFixed(2)));
+                        const dColors  = domScores.map(s => NIVEL_COLOR[s.riesgo] || '#3b82f6');
+                        const dNiveles = domScores.map(s => s.riesgo);
+                        appState.charts.domains = new Chart(ctxDom.getContext('2d'), {
+                            type: 'bar',
+                            data: { labels: dLabels, datasets: [{ label: 'Puntaje Promedio', data: dData, backgroundColor: dColors, borderRadius: 6 }] },
+                            options: {
+                                responsive: true, maintainAspectRatio: false,
+                                plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` Promedio: ${ctx.raw}  |  Nivel: ${dNiveles[ctx.dataIndex]}` } } },
+                                scales: { y: { beginAtZero: true, max: 4 } }
+                            }
+                        });
+                    }
+                    // Actualizar tabla de dominios
+                    const tbody = document.getElementById('dominios-table-body');
+                    if (tbody) {
+                        const NCLS = { 'Muy alto':'text-red-600 font-semibold','Alto':'text-orange-600 font-semibold','Medio':'text-yellow-600 font-semibold','Bajo':'text-blue-600','Nulo':'text-slate-400' };
+                        tbody.innerHTML = domScores.map(s =>
+                            `<tr class="border-b border-slate-100 hover:bg-slate-50">
+                                <td class="px-5 py-3 font-medium text-slate-700">${s.domain}</td>
+                                <td class="px-5 py-3 text-center text-slate-600">${s.avg.toFixed(2)}</td>
+                                <td class="px-5 py-3 text-center font-semibold ${NCLS[s.riesgo]||''}">${s.riesgo}</td>
+                            </tr>`
+                        ).join('');
+                    }
+                } else {
+                    updateKPIs(data);
+                    renderCharts(data);
+                    renderDominiosTab(data);
+                }
                 renderTable(data.semaforoCategorias);
                 renderSucursalesTab(data);
-                renderDominiosTab(data);
                 renderContextualCharts(selCad, selSuc, totalCad, totalSuc);
                 // Pendientes/Avance: drill-down según nivel de filtro activo
                 if (_colabData.length) {
