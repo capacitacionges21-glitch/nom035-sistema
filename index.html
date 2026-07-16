@@ -3250,7 +3250,11 @@
             const ta = document.getElementById('title-avance');       if (ta) ta.textContent = isSucursal ? 'Avance por Sucursal' : 'Avance por Cadena';
             const sa = document.getElementById('subtitle-avance');    if (sa) sa.textContent = isSucursal ? '% de participación en cada sucursal' : '% de participación en cada cadena';
 
-            const labels = Object.keys(counts).sort((a,b) => counts[b].total - counts[a].total);
+            const labels = Object.keys(counts).sort((a,b) => {
+                const pctA = counts[a].total > 0 ? counts[a].submitted / counts[a].total : 0;
+                const pctB = counts[b].total > 0 ? counts[b].submitted / counts[b].total : 0;
+                return pctB - pctA;
+            });
             appState.avanceData = { labels, counts, title: isSucursal ? 'Avance por Sucursal' : 'Avance por Cadena' };
             const avanceEl = document.getElementById('avance-cadenas-list');
             if (avanceEl) {
