@@ -318,7 +318,10 @@
                                     <h3 id="title-faltantes" class="text-lg font-bold text-slate-800">Pendientes por responder</h3>
                                     <p id="subtitle-faltantes" class="text-xs text-slate-400 mt-0.5 mb-4">Colaboradores que aún no han completado la encuesta</p>
                                 </div>
-                                <button onclick="downloadChart('chart-faltantes','Pendientes_por_Responder')" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <button onclick="downloadChart('chart-faltantes','Pendientes_por_Responder')" title="Descargar imagen" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-image text-lg"></i></button>
+                                    <button onclick="downloadPendientesChartExcel()" title="Descargar Excel" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><i class="ph ph-file-xls text-lg"></i></button>
+                                </div>
                             </div>
                             <div class="relative w-full" style="height:380px"><canvas id="chart-faltantes"></canvas></div>
                         </div>
@@ -330,7 +333,10 @@
                                     <h3 id="title-avance" class="text-lg font-bold text-slate-800">Avance por Cadena</h3>
                                     <p id="subtitle-avance" class="text-xs text-slate-400 mt-0.5 mb-5">% de participación en cada cadena</p>
                                 </div>
-                                <button onclick="downloadAvanceChart()" title="Descargar gráfico" class="shrink-0 p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-lg"></i></button>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <button onclick="downloadAvanceChart()" title="Descargar imagen" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-image text-lg"></i></button>
+                                    <button onclick="downloadAvanceExcel()" title="Descargar Excel" class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"><i class="ph ph-file-xls text-lg"></i></button>
+                                </div>
                             </div>
                             <div id="avance-cadenas-list" class="space-y-3"></div>
                         </div>
@@ -2833,6 +2839,50 @@
             a.href = cv.toDataURL('image/png');
             a.click();
             showToast('Gráfico descargado.', 'success');
+        }
+
+        function downloadAvanceExcel() {
+            const data = appState.avanceData;
+            if (!data?.labels?.length) { showToast('No hay datos para descargar.', 'error'); return; }
+            const { labels, counts, title } = data;
+            const rows = [
+                [title || 'Avance', 'Completaron', 'Pendientes', 'Total', '% Cumplimiento'],
+                ...labels.map(k => {
+                    const d = counts[k];
+                    const pct = d.total > 0 ? Math.round(d.submitted / d.total * 100) : 0;
+                    return [k, d.submitted, d.total - d.submitted, d.total, pct + '%'];
+                })
+            ];
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws['!cols'] = [36, 14, 14, 10, 16].map(w => ({ wch: w }));
+            const fecha = new Date().toISOString().slice(0, 10);
+            const safeName = (title || 'Avance').replace(/\s+/g, '_');
+            XLSX.utils.book_append_sheet(wb, ws, safeName.slice(0, 31));
+            XLSX.writeFile(wb, `${safeName}_NOM035_${fecha}.xlsx`);
+        }
+
+        function downloadPendientesChartExcel() {
+            const data = appState.avanceData;
+            if (!data?.labels?.length) { showToast('No hay datos para descargar.', 'error'); return; }
+            const { labels, counts } = data;
+            const titleEl = document.getElementById('title-faltantes');
+            const titleText = titleEl?.textContent || 'Pendientes';
+            const rows = [
+                [titleText, 'Completaron', 'Pendientes', 'Total', '% Cumplimiento'],
+                ...labels.map(k => {
+                    const d = counts[k];
+                    const pct = d.total > 0 ? Math.round(d.submitted / d.total * 100) : 0;
+                    return [k, d.submitted, d.total - d.submitted, d.total, pct + '%'];
+                })
+            ];
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws['!cols'] = [36, 14, 14, 10, 16].map(w => ({ wch: w }));
+            const fecha = new Date().toISOString().slice(0, 10);
+            const safeName = titleText.replace(/\s+/g, '_');
+            XLSX.utils.book_append_sheet(wb, ws, safeName.slice(0, 31));
+            XLSX.writeFile(wb, `${safeName}_NOM035_${fecha}.xlsx`);
         }
 
         // Mapa canvasId → clave en appState.charts
