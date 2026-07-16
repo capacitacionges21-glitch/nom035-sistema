@@ -3274,6 +3274,37 @@
             if (appState.charts?.faltantes) appState.charts.faltantes.destroy();
             const ctx = document.getElementById('chart-faltantes');
             if (!ctx) return;
+
+            const stackLabelsPlugin = {
+                id: 'stackLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx: c, scales, data } = chart;
+                    const ds0 = data.datasets[0].data;
+                    const ds1 = data.datasets[1].data;
+                    data.labels.forEach((_, i) => {
+                        const completados = ds0[i] || 0;
+                        const pendientes  = ds1[i] || 0;
+                        const total = completados + pendientes;
+                        if (total === 0) return;
+                        const pct = Math.round(completados / total * 100);
+                        const barEl = chart.getDatasetMeta(1).data[i];
+                        if (!barEl) return;
+                        const x    = barEl.x;
+                        const topY = scales.y.getPixelForValue(total);
+                        c.save();
+                        c.textAlign = 'center';
+                        c.textBaseline = 'bottom';
+                        c.font = 'bold 9px Arial';
+                        c.fillStyle = '#1e293b';
+                        c.fillText(`${pct}%`, x, topY - 11);
+                        c.font = '8px Arial';
+                        c.fillStyle = '#64748b';
+                        c.fillText(`${completados}/${total}`, x, topY - 2);
+                        c.restore();
+                    });
+                }
+            };
+
             appState.charts.faltantes = new Chart(ctx.getContext('2d'), {
                 type: 'bar',
                 data: {
@@ -3285,9 +3316,11 @@
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { top: 28 } },
                     plugins: { legend: { position:'bottom', labels:{ font:{ size:11 }, padding:12 } } },
                     scales: { x:{ stacked:true, ticks:{ font:{ size:9 } } }, y:{ stacked:true, beginAtZero:true, ticks:{ stepSize:1 } } }
-                }
+                },
+                plugins: [stackLabelsPlugin]
             });
         }
 
