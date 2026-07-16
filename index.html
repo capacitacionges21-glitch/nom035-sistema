@@ -2717,7 +2717,8 @@
                     const sucFiltered = selSuc.length < totalSuc;
                     let missingOpts;
                     if (sucFiltered) {
-                        missingOpts = { groupBy: 'colaborador', filterCadenas: cadFiltered ? selCad : null, filterSucursales: selSuc };
+                        // Filtro de sucursal activo: mostrar barras solo de las sucursales seleccionadas
+                        missingOpts = { groupBy: 'sucursal', filterCadenas: cadFiltered ? selCad : null, filterSucursales: selSuc };
                     } else if (cadFiltered) {
                         missingOpts = { groupBy: 'sucursal', filterCadenas: selCad };
                     } else {
