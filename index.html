@@ -562,7 +562,7 @@
                     </div>
                     <div class="flex justify-between items-center mb-2 gap-2 flex-wrap">
                         <span id="colab-filter-count" class="text-xs text-slate-400"></span>
-                        <div class="flex gap-2 items-center">
+                        <div class="flex gap-2 items-center flex-wrap">
                             <select id="colab-riesgo-filter" onchange="filterColaboradoresTable()"
                                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                                 <option value="">Todos los riesgos</option>
@@ -574,6 +574,10 @@
                             </select>
                             <input id="colab-search" type="text" placeholder="Buscar colaborador..." oninput="filterColaboradoresTable()"
                                 class="px-3 py-2 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 w-52">
+                            <button onclick="downloadColaboradoresExcel()" title="Descargar tabla actual como Excel"
+                                class="flex items-center px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors shadow-sm">
+                                <i class="ph ph-download-simple mr-1.5 text-base"></i> Descargar
+                            </button>
                         </div>
                     </div>
                     <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -3101,8 +3105,39 @@
             if (countEl) countEl.textContent = filtered.length < _colabData.length
                 ? `${filtered.length} de ${_colabData.length} colaboradores` : '';
 
+            appState.filteredColabData = filtered;
             const container = document.getElementById('colaboradores-container');
             if (container) renderColaboradoresTab(filtered, container);
+        }
+
+        function downloadColaboradoresExcel() {
+            const data = appState.filteredColabData || _colabData || [];
+            if (!data.length) { showToast('No hay datos para descargar.', 'error'); return; }
+
+            const sorted = [...data].sort((a, b) => (b.puntajeTotal || 0) - (a.puntajeTotal || 0));
+            const rows = [
+                ['No. Colaborador', 'Nombre', 'Puesto', 'Sucursal', 'Cadena', 'Puntaje', 'Riesgo Global', 'Fecha'],
+                ...sorted.map(r => [
+                    r.empId || '',
+                    r.nombre || '',
+                    r.puesto || '',
+                    r.sucursal || '',
+                    r.cadena || '',
+                    r.puntajeTotal || 0,
+                    r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : ''),
+                    r.fecha || ''
+                ])
+            ];
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws['!cols'] = [14, 32, 28, 28, 22, 10, 14, 22].map(w => ({ wch: w }));
+            XLSX.utils.book_append_sheet(wb, ws, 'Resultados');
+
+            const riesgoFilter = document.getElementById('colab-riesgo-filter')?.value || '';
+            const sufijo = riesgoFilter ? `_${riesgoFilter.replace(/\s/g, '')}` : '';
+            const fecha = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `Colaboradores_NOM035${sufijo}_${fecha}.xlsx`);
         }
 
         function openColabDetail(empId) {
