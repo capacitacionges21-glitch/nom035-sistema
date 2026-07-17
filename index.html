@@ -3800,14 +3800,25 @@
             ];
             const COLORS_BASE = ['#dc2626','#ea580c','#ca8a04','#7c3aed','#0284c7','#475569'];
             const tipoFiltro  = document.getElementById('ev-filter-tipo')?.value || '';
-            const counts = ATS.map(({ id }) => data.filter(r => {
-                try {
-                    let resp = r.respuestas;
-                    if (typeof resp === 'string') resp = JSON.parse(resp);
-                    const v = String(resp?.[String(id)] ?? '').toUpperCase();
-                    return v === 'SI' || v === 'SÍ' || v === 'YES' || v === 'TRUE';
-                } catch { return false; }
-            }).length);
+            // counts + desglose por año por tipo
+            const countsByTipo = ATS.map(({ id }) => {
+                const matching = data.filter(r => {
+                    try {
+                        let resp = r.respuestas;
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        const v = String(resp?.[String(id)] ?? '').toUpperCase();
+                        return v === 'SI' || v === 'SÍ' || v === 'YES' || v === 'TRUE';
+                    } catch { return false; }
+                });
+                const porAnio = {};
+                matching.forEach(r => {
+                    const m = String(r.fecha || '').match(/\b(20\d{2})\b/);
+                    const yr = m ? m[1] : 'Sin año';
+                    porAnio[yr] = (porAnio[yr] || 0) + 1;
+                });
+                return { total: matching.length, porAnio };
+            });
+            const counts = countsByTipo.map(c => c.total);
             const COLORS = ATS.map((a, i) =>
                 !tipoFiltro || String(a.id) === tipoFiltro ? COLORS_BASE[i] : COLORS_BASE[i] + '33'
             );
@@ -3817,7 +3828,22 @@
                 data: { labels: ATS.map(a => a.label), datasets: [{ label: 'Colaboradores', data: counts, backgroundColor: COLORS, borderRadius: 6, borderSkipped: false }] },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} colaborador${c.parsed.y!==1?'es':''}`, title: c => c[0].label.replace('\n',' ') } } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: c => c[0].label.replace('\n', ' '),
+                                label: c => {
+                                    const info = countsByTipo[c.dataIndex];
+                                    const lines = [` Total: ${info.total} colaborador${info.total!==1?'es':''}`];
+                                    Object.keys(info.porAnio).sort().forEach(yr => {
+                                        lines.push(`  ${yr}: ${info.porAnio[yr]}`);
+                                    });
+                                    return lines;
+                                }
+                            }
+                        }
+                    },
                     scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { color:'#f1f5f9' } }, x: { grid: { display:false } } }
                 }
             });
