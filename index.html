@@ -568,16 +568,31 @@
                                 <option value="100">Otro riesgo de vida</option>
                             </select>
                         </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Año</label>
+                            <select id="ev-filter-anio" onchange="applyEventosFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-red-400 min-w-[110px]">
+                                <option value="">Todos los años</option>
+                            </select>
+                        </div>
                         <button onclick="clearEventosFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
                         <span id="ev-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
                     <div id="eventos-kpis" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
                     <div id="eventos-chart-wrapper" class="hidden bg-white rounded-2xl border border-slate-100 p-5 mb-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-semibold text-slate-700">Distribución por tipo de acontecimiento</h3>
-                            <span class="text-xs text-slate-400">Colaboradores que reportaron cada tipo</span>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-semibold text-slate-700 text-sm">Distribución por tipo de acontecimiento</h3>
+                                </div>
+                                <div class="relative" style="height:220px"><canvas id="eventos-chart"></canvas></div>
+                            </div>
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-semibold text-slate-700 text-sm">Afectados por año de encuesta</h3>
+                                </div>
+                                <div class="relative" style="height:220px"><canvas id="eventos-chart-anio"></canvas></div>
+                            </div>
                         </div>
-                        <div class="relative" style="height:260px"><canvas id="eventos-chart"></canvas></div>
                     </div>
                     <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                         <div id="eventos-container" class="p-8 text-center text-slate-400 italic">Selecciona este panel para cargar datos...</div>
@@ -3707,6 +3722,16 @@
             const cadenas = [...new Set(data.map(d => d.cadena).filter(Boolean))].sort();
             cadSel.innerHTML = '<option value="">Todas las cadenas</option>' +
                 cadenas.map(c => `<option value="${c}"${c===prevCad?' selected':''}>${c}</option>`).join('');
+            const anioSel = document.getElementById('ev-filter-anio');
+            if (anioSel) {
+                const prevAnio = anioSel.value;
+                const anios = [...new Set(data.map(d => {
+                    const m = String(d.fecha || '').match(/\b(20\d{2})\b/);
+                    return m ? m[1] : null;
+                }).filter(Boolean))].sort();
+                anioSel.innerHTML = '<option value="">Todos los años</option>' +
+                    anios.map(a => `<option value="${a}"${a===prevAnio?' selected':''}>${a}</option>`).join('');
+            }
             onEvCadenaChange(true);
         }
 
@@ -3728,6 +3753,7 @@
             const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
             const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
             const tipoId   = document.getElementById('ev-filter-tipo')?.value     || '';
+            const anio     = document.getElementById('ev-filter-anio')?.value     || '';
             let subset = data;
             if (cadena)   subset = subset.filter(d => d.cadena   === cadena);
             if (sucursal) subset = subset.filter(d => d.sucursal === sucursal);
@@ -3740,33 +3766,30 @@
                     } catch(e) { return false; }
                 });
             }
+            if (anio) {
+                subset = subset.filter(d => {
+                    const m = String(d.fecha || '').match(/\b(20\d{2})\b/);
+                    return m && m[1] === anio;
+                });
+            }
             const infoEl = document.getElementById('ev-filter-info');
-            if (infoEl) infoEl.textContent = (cadena || sucursal || tipoId) ? `${subset.length} de ${data.length} registros` : '';
+            if (infoEl) infoEl.textContent = (cadena || sucursal || tipoId || anio) ? `${subset.length} de ${data.length} registros` : '';
             renderEventosKPIs(subset, document.getElementById('eventos-kpis'));
             renderEventosChart(subset);
             renderEventosTab(subset, document.getElementById('eventos-container'));
         }
 
         let _eventosChart = null;
+        let _eventosChartAnio = null;
         function renderEventosChart(data) {
-            let wrapper = document.getElementById('eventos-chart-wrapper');
-            let ctx = document.getElementById('eventos-chart');
-            // Crear dinámicamente si el HTML cacheado no los tiene
-            if (!wrapper) {
-                const kpis = document.getElementById('eventos-kpis');
-                const container = document.getElementById('eventos-container')?.parentElement;
-                if (!kpis || !container) return;
-                wrapper = document.createElement('div');
-                wrapper.id = 'eventos-chart-wrapper';
-                wrapper.className = 'bg-white rounded-2xl border border-slate-100 p-5 mb-6';
-                wrapper.innerHTML = '<div class="flex items-center justify-between mb-4"><h3 class="font-semibold text-slate-700">Distribución por tipo de acontecimiento</h3><span class="text-xs text-slate-400">Colaboradores que reportaron cada tipo</span></div><div class="relative" style="height:260px"><canvas id="eventos-chart"></canvas></div>';
-                container.parentElement.insertBefore(wrapper, container);
-                ctx = document.getElementById('eventos-chart');
-            }
-            if (!wrapper || !ctx) return;
+            const wrapper = document.getElementById('eventos-chart-wrapper');
+            const ctx     = document.getElementById('eventos-chart');
+            const ctxAnio = document.getElementById('eventos-chart-anio');
+            if (!wrapper || !ctx || !ctxAnio) return;
             if (!data || data.length === 0) { wrapper.classList.add('hidden'); return; }
             wrapper.classList.remove('hidden');
 
+            // ── Gráfica 1: distribución por tipo ──────────────────────
             const ATS = [
                 { id: 95,  label: 'Accidente\ngrave' },
                 { id: 96,  label: 'Asalto' },
@@ -3777,7 +3800,6 @@
             ];
             const COLORS_BASE = ['#dc2626','#ea580c','#ca8a04','#7c3aed','#0284c7','#475569'];
             const tipoFiltro  = document.getElementById('ev-filter-tipo')?.value || '';
-
             const counts = ATS.map(({ id }) => data.filter(r => {
                 try {
                     let resp = r.respuestas;
@@ -3786,52 +3808,61 @@
                     return v === 'SI' || v === 'SÍ' || v === 'YES' || v === 'TRUE';
                 } catch { return false; }
             }).length);
-
-            // Si hay filtro de tipo: resaltar la barra seleccionada, atenuar las demás
             const COLORS = ATS.map((a, i) =>
-                !tipoFiltro || String(a.id) === tipoFiltro
-                    ? COLORS_BASE[i]
-                    : COLORS_BASE[i] + '33'   // ~20% opacidad para las no seleccionadas
+                !tipoFiltro || String(a.id) === tipoFiltro ? COLORS_BASE[i] : COLORS_BASE[i] + '33'
             );
-
             if (_eventosChart) { _eventosChart.destroy(); _eventosChart = null; }
             _eventosChart = new Chart(ctx, {
                 type: 'bar',
-                data: {
-                    labels: ATS.map(a => a.label),
-                    datasets: [{
-                        label: 'Colaboradores',
-                        data: counts,
-                        backgroundColor: COLORS,
-                        borderRadius: 6,
-                        borderSkipped: false,
-                    }]
-                },
+                data: { labels: ATS.map(a => a.label), datasets: [{ label: 'Colaboradores', data: counts, backgroundColor: COLORS, borderRadius: 6, borderSkipped: false }] },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ` ${ctx.parsed.y} colaborador${ctx.parsed.y !== 1 ? 'es' : ''}`,
-                                title: ctx => ctx[0].label.replace('\n', ' '),
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
-                    }
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} colaborador${c.parsed.y!==1?'es':''}`, title: c => c[0].label.replace('\n',' ') } } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { color:'#f1f5f9' } }, x: { grid: { display:false } } }
                 }
             });
+
+            // ── Gráfica 2: afectados por año ──────────────────────────
+            const anioMap = {};
+            data.forEach(r => {
+                const m = String(r.fecha || '').match(/\b(20\d{2})\b/);
+                const yr = m ? m[1] : 'Sin año';
+                anioMap[yr] = (anioMap[yr] || 0) + 1;
+            });
+            const anioLabels = Object.keys(anioMap).sort();
+            const anioData   = anioLabels.map(k => anioMap[k]);
+            if (_eventosChartAnio) { _eventosChartAnio.destroy(); _eventosChartAnio = null; }
+            _eventosChartAnio = new Chart(ctxAnio, {
+                type: 'bar',
+                data: { labels: anioLabels, datasets: [{ label: 'Colaboradores', data: anioData, backgroundColor: '#3b82f6', borderRadius: 6, borderSkipped: false }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} colaborador${c.parsed.y!==1?'es':''}` } } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { color:'#f1f5f9' } }, x: { grid: { display:false } } }
+                }
+            });
+        }
+
+        function getSecCounts(r) {
+            let resp = r.respuestas;
+            if (typeof resp === 'string') try { resp = JSON.parse(resp); } catch { resp = {}; }
+            if (!resp || typeof resp !== 'object') resp = {};
+            const si = id => String(resp[String(id)] || '').toUpperCase() === 'SI';
+            const tieneSI3 = [95,96,97,98,99,100].filter(si).length >= 3;
+            const secII    = [101,102].filter(si).length;
+            const secIII   = [103,104,105,106,107,108,109].filter(si).length;
+            const secIV    = [110,111,112,113,114].filter(si).length;
+            const requiere = tieneSI3 && (secII >= 1 || secIII >= 3 || secIV >= 2);
+            return { secII, secIII, secIV, requiere, tieneSI3 };
         }
 
         function clearEventosFilters() {
             const c = document.getElementById('ev-filter-cadena');
             const t = document.getElementById('ev-filter-tipo');
+            const a = document.getElementById('ev-filter-anio');
             if (c) c.value = '';
             if (t) t.value = '';
+            if (a) a.value = '';
             onEvCadenaChange();
         }
 
@@ -3871,33 +3902,74 @@
                     </div>`;
                 return;
             }
+            const ATS_TIPOS = [
+                { id: 95, label: 'Accidente grave' }, { id: 96, label: 'Asalto' },
+                { id: 97, label: 'Actos violentos' }, { id: 98, label: 'Secuestro' },
+                { id: 99, label: 'Amenazas' }, { id: 100, label: 'Otro riesgo de vida' },
+            ];
+            const getTiposRow = r => {
+                try {
+                    let resp = r.respuestas;
+                    if (typeof resp === 'string') resp = JSON.parse(resp);
+                    return ATS_TIPOS.filter(t => String(resp?.[String(t.id)] ?? '').toUpperCase() === 'SI').map(t => t.label).join(', ') || '—';
+                } catch { return '—'; }
+            };
+            const secBadge = (val, max, labels) => {
+                const pct = max ? val/max : 0;
+                const cls = pct === 0 ? 'bg-slate-100 text-slate-500' : pct < 0.5 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}" title="${labels}">${val}/${max}</span>`;
+            };
+            const accionBadge = (req, tieneSI3) => {
+                if (!tieneSI3) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">Monitorear</span>`;
+                if (req) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">⚠ Atención clínica</span>`;
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Seguimiento</span>`;
+            };
+            const formatFecha = f => {
+                if (!f) return '—';
+                const d = new Date(f);
+                if (!isNaN(d)) return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
+                return String(f);
+            };
             container.innerHTML = `
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-slate-50 border-b border-slate-200">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 sticky top-0">
                             <tr>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">No. Colaborador</th>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Nombre</th>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Puesto</th>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Sucursal</th>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Cadena</th>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Fecha encuesta</th>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Fecha evento</th>
-                                <th class="px-5 py-3 text-left font-semibold text-slate-600">Descripción</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">No. Colab.</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Nombre</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Puesto</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Sucursal</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Tipo(s)</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">F. Encuesta</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">F. Evento</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Involucrados</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap max-w-[160px]">Descripción</th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec II — Recuerdos (q101-102)">Sec II<br><span class="font-normal text-slate-400">Recuerdos</span></th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec III — Esfuerzo por evitar (q103-109)">Sec III<br><span class="font-normal text-slate-400">Evitación</span></th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec IV — Afectación (q110-114)">Sec IV<br><span class="font-normal text-slate-400">Afectación</span></th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Acción NOM-035</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            ${data.map(r => `
-                            <tr class="hover:bg-red-50 transition-colors">
-                                <td class="px-5 py-3 font-mono text-slate-600 text-xs">${r.empId || '—'}</td>
-                                <td class="px-5 py-3 font-medium text-slate-800">${r.nombre || '—'}</td>
-                                <td class="px-5 py-3 text-slate-600">${r.puesto || '—'}</td>
-                                <td class="px-5 py-3 text-slate-600">${r.sucursal || '—'}</td>
-                                <td class="px-5 py-3 text-slate-500 text-xs">${r.cadena || '—'}</td>
-                                <td class="px-5 py-3 text-slate-500">${r.fecha || '—'}</td>
-                                <td class="px-5 py-3 text-slate-500">${r.eventoFecha || '—'}</td>
-                                <td class="px-5 py-3 text-slate-500 max-w-xs truncate" title="${(r.eventoDescripcion || '').replace(/"/g,'&quot;')}">${r.eventoDescripcion || '—'}</td>
-                            </tr>`).join('')}
+                            ${data.map(r => {
+                                const sc = getSecCounts(r);
+                                return `
+                                <tr class="hover:bg-red-50 transition-colors">
+                                    <td class="px-3 py-3 font-mono text-slate-500">${r.empId || '—'}</td>
+                                    <td class="px-3 py-3 font-medium text-slate-800 whitespace-nowrap">${r.nombre || '—'}</td>
+                                    <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${r.puesto || '—'}</td>
+                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${r.sucursal || '—'}</td>
+                                    <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${getTiposRow(r)}</td>
+                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${formatFecha(r.fecha)}</td>
+                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${formatFecha(r.eventoFecha)}</td>
+                                    <td class="px-3 py-3 text-slate-500 max-w-[140px] truncate" title="${(r.eventoInvolucrados||'').replace(/"/g,'&quot;')}">${r.eventoInvolucrados || '—'}</td>
+                                    <td class="px-3 py-3 text-slate-500 max-w-[160px] truncate" title="${(r.eventoDescripcion||'').replace(/"/g,'&quot;')}">${r.eventoDescripcion || '—'}</td>
+                                    <td class="px-3 py-3 text-center">${secBadge(sc.secII, 2, 'Recuerdos recurrentes, sueños recurrentes')}</td>
+                                    <td class="px-3 py-3 text-center">${secBadge(sc.secIII, 7, 'Evitar sentimientos, lugares, personas; dificultad para recordar; distanciamiento; dificultad para expresar; sensación de futuro limitado')}</td>
+                                    <td class="px-3 py-3 text-center">${secBadge(sc.secIV, 5, 'Dificultad para dormir, irritabilidad, falta de concentración, alerta constante, sobresalto')}</td>
+                                    <td class="px-3 py-3">${accionBadge(sc.requiere, sc.tieneSI3)}</td>
+                                </tr>`;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>`;
