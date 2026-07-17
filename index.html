@@ -560,6 +560,13 @@
                         <span id="ev-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
                     <div id="eventos-kpis" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
+                    <div id="eventos-chart-wrapper" class="hidden bg-white rounded-2xl border border-slate-100 p-5 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-semibold text-slate-700">Distribución por tipo de acontecimiento</h3>
+                            <span class="text-xs text-slate-400">Colaboradores que reportaron cada tipo</span>
+                        </div>
+                        <div class="relative" style="height:260px"><canvas id="eventos-chart"></canvas></div>
+                    </div>
                     <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                         <div id="eventos-container" class="p-8 text-center text-slate-400 italic">Selecciona este panel para cargar datos...</div>
                     </div>
@@ -919,7 +926,7 @@
         }
 
         let loadedEmployees = [];
-        let appState = { user: null, answers: {}, charts: {}, dashData: null, eventosData: [] };
+        let appState = { user: null, answers: {}, charts: {}, dashData: null, eventosData: null };
         let currentSurveyPage = 1;
         let signatureDrawn = false;
         let surveyStartTime = null;
@@ -2197,13 +2204,13 @@
                     return;
                 }
             }
-            if (delta === 1 && currentSurveyPage === 15 && getSiCount() < 3) {
-                currentSurveyPage = totalBlocks + 1; // saltar directo a firma (menos de 3 SI)
+            if (delta === 1 && currentSurveyPage === 15 && getSiCount() === 0) {
+                currentSurveyPage = totalBlocks + 1; // saltar directo a firma (ningún SI en Sección I)
                 updatePaginationUI();
                 updateProgress();
                 return;
             }
-            if (delta === -1 && currentSurveyPage === totalBlocks + 1 && getSiCount() < 3) {
+            if (delta === -1 && currentSurveyPage === totalBlocks + 1 && getSiCount() === 0) {
                 currentSurveyPage = 15; // al ir atrás, regresar a sección 15
                 updatePaginationUI();
                 updateProgress();
@@ -3626,16 +3633,30 @@
             const kpisEl = document.getElementById('eventos-kpis');
             if (!container) return;
             // Si ya hay datos cargados, solo re-aplicar filtros
-            if (appState.eventosData) {
+            if (appState.eventosData !== null) {
                 populateEventosFilters();
                 applyEventosFilters();
                 return;
             }
             container.innerHTML = '<div class="p-8 text-center text-slate-400"><i class="ph ph-spinner animate-spin text-2xl"></i><p class="mt-2 text-sm">Cargando datos...</p></div>';
             try {
-                const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getEventosTraumaticos');
+                // Reutiliza getColaboradoresDetalle (misma fuente que el PDF ATS) y filtra
+                // client-side: incluir solo quienes respondieron "Sí" a alguna pregunta de Sección I
+                const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle');
                 const result = await res.json();
-                appState.eventosData = result.status === 'success' ? result.data : [];
+                const todos = result.status === 'success' ? result.data : [];
+                const ATS_IDS = [95, 96, 97, 98, 99, 100];
+                appState.eventosData = todos.filter(r => {
+                    if (String(r.eventoTraumatico || '').toUpperCase() === 'SI') return true;
+                    try {
+                        let resp = r.respuestas;
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        if (!resp || typeof resp !== 'object') return false;
+                        return ATS_IDS.some(id => String(resp[String(id)] || '').toUpperCase() === 'SI');
+                    } catch { return false; }
+                });
+                console.log('[ATS] Encuestados:', todos.length, '| Con evento:', appState.eventosData.length);
                 populateEventosFilters();
                 applyEventosFilters();
             } catch(e) {
@@ -3677,7 +3698,88 @@
             const infoEl = document.getElementById('ev-filter-info');
             if (infoEl) infoEl.textContent = (cadena || sucursal) ? `${subset.length} de ${data.length} registros` : '';
             renderEventosKPIs(subset, document.getElementById('eventos-kpis'));
+            renderEventosChart(subset);
             renderEventosTab(subset, document.getElementById('eventos-container'));
+        }
+
+        let _eventosChart = null;
+        function renderEventosChart(data) {
+            let wrapper = document.getElementById('eventos-chart-wrapper');
+            let ctx = document.getElementById('eventos-chart');
+            // Crear dinámicamente si el HTML cacheado no los tiene
+            if (!wrapper) {
+                const kpis = document.getElementById('eventos-kpis');
+                const container = document.getElementById('eventos-container')?.parentElement;
+                if (!kpis || !container) return;
+                wrapper = document.createElement('div');
+                wrapper.id = 'eventos-chart-wrapper';
+                wrapper.className = 'bg-white rounded-2xl border border-slate-100 p-5 mb-6';
+                wrapper.innerHTML = '<div class="flex items-center justify-between mb-4"><h3 class="font-semibold text-slate-700">Distribución por tipo de acontecimiento</h3><span class="text-xs text-slate-400">Colaboradores que reportaron cada tipo</span></div><div class="relative" style="height:260px"><canvas id="eventos-chart"></canvas></div>';
+                container.parentElement.insertBefore(wrapper, container);
+                ctx = document.getElementById('eventos-chart');
+            }
+            if (!wrapper || !ctx) return;
+            if (!data || data.length === 0) { wrapper.classList.add('hidden'); return; }
+            wrapper.classList.remove('hidden');
+
+            const ATS = [
+                { id: 95,  label: 'Accidente\ngrave' },
+                { id: 96,  label: 'Asalto' },
+                { id: 97,  label: 'Actos\nviolentos' },
+                { id: 98,  label: 'Secuestro' },
+                { id: 99,  label: 'Amenazas' },
+                { id: 100, label: 'Otro riesgo\nde vida' },
+            ];
+            const COLORS = ['#dc2626','#ea580c','#ca8a04','#7c3aed','#0284c7','#475569'];
+
+            const counts = ATS.map(({ id }) => data.filter(r => {
+                if (String(r.eventoTraumatico || '').toUpperCase() === 'SI') {
+                    try {
+                        let resp = r.respuestas;
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        const v = String(resp?.[String(id)] ?? '').toUpperCase();
+                        return v === 'SI' || v === 'SÍ' || v === 'YES' || v === 'TRUE';
+                    } catch { return false; }
+                }
+                try {
+                    let resp = r.respuestas;
+                    if (typeof resp === 'string') resp = JSON.parse(resp);
+                    const v = String(resp?.[String(id)] ?? '').toUpperCase();
+                    return v === 'SI' || v === 'SÍ' || v === 'YES' || v === 'TRUE';
+                } catch { return false; }
+            }).length);
+
+            if (_eventosChart) { _eventosChart.destroy(); _eventosChart = null; }
+            _eventosChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ATS.map(a => a.label),
+                    datasets: [{
+                        label: 'Colaboradores',
+                        data: counts,
+                        backgroundColor: COLORS,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.parsed.y} colaborador${ctx.parsed.y !== 1 ? 'es' : ''}`,
+                                title: ctx => ctx[0].label.replace('\n', ' '),
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
         }
 
         function clearEventosFilters() {
@@ -3710,11 +3812,16 @@
 
         function renderEventosTab(data, container) {
             if (!data || data.length === 0) {
+                const totalEncuestados = (appState.eventosData || []).length;
+                const debugMsg = totalEncuestados === 0
+                    ? '<p class="text-xs text-slate-400 mt-2">Sin datos del servidor — revisa consola (F12) para diagnóstico.</p>'
+                    : `<p class="text-xs text-slate-400 mt-2">${totalEncuestados} colaborador${totalEncuestados !== 1 ? 'es detectados' : ' detectado'} con eventos — el filtro actual no coincide.</p>`;
                 container.innerHTML = `
                     <div class="p-12 text-center">
                         <div class="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-3xl"></i></div>
                         <h3 class="text-lg font-bold text-slate-700 mb-1">Sin registros</h3>
                         <p class="text-sm text-slate-500">No se han reportado eventos traumáticos severos hasta el momento.</p>
+                        ${debugMsg}
                     </div>`;
                 return;
             }
@@ -3902,7 +4009,14 @@
 
                 const ev = eventosMap[String(r.empId || '').trim()] || {};
                 const siCount = ATS_PREGUNTAS.filter(q => String(resp[String(q.id)] || '').toUpperCase() === 'SI').length;
-                const tieneSI = siCount >= 3;
+                const tieneSI = siCount >= 1; // cualquier "Sí" en Sección I → reportó acontecimiento
+
+                // Evaluación clínica por secciones II, III y IV
+                const secII_si  = [101, 102].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
+                const secIII_si = [103,104,105,106,107,108,109].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
+                const secIV_si  = [110,111,112,113,114].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
+                // Requiere atención clínica si cualquier criterio se cumple (NOM-035, Guía III)
+                const requiereAtencion = tieneSI && (secII_si >= 1 || secIII_si >= 3 || secIV_si >= 2);
 
                 let y = MG;
 
@@ -3967,15 +4081,15 @@
 
                 // — Resultado Sección I —
                 if (tieneSI) {
-                    doc.setFillColor(254,242,242); doc.setDrawColor(252,165,165);
+                    doc.setFillColor(255,251,235); doc.setDrawColor(251,191,36);
                     doc.roundedRect(MG, y, CW, 9, 1, 1, 'FD');
-                    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(185,28,28);
-                    doc.text('RESULTADO: Reporto al menos un acontecimiento traumatico severo. Requiere atencion especializada.', MG+3, y+6);
+                    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(146,64,14);
+                    doc.text(`SECCION I: Reporto ${siCount} acontecimiento${siCount>1?'s':''} traumatico${siCount>1?'s':''}. Procede evaluacion de efectos (Secciones II, III y IV).`, MG+3, y+6);
                 } else {
                     doc.setFillColor(240,253,244); doc.setDrawColor(134,239,172);
                     doc.roundedRect(MG, y, CW, 9, 1, 1, 'FD');
                     doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(22,101,52);
-                    doc.text('RESULTADO: No reporto acontecimienos traumaticos severos.', MG+3, y+6);
+                    doc.text('RESULTADO: No reporto acontecimienos traumaticos severos. No requiere valoracion clinica.', MG+3, y+6);
                 }
                 y += 13;
 
@@ -4033,6 +4147,46 @@
                         drawSIBox(PW - MG - 26, y+0.75, ans);
                         y += 10;
                     });
+
+                    // — Resultado clínico final (Secciones II, III y IV) —
+                    y += 3;
+                    y = needPage(y, 30);
+
+                    // Criterios individuales
+                    const criterios = [
+                        { label: 'Secc. II  — Recuerdos persistentes',         si: secII_si,  total: 2,  umbral: 1, texto: `${secII_si}/2 respuestas "Sí"  (criterio: ≥ 1)` },
+                        { label: 'Secc. III — Esfuerzo por evitar',             si: secIII_si, total: 7,  umbral: 3, texto: `${secIII_si}/7 respuestas "Sí"  (criterio: ≥ 3)` },
+                        { label: 'Secc. IV  — Afectación',                      si: secIV_si,  total: 5,  umbral: 2, texto: `${secIV_si}/5 respuestas "Sí"  (criterio: ≥ 2)` },
+                    ];
+                    criterios.forEach(cr => {
+                        const cumple = cr.si >= cr.umbral;
+                        doc.setFillColor(cumple?254:249, cumple?242:250, cumple?242:252);
+                        doc.setDrawColor(cumple?252:209, cumple?165:213, cumple?165:219);
+                        doc.roundedRect(MG, y, CW, 7, 1, 1, 'FD');
+                        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(cumple?185:71, cumple?28:85, cumple?28:105);
+                        doc.text(`${cumple ? '● CRITERIO CUMPLIDO' : '○ Sin criterio'}  |  ${cr.label}`, MG+3, y+4.5);
+                        doc.setFont('helvetica','normal'); doc.setTextColor(cumple?185:100, cumple?28:116, cumple?28:139);
+                        doc.text(cr.texto, MG+3, y+4.5, { align: 'left' });
+                        // right-align the count text
+                        doc.setFont('helvetica','bold'); doc.setFontSize(7);
+                        doc.text(cr.texto, PW-MG-3, y+4.5, { align: 'right' });
+                        y += 9;
+                    });
+
+                    y += 2;
+                    y = needPage(y, 12);
+                    if (requiereAtencion) {
+                        doc.setFillColor(254,242,242); doc.setDrawColor(252,165,165);
+                        doc.roundedRect(MG, y, CW, 10, 1, 1, 'FD');
+                        doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(185,28,28);
+                        doc.text('RESULTADO FINAL: REQUIERE ATENCIÓN CLÍNICA ESPECIALIZADA', MG+3, y+7);
+                    } else {
+                        doc.setFillColor(240,253,244); doc.setDrawColor(134,239,172);
+                        doc.roundedRect(MG, y, CW, 10, 1, 1, 'FD');
+                        doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(22,101,52);
+                        doc.text('RESULTADO FINAL: Reportó acontecimiento. Sin indicadores de atención clínica en Secc. II, III y IV.', MG+3, y+7);
+                    }
+                    y += 14;
                 }
 
                 // — Pie de página —
