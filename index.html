@@ -3669,6 +3669,18 @@
                 const result = await res.json();
                 const todos = result.status === 'success' ? result.data : [];
                 const ATS_IDS = [95, 96, 97, 98, 99, 100];
+                // Enrich each record with event details from the JSON blob when direct fields are empty
+                todos.forEach(r => {
+                    try {
+                        let resp = r.respuestas;
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        if (!resp || typeof resp !== 'object') return;
+                        if (!r.eventoFecha        && resp.eventoFecha)        r.eventoFecha        = resp.eventoFecha;
+                        if (!r.eventoInvolucrados && resp.eventoInvolucrados) r.eventoInvolucrados = resp.eventoInvolucrados;
+                        if (!r.eventoDescripcion  && resp.eventoDescripcion)  r.eventoDescripcion  = resp.eventoDescripcion;
+                    } catch { /* ignore */ }
+                });
                 appState.eventosData = todos.filter(r => {
                     if (String(r.eventoTraumatico || '').toUpperCase() === 'SI') return true;
                     try {
