@@ -3752,17 +3752,10 @@
                 { id: 99,  label: 'Amenazas' },
                 { id: 100, label: 'Otro riesgo\nde vida' },
             ];
-            const COLORS = ['#dc2626','#ea580c','#ca8a04','#7c3aed','#0284c7','#475569'];
+            const COLORS_BASE = ['#dc2626','#ea580c','#ca8a04','#7c3aed','#0284c7','#475569'];
+            const tipoFiltro  = document.getElementById('ev-filter-tipo')?.value || '';
 
             const counts = ATS.map(({ id }) => data.filter(r => {
-                if (String(r.eventoTraumatico || '').toUpperCase() === 'SI') {
-                    try {
-                        let resp = r.respuestas;
-                        if (typeof resp === 'string') resp = JSON.parse(resp);
-                        const v = String(resp?.[String(id)] ?? '').toUpperCase();
-                        return v === 'SI' || v === 'SÍ' || v === 'YES' || v === 'TRUE';
-                    } catch { return false; }
-                }
                 try {
                     let resp = r.respuestas;
                     if (typeof resp === 'string') resp = JSON.parse(resp);
@@ -3770,6 +3763,13 @@
                     return v === 'SI' || v === 'SÍ' || v === 'YES' || v === 'TRUE';
                 } catch { return false; }
             }).length);
+
+            // Si hay filtro de tipo: resaltar la barra seleccionada, atenuar las demás
+            const COLORS = ATS.map((a, i) =>
+                !tipoFiltro || String(a.id) === tipoFiltro
+                    ? COLORS_BASE[i]
+                    : COLORS_BASE[i] + '33'   // ~20% opacidad para las no seleccionadas
+            );
 
             if (_eventosChart) { _eventosChart.destroy(); _eventosChart = null; }
             _eventosChart = new Chart(ctx, {
