@@ -3881,19 +3881,46 @@
         }
 
         async function downloadEventosPDF() {
+            const ATS_TIPOS = [
+                { id: 95,  label: 'Accidente grave' },
+                { id: 96,  label: 'Asalto' },
+                { id: 97,  label: 'Actos violentos' },
+                { id: 98,  label: 'Secuestro' },
+                { id: 99,  label: 'Amenazas' },
+                { id: 100, label: 'Otro riesgo de vida' },
+            ];
+            const getTipos = r => {
+                try {
+                    let resp = r.respuestas;
+                    if (typeof resp === 'string') resp = JSON.parse(resp);
+                    return ATS_TIPOS.filter(t => String(resp?.[String(t.id)] ?? '').toUpperCase() === 'SI')
+                                    .map(t => t.label).join(', ');
+                } catch(e) { return '—'; }
+            };
+
             const allData  = appState.eventosData || [];
             const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
             const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
+            const tipoId   = document.getElementById('ev-filter-tipo')?.value     || '';
             let data = allData;
             if (cadena)   data = data.filter(d => d.cadena   === cadena);
             if (sucursal) data = data.filter(d => d.sucursal === sucursal);
+            if (tipoId) {
+                data = data.filter(d => {
+                    try {
+                        let resp = d.respuestas;
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        return String(resp?.[tipoId] ?? '').toUpperCase() === 'SI';
+                    } catch(e) { return false; }
+                });
+            }
             if (!data || data.length === 0) {
                 showToast('No hay colaboradores con eventos traumáticos para reportar.', 'error');
                 return;
             }
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape', 'mm', 'a4');
-            const pageW = 297, margin = 15, contentW = pageW - margin * 2;
+            const pageW = 297, margin = 15;
             let y = margin;
 
             try { const g = await loadImgAsB64('logo-ges.png'); doc.addImage(g, 'PNG', margin, y, 22, 11); } catch(e) {}
@@ -3905,7 +3932,8 @@
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(100, 116, 139);
-            doc.text('NOM-035-STPS-2018 | Generado: ' + new Date().toLocaleDateString('es-MX'), pageW / 2, y + 13, { align: 'center' });
+            const filtroTexto = [cadena, sucursal, tipoId ? ATS_TIPOS.find(t => String(t.id) === tipoId)?.label : ''].filter(Boolean).join(' · ');
+            doc.text('NOM-035-STPS-2018 | Generado: ' + new Date().toLocaleDateString('es-MX') + (filtroTexto ? '  |  Filtro: ' + filtroTexto : ''), pageW / 2, y + 13, { align: 'center' });
             y += 22;
 
             doc.setDrawColor(203, 213, 225);
@@ -3920,16 +3948,16 @@
 
             doc.autoTable({
                 startY: y,
-                head: [['No. Colaborador', 'Nombre', 'Puesto', 'Sucursal', 'Cadena', 'Fecha Encuesta', 'Fecha Evento', 'Involucrados', 'Descripción']],
+                head: [['No. Colaborador', 'Nombre', 'Puesto', 'Sucursal', 'Cadena', 'Tipo(s) de acontecimiento', 'Fecha Encuesta', 'Fecha Evento', 'Involucrados', 'Descripción']],
                 body: data.map(r => [
                     r.empId || '', r.nombre || '', r.puesto || '', r.sucursal || '',
-                    r.cadena || '', r.fecha || '', r.eventoFecha || '',
+                    r.cadena || '', getTipos(r), r.fecha || '', r.eventoFecha || '',
                     r.eventoInvolucrados || '', r.eventoDescripcion || ''
                 ]),
-                styles: { fontSize: 7.5, cellPadding: 3, overflow: 'linebreak' },
+                styles: { fontSize: 7, cellPadding: 2.5, overflow: 'linebreak' },
                 headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
                 alternateRowStyles: { fillColor: [254, 242, 242] },
-                columnStyles: { 8: { cellWidth: 50 } },
+                columnStyles: { 5: { cellWidth: 38 }, 9: { cellWidth: 45 } },
                 margin: { left: margin, right: margin }
             });
 
