@@ -569,7 +569,7 @@
                             </select>
                         </div>
                         <div class="flex flex-col gap-1">
-                            <label class="text-xs text-slate-400 font-medium pl-1">Año</label>
+                            <label class="text-xs text-slate-400 font-medium pl-1">Año del evento</label>
                             <select id="ev-filter-anio" onchange="applyEventosFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-red-400 min-w-[110px]">
                                 <option value="">Todos los años</option>
                             </select>
@@ -3726,7 +3726,7 @@
             if (anioSel) {
                 const prevAnio = anioSel.value;
                 const anios = [...new Set(data.map(d => {
-                    const m = String(d.fecha || '').match(/\b(20\d{2})\b/);
+                    const m = String(d.eventoFecha || '').match(/\b(20\d{2})\b/);
                     return m ? m[1] : null;
                 }).filter(Boolean))].sort();
                 anioSel.innerHTML = '<option value="">Todos los años</option>' +
@@ -3768,7 +3768,7 @@
             }
             if (anio) {
                 subset = subset.filter(d => {
-                    const m = String(d.fecha || '').match(/\b(20\d{2})\b/);
+                    const m = String(d.eventoFecha || '').match(/\b(20\d{2})\b/);
                     return m && m[1] === anio;
                 });
             }
@@ -3856,7 +3856,7 @@
             ];
             const anioDesglose = {}; // { '2026': { total: N, tipos: { 'Asalto': 3, ... } } }
             data.forEach(r => {
-                const m = String(r.fecha || '').match(/\b(20\d{2})\b/);
+                const m = String(r.eventoFecha || '').match(/\b(20\d{2})\b/);
                 const yr = m ? m[1] : 'Sin año';
                 if (!anioDesglose[yr]) anioDesglose[yr] = { total: 0, tipos: {} };
                 anioDesglose[yr].total++;
