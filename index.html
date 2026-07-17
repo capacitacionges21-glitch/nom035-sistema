@@ -3848,22 +3848,50 @@
                 }
             });
 
-            // ── Gráfica 2: afectados por año ──────────────────────────
-            const anioMap = {};
+            // ── Gráfica 2: afectados por año con desglose por tipo ───────
+            const ATS_NOMBRES = [
+                { id: 95, label: 'Accidente grave' }, { id: 96, label: 'Asalto' },
+                { id: 97, label: 'Actos violentos' }, { id: 98, label: 'Secuestro' },
+                { id: 99, label: 'Amenazas' },        { id: 100, label: 'Otro riesgo de vida' },
+            ];
+            const anioDesglose = {}; // { '2026': { total: N, tipos: { 'Asalto': 3, ... } } }
             data.forEach(r => {
                 const m = String(r.fecha || '').match(/\b(20\d{2})\b/);
                 const yr = m ? m[1] : 'Sin año';
-                anioMap[yr] = (anioMap[yr] || 0) + 1;
+                if (!anioDesglose[yr]) anioDesglose[yr] = { total: 0, tipos: {} };
+                anioDesglose[yr].total++;
+                let resp = r.respuestas;
+                try { if (typeof resp === 'string') resp = JSON.parse(resp); } catch { resp = {}; }
+                ATS_NOMBRES.forEach(({ id, label }) => {
+                    if (String(resp?.[String(id)] ?? '').toUpperCase() === 'SI') {
+                        anioDesglose[yr].tipos[label] = (anioDesglose[yr].tipos[label] || 0) + 1;
+                    }
+                });
             });
-            const anioLabels = Object.keys(anioMap).sort();
-            const anioData   = anioLabels.map(k => anioMap[k]);
+            const anioLabels = Object.keys(anioDesglose).sort();
+            const anioData   = anioLabels.map(k => anioDesglose[k].total);
             if (_eventosChartAnio) { _eventosChartAnio.destroy(); _eventosChartAnio = null; }
             _eventosChartAnio = new Chart(ctxAnio, {
                 type: 'bar',
                 data: { labels: anioLabels, datasets: [{ label: 'Colaboradores', data: anioData, backgroundColor: '#3b82f6', borderRadius: 6, borderSkipped: false }] },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.parsed.y} colaborador${c.parsed.y!==1?'es':''}` } } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: c => `Año ${c[0].label}`,
+                                label: c => {
+                                    const info = anioDesglose[anioLabels[c.dataIndex]];
+                                    const lines = [` Total: ${info.total} colaborador${info.total!==1?'es':''}`];
+                                    ATS_NOMBRES.forEach(({ label }) => {
+                                        if (info.tipos[label]) lines.push(`  ${label}: ${info.tipos[label]}`);
+                                    });
+                                    return lines;
+                                }
+                            }
+                        }
+                    },
                     scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { color:'#f1f5f9' } }, x: { grid: { display:false } } }
                 }
             });
