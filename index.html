@@ -3600,7 +3600,7 @@
                 avanceEl.innerHTML = labels.map(k => {
                     const d = counts[k];
                     const pct = d.total > 0 ? Math.round(d.submitted / d.total * 100) : 0;
-                    const barC = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+                    const barC = 'bg-blue-600';
                     return `<div><div class="flex justify-between text-xs mb-1">
                         <span class="text-slate-600 font-medium truncate max-w-[65%]" title="${k}">${k}</span>
                         <span class="text-slate-400 shrink-0 ml-1">${d.submitted}/${d.total} · ${pct}%</span>
