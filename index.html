@@ -556,6 +556,18 @@
                                 <option value="">Todas las sucursales</option>
                             </select>
                         </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Tipo de acontecimiento</label>
+                            <select id="ev-filter-tipo" onchange="applyEventosFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-red-400 min-w-[200px]">
+                                <option value="">Todos los tipos</option>
+                                <option value="95">Accidente grave</option>
+                                <option value="96">Asalto</option>
+                                <option value="97">Actos violentos</option>
+                                <option value="98">Secuestro</option>
+                                <option value="99">Amenazas</option>
+                                <option value="100">Otro riesgo de vida</option>
+                            </select>
+                        </div>
                         <button onclick="clearEventosFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
                         <span id="ev-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
@@ -3692,11 +3704,21 @@
             const data     = appState.eventosData || [];
             const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
             const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
+            const tipoId   = document.getElementById('ev-filter-tipo')?.value     || '';
             let subset = data;
             if (cadena)   subset = subset.filter(d => d.cadena   === cadena);
             if (sucursal) subset = subset.filter(d => d.sucursal === sucursal);
+            if (tipoId) {
+                subset = subset.filter(d => {
+                    try {
+                        let resp = d.respuestas;
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        return String(resp?.[tipoId] ?? '').toUpperCase() === 'SI';
+                    } catch(e) { return false; }
+                });
+            }
             const infoEl = document.getElementById('ev-filter-info');
-            if (infoEl) infoEl.textContent = (cadena || sucursal) ? `${subset.length} de ${data.length} registros` : '';
+            if (infoEl) infoEl.textContent = (cadena || sucursal || tipoId) ? `${subset.length} de ${data.length} registros` : '';
             renderEventosKPIs(subset, document.getElementById('eventos-kpis'));
             renderEventosChart(subset);
             renderEventosTab(subset, document.getElementById('eventos-container'));
@@ -3784,8 +3806,9 @@
 
         function clearEventosFilters() {
             const c = document.getElementById('ev-filter-cadena');
-            const s = document.getElementById('ev-filter-sucursal');
+            const t = document.getElementById('ev-filter-tipo');
             if (c) c.value = '';
+            if (t) t.value = '';
             onEvCadenaChange();
         }
 
