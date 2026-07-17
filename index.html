@@ -2406,6 +2406,17 @@
             const eventoTraumatico = [95, 96, 97, 98, 99, 100].some(id =>
                 document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)) ? 'SI' : 'NO';
 
+            const evFecha        = eventoTraumatico === 'SI' ? (document.getElementById('trauma-fecha')?.value || '') : '';
+            const evInvolucrados = eventoTraumatico === 'SI' ? (document.getElementById('trauma-involucrados')?.value?.trim() || '') : '';
+            const evDescripcion  = eventoTraumatico === 'SI' ? (document.getElementById('trauma-descripcion')?.value?.trim() || '') : '';
+
+            // Embed event details inside the JSON blob so they are always persisted
+            if (eventoTraumatico === 'SI') {
+                respuestas['eventoFecha']        = evFecha;
+                respuestas['eventoInvolucrados'] = evInvolucrados;
+                respuestas['eventoDescripcion']  = evDescripcion;
+            }
+
             const payload = {
                 action: 'saveSurvey',
                 timestamp: new Date().toISOString(),
@@ -2424,9 +2435,9 @@
                 puntajeTotal: puntajeTotal,
                 riesgoGlobal: calcRiesgoGlobal(puntajeTotal),
                 eventoTraumatico: eventoTraumatico,
-                eventoFecha: eventoTraumatico === 'SI' ? (document.getElementById('trauma-fecha')?.value || '') : '',
-                eventoInvolucrados: eventoTraumatico === 'SI' ? (document.getElementById('trauma-involucrados')?.value?.trim() || '') : '',
-                eventoDescripcion: eventoTraumatico === 'SI' ? (document.getElementById('trauma-descripcion')?.value?.trim() || '') : ''
+                eventoFecha:        evFecha,
+                eventoInvolucrados: evInvolucrados,
+                eventoDescripcion:  evDescripcion
             };
 
             const btn = document.getElementById('btn-submit-survey');
