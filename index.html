@@ -3905,7 +3905,7 @@
             const secII    = [101,102].filter(si).length;
             const secIII   = [103,104,105,106,107,108,109].filter(si).length;
             const secIV    = [110,111,112,113,114].filter(si).length;
-            const requiere = tieneSI && secII >= 1;
+            const requiere = tieneSI && (secII >= 1 || secIII >= 3 || secIV >= 2);
             return { secII, secIII, secIV, requiere, tieneSI };
         }
 
@@ -4215,7 +4215,7 @@
                 const secIII_si = [103,104,105,106,107,108,109].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
                 const secIV_si  = [110,111,112,113,114].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
                 // Requiere atención clínica si cualquier criterio se cumple (NOM-035, Guía III)
-                const requiereAtencion = tieneSI && secII_si >= 1;
+                const requiereAtencion = tieneSI && (secII_si >= 1 || secIII_si >= 3 || secIV_si >= 2);
 
                 let y = MG;
 
