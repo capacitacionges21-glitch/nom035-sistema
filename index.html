@@ -3901,12 +3901,12 @@
             if (typeof resp === 'string') try { resp = JSON.parse(resp); } catch { resp = {}; }
             if (!resp || typeof resp !== 'object') resp = {};
             const si = id => String(resp[String(id)] || '').toUpperCase() === 'SI';
-            const tieneSI3 = [95,96,97,98,99,100].filter(si).length >= 3;
+            const tieneSI  = [95,96,97,98,99,100].some(si);
             const secII    = [101,102].filter(si).length;
             const secIII   = [103,104,105,106,107,108,109].filter(si).length;
             const secIV    = [110,111,112,113,114].filter(si).length;
-            const requiere = tieneSI3 && (secII >= 1 || secIII >= 3 || secIV >= 2);
-            return { secII, secIII, secIV, requiere, tieneSI3 };
+            const requiere = tieneSI && secII >= 1;
+            return { secII, secIII, secIV, requiere, tieneSI };
         }
 
         function clearEventosFilters() {
@@ -3972,8 +3972,8 @@
                 const cls = pct === 0 ? 'bg-slate-100 text-slate-500' : pct < 0.5 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700';
                 return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}" title="${labels}">${val}/${max}</span>`;
             };
-            const accionBadge = (req, tieneSI3) => {
-                if (!tieneSI3) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">Monitorear</span>`;
+            const accionBadge = (req, tieneSI) => {
+                if (!tieneSI) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">Monitorear</span>`;
                 if (req) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">⚠ Atención clínica</span>`;
                 return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Seguimiento</span>`;
             };
@@ -4020,7 +4020,7 @@
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secII, 2, 'Recuerdos recurrentes, sueños recurrentes')}</td>
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIII, 7, 'Evitar sentimientos, lugares, personas; dificultad para recordar; distanciamiento; dificultad para expresar; sensación de futuro limitado')}</td>
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIV, 5, 'Dificultad para dormir, irritabilidad, falta de concentración, alerta constante, sobresalto')}</td>
-                                    <td class="px-3 py-3">${accionBadge(sc.requiere, sc.tieneSI3)}</td>
+                                    <td class="px-3 py-3">${accionBadge(sc.requiere, sc.tieneSI)}</td>
                                 </tr>`;
                             }).join('')}
                         </tbody>
@@ -4215,7 +4215,7 @@
                 const secIII_si = [103,104,105,106,107,108,109].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
                 const secIV_si  = [110,111,112,113,114].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
                 // Requiere atención clínica si cualquier criterio se cumple (NOM-035, Guía III)
-                const requiereAtencion = tieneSI && (secII_si >= 1 || secIII_si >= 3 || secIV_si >= 2);
+                const requiereAtencion = tieneSI && secII_si >= 1;
 
                 let y = MG;
 
