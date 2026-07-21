@@ -1888,6 +1888,47 @@
             navigateTo('login-view');
         }
 
+        function handleTraumaSecChange() {
+            const anySecII = [101, 102].some(id =>
+                document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
+            );
+            const secIIIIds = [103,104,105,106,107,108,109];
+            const secIVIds  = [110,111,112,113,114];
+            const subHdrIII = document.getElementById('trauma-subhdr-secIII');
+            const subHdrIV  = document.getElementById('trauma-subhdr-secIV');
+
+            const showGroup = (ids, subHdr) => {
+                if (subHdr) { subHdr.classList.remove('hidden'); subHdr.classList.add('fade-in'); }
+                ids.forEach(id => {
+                    const el = document.getElementById(`question-card-${id}`);
+                    if (el) { el.classList.remove('hidden'); el.classList.add('fade-in'); }
+                });
+            };
+            const hideGroup = (ids, subHdr) => {
+                if (subHdr) subHdr.classList.add('hidden');
+                ids.forEach(id => {
+                    const el = document.getElementById(`question-card-${id}`);
+                    if (el) { el.classList.add('hidden'); el.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false); }
+                });
+            };
+
+            if (!anySecII) {
+                hideGroup(secIIIIds, subHdrIII);
+                hideGroup(secIVIds, subHdrIV);
+                return;
+            }
+            showGroup(secIIIIds, subHdrIII);
+
+            const secIIISiCount = secIIIIds.filter(id =>
+                document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
+            ).length;
+            if (secIIISiCount >= 3) {
+                showGroup(secIVIds, subHdrIV);
+            } else {
+                hideGroup(secIVIds, subHdrIV);
+            }
+        }
+
         function handleTraumaFilterChange() {
             const hasSi = [95, 96, 97, 98, 99, 100].some(id =>
                 document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
@@ -1983,7 +2024,13 @@
                     if (q.categoria === 'TraumaEval' && q.dimension !== lastDimension) {
                         lastDimension = q.dimension;
                         const subHdr = document.createElement('div');
-                        subHdr.className = 'pt-2 pb-1 px-1';
+                        const subHdrIds = { 'Esfuerzo por evitar': 'trauma-subhdr-secIII', 'Afectación': 'trauma-subhdr-secIV' };
+                        if (subHdrIds[q.dimension]) {
+                            subHdr.id = subHdrIds[q.dimension];
+                            subHdr.className = 'pt-2 pb-1 px-1 hidden';
+                        } else {
+                            subHdr.className = 'pt-2 pb-1 px-1';
+                        }
                         const subTitles = { 'Recuerdos persistentes': 'Sección II — Recuerdos persistentes sobre el acontecimiento', 'Esfuerzo por evitar': 'Sección III — Esfuerzo por evitar circunstancias asociadas', 'Afectación': 'Sección IV — Afectación' };
                         subHdr.innerHTML = `<h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider border-b border-amber-200 pb-2">${subTitles[q.dimension] || q.dimension}</h3>`;
                         pageDiv.appendChild(subHdr);
@@ -1993,7 +2040,7 @@
                     qCard.id = `question-card-${q.id}`;
                     qCard.className = 'question-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow';
 
-                    if ((q.id >= 86 && q.id <= 89) || (q.id >= 91 && q.id <= 94)) {
+                    if ((q.id >= 86 && q.id <= 89) || (q.id >= 91 && q.id <= 94) || (q.id >= 103 && q.id <= 114)) {
                         qCard.classList.add('hidden');
                     }
 
@@ -2048,14 +2095,14 @@
                             <div class="grid grid-cols-2 gap-4 mt-4">
                                 <div class="relative">
                                     <input type="radio" id="${radioSiId}" name="q_${q.id}" value="SI"
-                                        class="peer sr-only radio-custom">
+                                        class="peer sr-only radio-custom" onchange="handleTraumaSecChange()">
                                     <label for="${radioSiId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-amber-50 hover:border-amber-400 transition-all text-center h-full">
                                         <span class="text-lg font-bold text-slate-700 block mb-1">Sí</span>
                                     </label>
                                 </div>
                                 <div class="relative">
                                     <input type="radio" id="${radioNoId}" name="q_${q.id}" value="NO"
-                                        class="peer sr-only radio-custom">
+                                        class="peer sr-only radio-custom" onchange="handleTraumaSecChange()">
                                     <label for="${radioNoId}" class="flex flex-col items-center justify-center p-3 border-2 border-slate-100 rounded-xl cursor-pointer hover:bg-slate-50 transition-all text-center h-full">
                                         <span class="text-lg font-bold text-slate-700 block mb-1">No</span>
                                     </label>
