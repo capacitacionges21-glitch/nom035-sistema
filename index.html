@@ -3896,6 +3896,15 @@
             });
         }
 
+        const NOM035_SEG_STORE = 'nom035_seguimiento_v1';
+        function getNOM035Seg() {
+            try { return JSON.parse(localStorage.getItem(NOM035_SEG_STORE) || '{}'); } catch { return {}; }
+        }
+        function saveNOM035Seg(key, val) {
+            const d = getNOM035Seg(); d[key] = val;
+            localStorage.setItem(NOM035_SEG_STORE, JSON.stringify(d));
+        }
+
         function getSecCounts(r) {
             let resp = r.respuestas;
             if (typeof resp === 'string') try { resp = JSON.parse(resp); } catch { resp = {}; }
@@ -4001,11 +4010,19 @@
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec III — Esfuerzo por evitar (q103-109)">Sec III<br><span class="font-normal text-slate-400">Evitación</span></th>
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec IV — Afectación (q110-114)">Sec IV<br><span class="font-normal text-slate-400">Afectación</span></th>
                                 <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Acción NOM-035</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Seguimiento RH</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            ${data.map(r => {
+                            ${(() => {
+                                const segData = getNOM035Seg();
+                                const SEG_OPTS = ['Pendiente','En proceso','Aplicado','Nulo','N/A'];
+                                const SEG_COLORS = {'Pendiente':'#64748b','En proceso':'#2563eb','Aplicado':'#059669','Nulo':'#ef4444','N/A':'#94a3b8'};
+                                return data.map(r => {
                                 const sc = getSecCounts(r);
+                                const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
+                                const segVal = segData[segKey] || 'Pendiente';
+                                const segOpts = SEG_OPTS.map(o => `<option value="${o}"${o===segVal?' selected':''}>${o}</option>`).join('');
                                 return `
                                 <tr class="hover:bg-red-50 transition-colors">
                                     <td class="px-3 py-3 font-mono text-slate-500">${r.empId || '—'}</td>
@@ -4021,7 +4038,16 @@
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIII, 7, 'Evitar sentimientos, lugares, personas; dificultad para recordar; distanciamiento; dificultad para expresar; sensación de futuro limitado')}</td>
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIV, 5, 'Dificultad para dormir, irritabilidad, falta de concentración, alerta constante, sobresalto')}</td>
                                     <td class="px-3 py-3">${accionBadge(sc.requiere, sc.tieneSI)}</td>
+                                    <td class="px-3 py-3">
+                                        <select onchange="saveNOM035Seg('${segKey}', this.value); this.style.color=({'Pendiente':'#64748b','En proceso':'#2563eb','Aplicado':'#059669','Nulo':'#ef4444','N/A':'#94a3b8'})[this.value]||'#64748b'"
+                                                style="color:${SEG_COLORS[segVal]||'#64748b'}"
+                                                class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-blue-300 cursor-pointer w-28">
+                                            ${segOpts}
+                                        </select>
+                                    </td>
                                 </tr>`;
+                                }).join('');
+                            })()}
                             }).join('')}
                         </tbody>
                     </table>
