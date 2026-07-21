@@ -3559,7 +3559,7 @@
                     type: 'doughnut',
                     data: {
                         labels: ['Completaron','Pendientes'],
-                        datasets: [{ data:[comp, pend], backgroundColor:['#10b981','#f59e0b'], borderWidth:0, hoverOffset:4 }]
+                        datasets: [{ data:[comp, pend], backgroundColor:['#002856','#93c5fd'], borderWidth:0, hoverOffset:4 }]
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false, cutout:'65%',
@@ -3632,9 +3632,6 @@
                         c.save();
                         c.textAlign = 'center';
                         c.textBaseline = 'bottom';
-                        c.font = 'bold 9px Arial';
-                        c.fillStyle = '#1e293b';
-                        c.fillText(`${pct}%`, x, topY - 11);
                         c.font = '8px Arial';
                         c.fillStyle = '#64748b';
                         c.fillText(`${completados}/${total}`, x, topY - 2);
@@ -3648,8 +3645,8 @@
                 data: {
                     labels: labels.map(l => l.length > 16 ? l.substring(0,15)+'…' : l),
                     datasets: [
-                        { label: 'Completaron', data: labels.map(k=>counts[k].submitted), backgroundColor:'#10b981', borderRadius:4 },
-                        { label: 'Pendientes',  data: labels.map(k=>counts[k].total-counts[k].submitted), backgroundColor:'#f59e0b', borderRadius:4 }
+                        { label: 'Completaron', data: labels.map(k=>counts[k].submitted), backgroundColor:'#002856', borderRadius:4 },
+                        { label: 'Pendientes',  data: labels.map(k=>counts[k].total-counts[k].submitted), backgroundColor:'#93c5fd', borderRadius:4 }
                     ]
                 },
                 options: {
@@ -3797,7 +3794,7 @@
                 { id: 99,  label: 'Amenazas' },
                 { id: 100, label: 'Otro riesgo\nde vida' },
             ];
-            const COLORS_BASE = ['#dc2626','#ea580c','#ca8a04','#7c3aed','#0284c7','#475569'];
+            const COLORS_BASE = ['#001a3e','#002856','#0a4a8c','#2563eb','#60a5fa','#93c5fd'];
             const tipoFiltro  = document.getElementById('ev-filter-tipo')?.value || '';
             // counts + desglose por año por tipo
             const countsByTipo = ATS.map(({ id }) => {
@@ -3872,7 +3869,7 @@
             if (_eventosChartAnio) { _eventosChartAnio.destroy(); _eventosChartAnio = null; }
             _eventosChartAnio = new Chart(ctxAnio, {
                 type: 'bar',
-                data: { labels: anioLabels, datasets: [{ label: 'Colaboradores', data: anioData, backgroundColor: '#3b82f6', borderRadius: 6, borderSkipped: false }] },
+                data: { labels: anioLabels, datasets: [{ label: 'Colaboradores', data: anioData, backgroundColor: '#002856', borderRadius: 6, borderSkipped: false }] },
                 options: {
                     responsive: true, maintainAspectRatio: false,
                     plugins: {
