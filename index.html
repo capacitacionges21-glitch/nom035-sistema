@@ -3973,7 +3973,7 @@
                 return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}" title="${labels}">${val}/${max}</span>`;
             };
             const accionBadge = (req, tieneSI) => {
-                if (!tieneSI) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">Monitorear</span>`;
+                if (!tieneSI) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400">N/A</span>`;
                 if (req) return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">⚠ Atención clínica</span>`;
                 return `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Seguimiento</span>`;
             };
