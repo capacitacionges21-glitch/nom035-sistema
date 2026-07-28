@@ -1475,17 +1475,48 @@
                 let scopeRows = _colabData;
                 if (scopeType === 'cadena')   scopeRows = _colabData.filter(r => r.cadena   === scopeValue);
                 if (scopeType === 'sucursal') scopeRows = _colabData.filter(r => r.sucursal === scopeValue);
-                const indAlto    = scopeRows.filter(r => { const rg = r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : ''); return rg === 'Alto'; }).length;
-                const indMuyAlto = scopeRows.filter(r => { const rg = r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : ''); return rg === 'Muy alto'; }).length;
-                const indAlert = (indAlto + indMuyAlto) > 0
+                const indHighRows = scopeRows.filter(r => {
+                    const rg = r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : '');
+                    return rg === 'Alto' || rg === 'Muy alto';
+                }).sort((a, b) => (parseInt(b.puntajeTotal)||0) - (parseInt(a.puntajeTotal)||0));
+                const indAlto    = indHighRows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Alto').length;
+                const indMuyAlto = indHighRows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Muy alto').length;
+                const indAlert = indHighRows.length > 0
                     ? `<div class="mt-3 pt-3 border-t border-emerald-200">
-                        <p class="text-sm font-semibold text-amber-700 mb-1"><i class="ph ph-warning mr-1"></i>Atención individual requerida:</p>
-                        <p class="text-sm text-amber-800">
-                            ${indMuyAlto > 0 ? `<span class="font-bold">${indMuyAlto} colaborador(es) con Riesgo Global Muy alto</span>` : ''}
-                            ${indMuyAlto > 0 && indAlto > 0 ? ' · ' : ''}
-                            ${indAlto > 0 ? `<span class="font-bold">${indAlto} colaborador(es) con Riesgo Global Alto</span>` : ''}
-                        </p>
-                        <p class="text-xs text-amber-700 mt-1">El promedio grupal por dominio no supera los umbrales NOM-035, pero estos colaboradores requieren seguimiento individual. Revísalos en la sección <strong>Por Colaborador</strong>.</p>
+                        <p class="text-sm font-semibold text-amber-700 mb-2"><i class="ph ph-warning mr-1"></i>Atención individual requerida — ${indHighRows.length} colaborador(es):</p>
+                        <div class="overflow-x-auto">
+                          <table class="w-full text-xs">
+                            <thead><tr class="text-slate-500 border-b border-amber-100">
+                              <th class="text-left py-1 pr-3 font-medium">No.</th>
+                              <th class="text-left py-1 pr-3 font-medium">Nombre</th>
+                              <th class="text-left py-1 pr-3 font-medium">Puesto</th>
+                              <th class="text-center py-1 pr-3 font-medium">Puntaje</th>
+                              <th class="text-center py-1 font-medium">Riesgo</th>
+                              <th class="py-1"></th>
+                            </tr></thead>
+                            <tbody>
+                              ${indHighRows.map(r => {
+                                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                                const badge = rg === 'Muy alto'
+                                    ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700';
+                                const eid = JSON.stringify(String(r.empId || r.id || ''));
+                                return `<tr class="border-b border-amber-50 hover:bg-amber-50">
+                                  <td class="py-1.5 pr-3 font-mono text-slate-400">${r.empId || r.id || '—'}</td>
+                                  <td class="py-1.5 pr-3 font-medium text-slate-700 whitespace-nowrap">${r.nombre || '—'}</td>
+                                  <td class="py-1.5 pr-3 text-slate-500 whitespace-nowrap">${r.puesto || '—'}</td>
+                                  <td class="py-1.5 pr-3 text-center font-semibold text-slate-700">${r.puntajeTotal || '—'}</td>
+                                  <td class="py-1.5 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${badge}">${rg}</span></td>
+                                  <td class="py-1.5 pl-2">
+                                    <button onclick="irAPsicoColab(${eid})"
+                                      class="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors whitespace-nowrap">
+                                      <i class="ph ph-arrow-square-out text-sm"></i> Ver detalle
+                                    </button>
+                                  </td>
+                                </tr>`;
+                              }).join('')}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>`
                     : '';
                 container.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl text-emerald-800">
@@ -3017,6 +3048,30 @@
             const isHidden = row.classList.contains('hidden');
             row.classList.toggle('hidden', !isHidden);
             if (icon) icon.style.transform = isHidden ? 'rotate(90deg)' : '';
+        }
+
+        function irAPsicoColab(empId) {
+            switchDashTab('psicosocial');
+            setTimeout(() => {
+                // Clear filters to ensure collaborator is visible
+                ['psico-filter-cadena','psico-filter-sucursal','psico-filter-nivel'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.value = '';
+                });
+                applyPsicoFilters();
+                setTimeout(() => {
+                    // Find and highlight the row
+                    const rows = document.querySelectorAll('#psico-container tbody tr');
+                    for (const row of rows) {
+                        const cell = row.querySelector('td:first-child');
+                        if (cell && cell.textContent.trim() === String(empId)) {
+                            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            row.classList.add('ring-2', 'ring-blue-400', 'bg-blue-50');
+                            setTimeout(() => row.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50'), 3000);
+                            break;
+                        }
+                    }
+                }, 200);
+            }, 100);
         }
 
         function selectSucursalPlan(sucursal) {
