@@ -1108,7 +1108,12 @@
             const filterBar = document.getElementById('filter-bar');
             if (filterBar) {
                 const sinFiltros = ['reportes','eventos','psicosocial'];
-                filterBar.style.display = sinFiltros.includes(tabId) ? 'none' : '';
+                if (sinFiltros.includes(tabId)) {
+                    filterBar.classList.add('hidden');
+                } else {
+                    filterBar.classList.remove('hidden');
+                    filterBar.style.display = '';
+                }
             }
 
             if (tabId === 'planes') renderActionPlans();
