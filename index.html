@@ -197,6 +197,7 @@
                     <a id="menu-reportes" onclick="switchDashTab('reportes')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-file-text text-lg mr-3"></i> Reportes STPS</a>
                     <a id="menu-colaboradores" onclick="switchDashTab('colaboradores')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-user-list text-lg mr-3"></i> Por Colaborador</a>
                     <a id="menu-eventos" onclick="switchDashTab('eventos')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-warning-octagon text-lg mr-3"></i> Eventos Traumáticos</a>
+                    <a id="menu-psicosocial" onclick="switchDashTab('psicosocial')" class="flex items-center px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"><i class="ph ph-brain text-lg mr-3"></i> Riesgos Psicosociales</a>
                 </nav>
                 <div class="p-4 border-t border-slate-200">
                     <button onclick="logout()" class="flex items-center w-full px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="ph ph-sign-out text-lg mr-3"></i> Cerrar Sesión</button>
@@ -639,6 +640,53 @@
                     </div>
                 </div>
 
+                <!-- TAB: RIESGOS PSICOSOCIALES -->
+                <div id="tab-psicosocial" class="fade-in hidden">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                        <div>
+                            <h1 class="text-2xl font-bold text-slate-800">Riesgos Psicosociales</h1>
+                            <p class="text-sm text-slate-500 mt-1">Colaboradores con riesgo global <strong>Alto</strong> o <strong>Muy alto</strong> que requieren seguimiento.</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap justify-end">
+                            <button onclick="downloadPsicoExcel()" class="shrink-0 flex items-center px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors shadow-sm">
+                                <i class="ph ph-microsoft-excel-logo mr-2 text-base"></i> Descargar Excel
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Filtros -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-5 flex flex-wrap items-end gap-3">
+                        <div class="flex items-center gap-2 text-slate-500 text-sm font-medium mr-1"><i class="ph ph-funnel text-base"></i> Filtrar:</div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Cadena</label>
+                            <select id="psico-filter-cadena" onchange="applyPsicoFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[160px]">
+                                <option value="">Todas las cadenas</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Sucursal</label>
+                            <select id="psico-filter-sucursal" onchange="applyPsicoFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[180px]">
+                                <option value="">Todas las sucursales</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs text-slate-400 font-medium pl-1">Nivel de riesgo</label>
+                            <select id="psico-filter-nivel" onchange="applyPsicoFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[140px]">
+                                <option value="">Alto y Muy alto</option>
+                                <option value="Alto">Solo Alto</option>
+                                <option value="Muy alto">Solo Muy alto</option>
+                            </select>
+                        </div>
+                        <button onclick="clearPsicoFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
+                        <span id="psico-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
+                    </div>
+                    <!-- KPIs -->
+                    <div id="psico-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5"></div>
+                    <!-- Tabla -->
+                    <div id="psico-container">
+                        <p class="text-sm text-slate-400 italic text-center py-8">Cargando datos...</p>
+                    </div>
+                </div>
+
                 <!-- TAB: POR COLABORADOR -->
                 <div id="tab-colaboradores" class="fade-in hidden">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -1047,7 +1095,7 @@
         }
 
         function switchDashTab(tabId) {
-            ['resumen', 'sucursales', 'dominios', 'planes', 'reportes', 'eventos', 'colaboradores'].forEach(id => {
+            ['resumen', 'sucursales', 'dominios', 'planes', 'reportes', 'eventos', 'colaboradores', 'psicosocial'].forEach(id => {
                 document.getElementById(`tab-${id}`)?.classList.add('hidden');
                 document.getElementById(`menu-${id}`)?.classList.remove('bg-blue-50', 'text-blue-700');
                 document.getElementById(`menu-${id}`)?.classList.add('text-slate-600');
@@ -1059,7 +1107,7 @@
             // Ocultar filtros en pestañas donde no aplican
             const filterBar = document.getElementById('filter-bar');
             if (filterBar) {
-                const sinFiltros = ['reportes','eventos'];
+                const sinFiltros = ['reportes','eventos','psicosocial'];
                 filterBar.style.display = sinFiltros.includes(tabId) ? 'none' : '';
             }
 
@@ -1069,6 +1117,7 @@
             if (tabId === 'reportes') { populateAcuseInlineSelect(); populateReportesFilters(); }
             if (tabId === 'eventos') initEventosTraumaticos();
             if (tabId === 'colaboradores') initColaboradoresTab();
+            if (tabId === 'psicosocial') initRiesgosPsicosociales();
         }
 
         // ==========================================
@@ -4190,6 +4239,210 @@
                 },
                 plugins: [stackLabelsPlugin]
             });
+        }
+
+        // ==========================================
+        // RIESGOS PSICOSOCIALES — DASHBOARD
+        // ==========================================
+        const NOM035_PSICO_STORE = 'nom035_psico_seg_v1';
+        function getPsicoSeg() { try { return JSON.parse(localStorage.getItem(NOM035_PSICO_STORE) || '{}'); } catch { return {}; } }
+        function savePsicoSeg(key, val) { const d = getPsicoSeg(); d[key] = val; localStorage.setItem(NOM035_PSICO_STORE, JSON.stringify(d)); }
+
+        const PSICO_SEG_OPTS   = ['Pendiente', 'En proceso', 'Aplicado', 'No aplica'];
+        const PSICO_SEG_COLORS = { 'Pendiente': '#64748b', 'En proceso': '#2563eb', 'Aplicado': '#059669', 'No aplica': '#94a3b8' };
+
+        function initRiesgosPsicosociales() {
+            if (!_colabData.length) {
+                document.getElementById('psico-container').innerHTML =
+                    '<p class="text-sm text-slate-400 italic text-center py-8">No hay datos cargados. Ve a Resumen Global primero.</p>';
+                return;
+            }
+            // Populate filters
+            const cadenas   = [...new Set(_colabData.map(r => r.cadena).filter(Boolean))].sort();
+            const sucursales = [...new Set(_colabData.map(r => r.sucursal).filter(Boolean))].sort();
+            const cadSel  = document.getElementById('psico-filter-cadena');
+            const sucSel  = document.getElementById('psico-filter-sucursal');
+            if (cadSel && cadSel.options.length <= 1) {
+                cadenas.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; cadSel.appendChild(o); });
+            }
+            if (sucSel && sucSel.options.length <= 1) {
+                sucursales.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sucSel.appendChild(o); });
+            }
+            applyPsicoFilters();
+        }
+
+        function applyPsicoFilters() {
+            const cadena  = document.getElementById('psico-filter-cadena')?.value  || '';
+            const sucursal= document.getElementById('psico-filter-sucursal')?.value|| '';
+            const nivel   = document.getElementById('psico-filter-nivel')?.value   || '';
+
+            let rows = _colabData.filter(r => {
+                const rg = r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : '');
+                return rg === 'Alto' || rg === 'Muy alto';
+            });
+            if (cadena)   rows = rows.filter(r => r.cadena   === cadena);
+            if (sucursal) rows = rows.filter(r => r.sucursal === sucursal);
+            if (nivel)    rows = rows.filter(r => {
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                return rg === nivel;
+            });
+
+            const total = _colabData.filter(r => {
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                return rg === 'Alto' || rg === 'Muy alto';
+            }).length;
+            const infoEl = document.getElementById('psico-filter-info');
+            if (infoEl) infoEl.textContent = (cadena || sucursal || nivel) ? `${rows.length} de ${total} colaboradores` : `${total} colaboradores`;
+
+            renderPsicoKPIs(rows);
+            renderPsicoTable(rows);
+        }
+
+        function clearPsicoFilters() {
+            ['psico-filter-cadena','psico-filter-sucursal','psico-filter-nivel'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+            applyPsicoFilters();
+        }
+
+        function renderPsicoKPIs(rows) {
+            const kpiEl = document.getElementById('psico-kpis');
+            if (!kpiEl) return;
+            const muyAlto = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Muy alto').length;
+            const alto    = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Alto').length;
+            const cadenas = new Set(rows.map(r => r.cadena).filter(Boolean)).size;
+            const sucursales = new Set(rows.map(r => r.sucursal).filter(Boolean)).size;
+            kpiEl.innerHTML = `
+                <div class="bg-white rounded-2xl border border-red-100 p-4 flex items-center gap-3">
+                    <div class="h-10 w-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-warning text-xl"></i></div>
+                    <div><p class="text-xs text-slate-400 font-medium">Muy alto</p><p class="text-2xl font-bold text-red-600">${muyAlto}</p></div>
+                </div>
+                <div class="bg-white rounded-2xl border border-orange-100 p-4 flex items-center gap-3">
+                    <div class="h-10 w-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-warning-circle text-xl"></i></div>
+                    <div><p class="text-xs text-slate-400 font-medium">Alto</p><p class="text-2xl font-bold text-orange-600">${alto}</p></div>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3">
+                    <div class="h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-buildings text-xl"></i></div>
+                    <div><p class="text-xs text-slate-400 font-medium">Cadenas involucradas</p><p class="text-2xl font-bold text-slate-700">${cadenas}</p></div>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3">
+                    <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-xl"></i></div>
+                    <div><p class="text-xs text-slate-400 font-medium">Sucursales</p><p class="text-2xl font-bold text-slate-700">${sucursales}</p></div>
+                </div>`;
+        }
+
+        function renderPsicoTable(rows) {
+            const container = document.getElementById('psico-container');
+            if (!container) return;
+            if (!rows.length) {
+                container.innerHTML = `<div class="p-12 text-center">
+                    <div class="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-3xl"></i></div>
+                    <h3 class="text-lg font-bold text-slate-700 mb-1">Sin resultados</h3>
+                    <p class="text-sm text-slate-500">No hay colaboradores con riesgo Alto o Muy alto para este filtro.</p></div>`;
+                return;
+            }
+            const segData = getPsicoSeg();
+            const BADGE = {
+                'Muy alto': 'bg-red-100 text-red-700 border border-red-200',
+                'Alto':     'bg-orange-100 text-orange-700 border border-orange-200',
+            };
+            // Sort: Muy alto first, then by score desc
+            rows = [...rows].sort((a, b) => {
+                const ra = a.riesgoGlobal || calcRiesgoGlobal(a.puntajeTotal);
+                const rb = b.riesgoGlobal || calcRiesgoGlobal(b.puntajeTotal);
+                if (ra !== rb) return ra === 'Muy alto' ? -1 : 1;
+                return (parseInt(b.puntajeTotal) || 0) - (parseInt(a.puntajeTotal) || 0);
+            });
+            container.innerHTML = `
+            <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200 sticky top-0">
+                            <tr>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">No. Colab.</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">Nombre</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">Puesto</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">Sucursal</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">Cadena</th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600">Puntaje</th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600">Riesgo Global</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">Dominios críticos</th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600">Seguimiento RH</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${rows.map(r => {
+                                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                                const badge = BADGE[rg] || '';
+                                const segKey = String(r.empId || r.id || '');
+                                const rawVal = segData[segKey];
+                                const segVal = PSICO_SEG_OPTS.includes(rawVal) ? rawVal : 'Pendiente';
+                                const segOpts = PSICO_SEG_OPTS.map(o => `<option value="${o}"${o===segVal?' selected':''}>${o}</option>`).join('');
+                                // Get critical domains for this collaborator
+                                let criticos = '';
+                                try {
+                                    const scores = _calcDomainScoresFromRows([r]);
+                                    if (scores) {
+                                        const crit = scores.filter(s => s.riesgo === 'Alto' || s.riesgo === 'Muy alto');
+                                        criticos = crit.map(c => `<span class="inline-block px-1.5 py-0.5 rounded text-xs mr-1 mb-0.5 ${c.riesgo==='Muy alto'?'bg-red-50 text-red-600':'bg-orange-50 text-orange-600'}">${c.domain}</span>`).join('');
+                                    }
+                                } catch(e) {}
+                                return `<tr class="hover:bg-orange-50 transition-colors">
+                                    <td class="px-3 py-3 font-mono text-slate-500">${r.empId || r.id || '—'}</td>
+                                    <td class="px-3 py-3 font-medium text-slate-800 whitespace-nowrap">${r.nombre || '—'}</td>
+                                    <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${r.puesto || '—'}</td>
+                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${r.sucursal || '—'}</td>
+                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${r.cadena || '—'}</td>
+                                    <td class="px-3 py-3 text-center font-semibold text-slate-700">${r.puntajeTotal || '—'}</td>
+                                    <td class="px-3 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${badge}">${rg}</span></td>
+                                    <td class="px-3 py-3">${criticos || '<span class="text-slate-300">—</span>'}</td>
+                                    <td class="px-3 py-3">
+                                        <select onchange="savePsicoSeg('${segKey}', this.value); this.style.color=(${JSON.stringify(PSICO_SEG_COLORS)})[this.value]||'#64748b'"
+                                                style="color:${PSICO_SEG_COLORS[segVal]||'#64748b'}"
+                                                class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-blue-300 cursor-pointer w-28">
+                                            ${segOpts}
+                                        </select>
+                                    </td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <p class="text-xs text-slate-400 mt-2 italic">Ordenado por nivel de riesgo y puntaje descendente.</p>`;
+        }
+
+        async function downloadPsicoExcel() {
+            const cadena  = document.getElementById('psico-filter-cadena')?.value  || '';
+            const sucursal= document.getElementById('psico-filter-sucursal')?.value|| '';
+            const nivel   = document.getElementById('psico-filter-nivel')?.value   || '';
+            let rows = _colabData.filter(r => {
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                return rg === 'Alto' || rg === 'Muy alto';
+            });
+            if (cadena)   rows = rows.filter(r => r.cadena   === cadena);
+            if (sucursal) rows = rows.filter(r => r.sucursal === sucursal);
+            if (nivel)    rows = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === nivel);
+            if (!rows.length) { showToast('No hay colaboradores para exportar.', 'error'); return; }
+            const segData = getPsicoSeg();
+            const wsData = [['No. Colaborador','Nombre','Puesto','Sucursal','Cadena','Puntaje','Riesgo Global','Dominios Críticos','Seguimiento RH']];
+            rows.forEach(r => {
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                const segKey = String(r.empId || r.id || '');
+                const segVal = PSICO_SEG_OPTS.includes(segData[segKey]) ? segData[segKey] : 'Pendiente';
+                let criticos = '';
+                try {
+                    const scores = _calcDomainScoresFromRows([r]);
+                    if (scores) criticos = scores.filter(s => s.riesgo==='Alto'||s.riesgo==='Muy alto').map(s=>s.domain).join(', ');
+                } catch(e) {}
+                wsData.push([r.empId||r.id||'', r.nombre||'', r.puesto||'', r.sucursal||'', r.cadena||'', r.puntajeTotal||'', rg, criticos, segVal]);
+            });
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [10,30,25,25,20,10,12,40,18].map(w=>({wch:w}));
+            XLSX.utils.book_append_sheet(wb, ws, 'Riesgos Psicosociales');
+            XLSX.writeFile(wb, `RiesgosPsicosociales_${new Date().toLocaleDateString('es-MX').replace(/\//g,'-')}.xlsx`);
+            showToast('Excel descargado.');
         }
 
         // ==========================================
