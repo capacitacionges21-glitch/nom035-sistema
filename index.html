@@ -4248,8 +4248,8 @@
         function getPsicoSeg() { try { return JSON.parse(localStorage.getItem(NOM035_PSICO_STORE) || '{}'); } catch { return {}; } }
         function savePsicoSeg(key, val) { const d = getPsicoSeg(); d[key] = val; localStorage.setItem(NOM035_PSICO_STORE, JSON.stringify(d)); }
 
-        const PSICO_SEG_OPTS   = ['Pendiente', 'En proceso', 'Aplicado', 'No aplica'];
-        const PSICO_SEG_COLORS = { 'Pendiente': '#64748b', 'En proceso': '#2563eb', 'Aplicado': '#059669', 'No aplica': '#94a3b8' };
+        const PSICO_SEG_OPTS   = ['Pendiente', 'Compartido a RH', 'No aplica', 'Nulo'];
+        const PSICO_SEG_COLORS = { 'Pendiente': '#64748b', 'Compartido a RH': '#2563eb', 'No aplica': '#94a3b8', 'Nulo': '#ef4444' };
 
         function initRiesgosPsicosociales() {
             if (!_colabData.length) {
@@ -4789,9 +4789,9 @@
                 return;
             }
 
-            const SEG_OPTS   = ['Compartido a RH', 'No aplica', 'Nulo'];
-            const SEG_COLORS = {'Compartido a RH':'#2563eb', 'No aplica':'#94a3b8', 'Nulo':'#ef4444'};
-            const SEG_DEF    = 'Compartido a RH';
+            const SEG_OPTS   = ['Pendiente', 'Compartido a RH', 'No aplica', 'Nulo'];
+            const SEG_COLORS = {'Pendiente':'#64748b', 'Compartido a RH':'#2563eb', 'No aplica':'#94a3b8', 'Nulo':'#ef4444'};
+            const SEG_DEF    = 'Pendiente';
 
             container.innerHTML = `
                 <p class="text-xs text-slate-500 mb-3 font-medium">
