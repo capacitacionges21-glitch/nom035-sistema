@@ -466,12 +466,13 @@
                     </div>
                 </div>
                 
-                <!-- TAB 4: REPORTES STPS ACTUALIZADO -->
+                <!-- TAB 4: CENTRO DE DESCARGAS -->
                 <div id="tab-reportes" class="fade-in hidden">
-                    <h1 class="text-2xl font-bold mb-6">Centro de Reportes y Descargas</h1>
+                    <h1 class="text-2xl font-bold mb-1">Centro de Descargas</h1>
+                    <p class="text-sm text-slate-400 mb-6">Todos los reportes de la plataforma en un solo lugar. Aplica filtros para acotar los datos descargados.</p>
 
-                    <!-- Filtro propio para Reportes STPS -->
-                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-6 flex flex-wrap items-end gap-3">
+                    <!-- Filtros -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-8 flex flex-wrap items-end gap-3">
                         <div class="flex items-center gap-2 text-slate-500 text-sm font-medium mr-1">
                             <i class="ph ph-funnel text-base"></i> Filtrar descargas:
                         </div>
@@ -491,76 +492,159 @@
                         <span id="rep-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        
-                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
-                            <div class="h-16 w-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-microsoft-excel-logo text-3xl"></i></div>
-                            <h3 class="text-xl font-bold mb-2">Reporte Excel</h3>
-                            <p class="text-sm text-slate-500 mb-6">Descarga la base de datos completa de respuestas en formato Excel (.xlsx).</p>
-                            <a href="https://docs.google.com/spreadsheets/d/1AUtcH5u3LbgCCO7jzmcFgC5xch_R1rjq2__oe7ZFZLY/export?format=xlsx&gid=859518563" target="_blank" class="inline-flex px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium items-center"><i class="ph ph-download-simple mr-2"></i> Descargar Excel</a>
+                    <!-- Sección: Participación -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="h-5 w-1.5 rounded-full bg-emerald-500"></span>
+                            <h2 class="text-base font-bold text-slate-700">Participación</h2>
                         </div>
-
-                        <!-- Botón para PDF -->
-                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
-                            <div class="h-16 w-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-file-pdf text-3xl"></i></div>
-                            <h3 class="text-xl font-bold mb-2">Reportes Individuales (PDF)</h3>
-                            <p class="text-sm text-slate-500 mb-6">Generador automático de Plan de Acción por colaborador listos para expediente.</p>
-                            <button onclick="openPdfModal()" class="inline-flex px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium items-center shadow-sm">
-                                <i class="ph ph-magic-wand mr-2 text-lg"></i> Generar Reportes
-                            </button>
-                        </div>
-
-                        <!-- Reporte Pendientes -->
-                        <div class="bg-white p-8 rounded-2xl border border-slate-100 text-center hover:shadow-md transition-shadow">
-                            <div class="h-16 w-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-clock-countdown text-3xl"></i></div>
-                            <h3 class="text-xl font-bold mb-2">Colaboradores Pendientes</h3>
-                            <p class="text-sm text-slate-500 mb-6">Lista de colaboradores que aún no han completado la encuesta NOM-035.</p>
-                            <button onclick="downloadPendientesExcel()" id="btn-pendientes" class="inline-flex px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors font-medium items-center">
-                                <i class="ph ph-download-simple mr-2"></i> Descargar Excel
-                            </button>
-                        </div>
-
-                        <!-- Acuse por Sucursal -->
-                        <div class="bg-white p-6 rounded-2xl border border-slate-100 hover:shadow-md transition-shadow md:col-span-2">
-                            <div class="flex items-center gap-4 mb-5">
-                                <div class="h-14 w-14 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-signature text-2xl"></i></div>
-                                <div>
-                                    <h3 class="text-xl font-bold">Acuse de Recibido por Sucursal</h3>
-                                    <p class="text-sm text-slate-500">Genera el PDF con todas las firmas de la sucursal seleccionada.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-clock-countdown text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Pendientes de Encuesta</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Colaboradores que aún no han completado la encuesta NOM-035.</p>
+                                    <button onclick="downloadPendientesExcel()" id="btn-pendientes" class="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                                        <i class="ph ph-microsoft-excel-logo"></i> Excel
+                                    </button>
                                 </div>
                             </div>
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <select id="acuse-inline-select" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <option value="">Selecciona una sucursal...</option>
-                                </select>
-                                <button onclick="downloadAcuseInline()" class="shrink-0 flex items-center justify-center px-5 py-2.5 bg-indigo-700 text-white font-medium rounded-lg hover:bg-indigo-800 transition-colors text-sm">
-                                    <i class="ph ph-download-simple mr-2"></i> Descargar PDF
-                                </button>
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-table text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Base Completa de Respuestas</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Hoja de cálculo con todas las respuestas individuales de la encuesta NOM-035.</p>
+                                    <a href="https://docs.google.com/spreadsheets/d/1AUtcH5u3LbgCCO7jzmcFgC5xch_R1rjq2__oe7ZFZLY/export?format=xlsx&gid=859518563" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">
+                                        <i class="ph ph-microsoft-excel-logo"></i> Descargar Excel
+                                    </a>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Reporte para Autoridad -->
-                        <div class="bg-white p-8 rounded-2xl border border-red-100 text-center hover:shadow-md transition-shadow md:col-span-2">
-                            <div class="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-shield-warning text-3xl"></i></div>
-                            <h3 class="text-xl font-bold mb-2">Reporte para Autoridad</h3>
-                            <p class="text-sm text-slate-500 mb-2">Colaboradores con <strong>ATS que requieren atención clínica</strong> y colaboradores con <strong>riesgo psicosocial Alto o Muy alto</strong> por dominio.</p>
-                            <p class="text-xs text-slate-400 mb-6">Para presentar a la autoridad laboral y canalizar con el RH de zona.</p>
-                            <button onclick="downloadAutoridadReport()" class="inline-flex px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium items-center">
-                                <i class="ph ph-download-simple mr-2"></i> Generar Reporte Excel
-                            </button>
+                    <!-- Sección: Resultados NOM-035 -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="h-5 w-1.5 rounded-full bg-blue-500"></span>
+                            <h2 class="text-base font-bold text-slate-700">Resultados NOM-035</h2>
                         </div>
-
-                        <!-- Reporte por Dominio y Categoría -->
-                        <div class="bg-white p-8 rounded-2xl border border-indigo-100 text-center hover:shadow-md transition-shadow md:col-span-2">
-                            <div class="h-16 w-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-chart-bar-horizontal text-3xl"></i></div>
-                            <h3 class="text-xl font-bold mb-2">Reporte por Dominio y Categoría</h3>
-                            <p class="text-sm text-slate-500 mb-2">Distribución de colaboradores por nivel de riesgo desglosada por <strong>dominio</strong> y por <strong>categoría</strong> NOM-035.</p>
-                            <p class="text-xs text-slate-400 mb-6">Útil para identificar qué áreas de la organización concentran el mayor riesgo psicosocial.</p>
-                            <button onclick="downloadDominioCategoriaReport()" class="inline-flex px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium items-center">
-                                <i class="ph ph-download-simple mr-2"></i> Generar Reporte Excel
-                            </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-users text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Base por Colaborador</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Puntaje global y nivel de riesgo de cada colaborador que completó la encuesta.</p>
+                                    <button onclick="repDownloadColabExcel()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                                        <i class="ph ph-microsoft-excel-logo"></i> Excel
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-chart-bar-horizontal text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Distribución por Dominio y Categoría</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Conteo de colaboradores por nivel de riesgo, desglosado por dominio y categoría NOM-035.</p>
+                                    <button onclick="repDownloadDominioCat()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+                                        <i class="ph ph-microsoft-excel-logo"></i> Excel
+                                    </button>
+                                </div>
+                            </div>
                         </div>
+                    </div>
 
+                    <!-- Sección: Riesgos Psicosociales -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="h-5 w-1.5 rounded-full bg-violet-500"></span>
+                            <h2 class="text-base font-bold text-slate-700">Riesgos Psicosociales</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-violet-100 text-violet-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-brain text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Colaboradores Riesgo Alto / Muy Alto</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Listado con dominios críticos y seguimiento RH de colaboradores en riesgo elevado.</p>
+                                    <button onclick="repDownloadPsicoExcel()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition-colors">
+                                        <i class="ph ph-microsoft-excel-logo"></i> Excel
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-red-100 text-red-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-shield-warning text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Reporte para Autoridad</h3>
+                                    <p class="text-xs text-slate-500 mb-3">ATS con atención clínica + riesgo dominio alto/muy alto. Para presentar ante autoridad laboral.</p>
+                                    <button onclick="repDownloadAutoridadReport()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
+                                        <i class="ph ph-microsoft-excel-logo"></i> Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Eventos Traumáticos ATS -->
+                    <div class="mb-8">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="h-5 w-1.5 rounded-full bg-orange-500"></span>
+                            <h2 class="text-base font-bold text-slate-700">Eventos Traumáticos (ATS)</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-first-aid-kit text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Reporte Atención Clínica</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Colaboradores que requieren atención clínica por ATS, con seguimiento RH.</p>
+                                    <button onclick="repDownloadEventosPDF()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 transition-colors">
+                                        <i class="ph ph-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-clipboard-text text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Encuestas ATS Completas</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Base de datos con todas las respuestas ATS por colaborador, secciones I–IV.</p>
+                                    <button onclick="repDownloadEncuestasATS()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-medium hover:bg-rose-700 transition-colors">
+                                        <i class="ph ph-microsoft-excel-logo"></i> Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección: Documentos Individuales -->
+                    <div class="mb-4">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="h-5 w-1.5 rounded-full bg-indigo-500"></span>
+                            <h2 class="text-base font-bold text-slate-700">Documentos Individuales</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-file-pdf text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Reportes Individuales PDF</h3>
+                                    <p class="text-xs text-slate-500 mb-3">Genera reportes con plan de acción por colaborador, listos para expediente.</p>
+                                    <button onclick="openPdfModal()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                                        <i class="ph ph-magic-wand"></i> Generar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl border border-slate-100 hover:shadow-md transition-shadow flex gap-4 items-start">
+                                <div class="h-11 w-11 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center shrink-0"><i class="ph ph-signature text-xl"></i></div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-slate-800 mb-0.5">Acuse por Sucursal</h3>
+                                    <p class="text-xs text-slate-500 mb-3">PDF con firmas de recibido de todos los colaboradores de la sucursal seleccionada.</p>
+                                    <div class="flex gap-2 mt-1">
+                                        <select id="acuse-inline-select" class="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-lg text-xs outline-none focus:ring-2 focus:ring-indigo-500">
+                                            <option value="">Selecciona sucursal...</option>
+                                        </select>
+                                        <button onclick="downloadAcuseInline()" class="shrink-0 flex items-center gap-1.5 px-3 py-2 bg-indigo-700 text-white font-medium rounded-lg hover:bg-indigo-800 transition-colors text-xs">
+                                            <i class="ph ph-file-pdf"></i> PDF
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -3536,7 +3620,7 @@
             XLSX.writeFile(wb, `${safeName}_NOM035_${fecha}.xlsx`);
         }
 
-        async function downloadAutoridadReport() {
+        async function downloadAutoridadReport(cadena='', sucursal='') {
             // Ensure data is loaded
             if (!_colabData.length || !appState.eventosData) {
                 showToast('Cargando datos... por favor espera un momento e intenta de nuevo.', 'info');
@@ -3559,10 +3643,12 @@
                 {id:95,label:'Accidente grave'},{id:96,label:'Asalto'},{id:97,label:'Actos violentos'},
                 {id:98,label:'Secuestro'},{id:99,label:'Amenazas'},{id:100,label:'Otro riesgo de vida'}
             ];
-            const atsRows = (appState.eventosData || []).filter(r => {
+            let atsRows = (appState.eventosData || []).filter(r => {
                 const sc = getSecCounts(r);
                 return sc.requiere;
             });
+            if (cadena)   atsRows = atsRows.filter(r => r.cadena   === cadena);
+            if (sucursal) atsRows = atsRows.filter(r => r.sucursal === sucursal);
             const atsData = [
                 ['No. Colaborador','Nombre','Puesto','Sucursal','Cadena','Tipo(s) de Evento','Fecha Evento','Fecha Encuesta','Sec II (Recuerdos)','Sec III (Evitación)','Sec IV (Afectación)','Acción NOM-035']
             ];
@@ -3642,10 +3728,15 @@
             showToast(`Reporte generado: ${totalATS} ATS, ${totalPsic} riesgo psicosocial.`, 'success');
         }
 
-        function downloadDominioCategoriaReport() {
+        function downloadDominioCategoriaReport(cadena='', sucursal='') {
             if (!_colabData.length) {
                 showToast('Carga los datos primero desde Resumen Global.', 'error'); return;
             }
+            const sourceData = _colabData.filter(r => {
+                if (cadena && r.cadena !== cadena) return false;
+                if (sucursal && r.sucursal !== sucursal) return false;
+                return true;
+            });
             const DOMAINS = _buildDomainMap();
             const NIVELES = ['Nulo','Bajo','Medio','Alto','Muy alto'];
 
@@ -3670,7 +3761,7 @@
             const catCounts = {}; // { categoria: { Nulo:0, ... } }
             Object.keys(catMap).forEach(c => { catCounts[c] = { 'Nulo':0,'Bajo':0,'Medio':0,'Alto':0,'Muy alto':0 }; });
 
-            _colabData.forEach(row => {
+            sourceData.forEach(row => {
                 try {
                     let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas||{});
                     if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -3698,7 +3789,7 @@
                 } catch(e) {}
             });
 
-            const total = _colabData.length;
+            const total = sourceData.length;
             const wb = XLSX.utils.book_new();
 
             // ── Sheet 1: Por Dominio ──
@@ -3733,7 +3824,7 @@
             XLSX.utils.book_append_sheet(wb, wsCat, 'Por Categoría');
 
             // ── Sheet 3: Por Sucursal × Dominio ──
-            const sucursales = [...new Set(_colabData.map(r=>r.sucursal).filter(Boolean))].sort();
+            const sucursales = [...new Set(sourceData.map(r=>r.sucursal).filter(Boolean))].sort();
             const domainList = Object.keys(DOMAINS);
             const sucHeader = ['Sucursal','Cadena','Encuestas',...domainList];
             const sucRows = sucursales.map(suc => {
@@ -3751,6 +3842,61 @@
             XLSX.writeFile(wb, `Reporte_Dominio_Categoria_NOM035_${new Date().toISOString().slice(0,10)}.xlsx`);
             showToast('Reporte por dominio y categoría generado.', 'success');
         }
+
+        // ── Wrappers del Centro de Descargas ─────────────────────────────
+        function _getRepFilters() {
+            return {
+                cadena:   document.getElementById('rep-filter-cadena')?.value  || '',
+                sucursal: document.getElementById('rep-filter-sucursal')?.value || ''
+            };
+        }
+
+        function repDownloadColabExcel() {
+            const {cadena, sucursal} = _getRepFilters();
+            let data = _colabData;
+            if (cadena)   data = data.filter(r => r.cadena   === cadena);
+            if (sucursal) data = data.filter(r => r.sucursal === sucursal);
+            downloadColaboradoresExcel(data);
+        }
+
+        function repDownloadDominioCat() {
+            const {cadena, sucursal} = _getRepFilters();
+            downloadDominioCategoriaReport(cadena, sucursal);
+        }
+
+        function repDownloadAutoridadReport() {
+            const {cadena, sucursal} = _getRepFilters();
+            downloadAutoridadReport(cadena, sucursal);
+        }
+
+        function repDownloadPsicoExcel() {
+            const {cadena, sucursal} = _getRepFilters();
+            const c = document.getElementById('psico-filter-cadena');
+            const s = document.getElementById('psico-filter-sucursal');
+            if (c) c.value = cadena;
+            if (s) s.value = sucursal;
+            applyPsicoFilters();
+            setTimeout(() => downloadPsicoExcel(), 150);
+        }
+
+        function repDownloadEventosPDF() {
+            const {cadena, sucursal} = _getRepFilters();
+            const c = document.getElementById('ev-filter-cadena');
+            const s = document.getElementById('ev-filter-sucursal');
+            if (c) c.value = cadena;
+            if (s) s.value = sucursal;
+            downloadEventosPDF();
+        }
+
+        function repDownloadEncuestasATS() {
+            const {cadena, sucursal} = _getRepFilters();
+            const c = document.getElementById('ev-filter-cadena');
+            const s = document.getElementById('ev-filter-sucursal');
+            if (c) c.value = cadena;
+            if (s) s.value = sucursal;
+            downloadEncuestasATS();
+        }
+        // ─────────────────────────────────────────────────────────────────
 
         // Mapa canvasId → clave en appState.charts
         const _CHART_KEYS = {
@@ -4051,8 +4197,8 @@
             if (container) renderColaboradoresTab(filtered, container);
         }
 
-        function downloadColaboradoresExcel() {
-            const data = appState.filteredColabData || _colabData || [];
+        function downloadColaboradoresExcel(overrideData) {
+            const data = overrideData || appState.filteredColabData || _colabData || [];
             if (!data.length) { showToast('No hay datos para descargar.', 'error'); return; }
 
             const sorted = [...data].sort((a, b) => (b.puntajeTotal || 0) - (a.puntajeTotal || 0));
