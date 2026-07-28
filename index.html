@@ -1111,7 +1111,8 @@
                 return { allowed: false, message: `El período de tu sucursal ya finalizó. Contacta a Recursos Humanos.` };
             }
 
-            const key = Object.keys(CADENA_SCHEDULE).find(k => k === (cadena || '').toUpperCase().trim());
+            const normCadena = s => s.toUpperCase().trim().replace(/[\/\-]+/g,' ').replace(/\s+/g,' ');
+            const key = Object.keys(CADENA_SCHEDULE).find(k => normCadena(k) === normCadena(cadena || ''));
             if (key) {
                 const s = CADENA_SCHEDULE[key];
                 const inicio = new Date(s.inicio + 'T00:00:00');
