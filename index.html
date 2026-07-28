@@ -430,6 +430,22 @@
                     </div>
                     <p class="text-xs text-slate-400 mt-3 italic">Promedio calculado sobre todas las encuestas del filtro activo. Los valores se actualizan conforme se acumulan encuestas.</p>
 
+                    <!-- Conteo por colaborador -->
+                    <div class="mt-8">
+                        <div class="flex items-center justify-between mb-3">
+                            <div>
+                                <h2 class="text-lg font-bold text-slate-800">Colaboradores en Riesgo por Dominio</h2>
+                                <p class="text-xs text-slate-400 mt-0.5">Número de colaboradores en cada nivel de riesgo por dominio</p>
+                            </div>
+                            <button onclick="renderColabPorDominio()" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+                                <i class="ph ph-arrows-clockwise mr-2"></i> Calcular
+                            </button>
+                        </div>
+                        <div id="colab-dominio-container">
+                            <p class="text-sm text-slate-400 italic text-center py-8">Haz clic en <strong>Calcular</strong> para ver la distribución de colaboradores por nivel de riesgo.</p>
+                        </div>
+                    </div>
+
                     <!-- Riesgo por Sucursal -->
                     <div class="mt-8">
                         <div class="flex items-center justify-between mb-3">
@@ -518,6 +534,17 @@
                                     <i class="ph ph-download-simple mr-2"></i> Descargar PDF
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Reporte para Autoridad -->
+                        <div class="bg-white p-8 rounded-2xl border border-red-100 text-center hover:shadow-md transition-shadow md:col-span-2">
+                            <div class="h-16 w-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-shield-warning text-3xl"></i></div>
+                            <h3 class="text-xl font-bold mb-2">Reporte para Autoridad</h3>
+                            <p class="text-sm text-slate-500 mb-2">Colaboradores con <strong>ATS que requieren atención clínica</strong> y colaboradores con <strong>riesgo psicosocial Alto o Muy alto</strong> por dominio.</p>
+                            <p class="text-xs text-slate-400 mb-6">Para presentar a la autoridad laboral y canalizar con el RH de zona.</p>
+                            <button onclick="downloadAutoridadReport()" class="inline-flex px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium items-center">
+                                <i class="ph ph-download-simple mr-2"></i> Generar Reporte Excel
+                            </button>
                         </div>
 
                     </div>
@@ -893,7 +920,8 @@
             { id: 13, title: "Sección 13", desc: "Las preguntas siguientes están relacionadas con la atención a clientes y usuarios.", start: 85, end: 89 },
             { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 },
             { id: 15, title: "Acontecimiento Traumático Severo", desc: "¿Ha presenciado o sufrido alguna vez, durante o con motivo del trabajo, alguno de los siguientes acontecimientos? Responda Sí o No a cada opción.", start: 95, end: 100, traumaFiltro: true },
-            { id: 16, title: "Evaluación de Efectos del Acontecimiento", desc: "Las siguientes preguntas hacen referencia al último mes. Contesta Sí o No en relación con el acontecimiento que reportaste.", start: 101, end: 114, traumaEval: true }
+            { id: 16, title: "Evaluación de Efectos del Acontecimiento", desc: "Las siguientes preguntas hacen referencia al último mes. Contesta Sí o No en relación con el acontecimiento que reportaste.", start: 101, end: 114, traumaEval: true },
+            { id: 17, title: "Comentarios y Observaciones", desc: "¿Tienes algún comentario o sugerencia adicional sobre tu experiencia laboral o sobre la encuesta?", comentarios: true }
         ];
 
         // Sucursales con acceso anticipado (antes de que abra su cadena completa)
@@ -2007,6 +2035,17 @@
                             </div>
                         </div>
                     `;
+                } else if (block.comentarios) {
+                    blockHeader.className = 'bg-slate-50 rounded-2xl p-6 mb-6 border border-slate-200';
+                    blockHeader.innerHTML = `
+                        <div class="flex items-start gap-3">
+                            <div class="h-10 w-10 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center shrink-0 mt-0.5"><i class="ph ph-chat-text text-xl"></i></div>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-700 mb-1">${block.title}</h2>
+                                <p class="text-slate-500 text-sm">${block.desc}</p>
+                            </div>
+                        </div>
+                    `;
                 } else {
                     blockHeader.className = 'bg-blue-50 rounded-2xl p-6 mb-6 border border-blue-100';
                     blockHeader.innerHTML = `
@@ -2015,6 +2054,22 @@
                     `;
                 }
                 pageDiv.appendChild(blockHeader);
+
+                if (block.comentarios) {
+                    const commentCard = document.createElement('div');
+                    commentCard.className = 'bg-white p-6 rounded-2xl shadow-sm border border-slate-100';
+                    commentCard.innerHTML = `
+                        <label for="survey-comentario-final" class="block text-sm font-medium text-slate-700 mb-3">
+                            Comentarios adicionales <span class="text-slate-400 font-normal">(opcional)</span>
+                        </label>
+                        <textarea id="survey-comentario-final" rows="5"
+                            placeholder="Escribe aquí tus comentarios, sugerencias o cualquier situación que desees reportar..."
+                            class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-400 outline-none resize-none bg-slate-50 placeholder-slate-300">
+                        </textarea>
+                        <p class="text-xs text-slate-400 mt-2">Tus comentarios son confidenciales y nos ayudan a mejorar las condiciones de trabajo.</p>
+                    `;
+                    pageDiv.appendChild(commentCard);
+                } else {
 
                 const blockQuestions = surveyQuestions.filter(q => q.id >= block.start && q.id <= block.end);
                 let lastDimension = null;
@@ -2170,6 +2225,7 @@
                     `;
                     pageDiv.appendChild(extraFields);
                 }
+                } // end else (not comentarios)
 
                 container.appendChild(pageDiv);
             });
@@ -2279,13 +2335,13 @@
                 }
             }
             if (delta === 1 && currentSurveyPage === 15 && getSiCount() === 0) {
-                currentSurveyPage = totalBlocks + 1; // saltar directo a firma (ningún SI en Sección I)
+                currentSurveyPage = totalBlocks; // skip ATS eval, go to comments page
                 updatePaginationUI();
                 updateProgress();
                 return;
             }
-            if (delta === -1 && currentSurveyPage === totalBlocks + 1 && getSiCount() === 0) {
-                currentSurveyPage = 15; // al ir atrás, regresar a sección 15
+            if (delta === -1 && currentSurveyPage === totalBlocks && getSiCount() === 0) {
+                currentSurveyPage = 15; // back from comments, skip ATS eval
                 updatePaginationUI();
                 updateProgress();
                 return;
@@ -2479,6 +2535,9 @@
                 respuestas['eventoDescripcion']  = evDescripcion;
             }
 
+            const comentarioFinal = document.getElementById('survey-comentario-final')?.value?.trim() || '';
+            if (comentarioFinal) respuestas['comentarioFinal'] = comentarioFinal;
+
             const payload = {
                 action: 'saveSurvey',
                 timestamp: new Date().toISOString(),
@@ -2499,7 +2558,8 @@
                 eventoTraumatico: eventoTraumatico,
                 eventoFecha:        evFecha,
                 eventoInvolucrados: evInvolucrados,
-                eventoDescripcion:  evDescripcion
+                eventoDescripcion:  evDescripcion,
+                comentarioFinal: comentarioFinal,
             };
 
             const btn = document.getElementById('btn-submit-survey');
@@ -2706,6 +2766,74 @@
                 </div>
             </div>
             <p class="text-xs text-slate-400 mt-2 italic">Ordenado por nivel de riesgo máximo. Haz clic en "Ver plan" para ir al plan de acción de esa sucursal.</p>`;
+        }
+
+        function renderColabPorDominio() {
+            const container = document.getElementById('colab-dominio-container');
+            if (!container) return;
+            if (!_colabData.length) {
+                container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-8">No hay datos. Ve a Resumen Global primero.</p>';
+                return;
+            }
+            const DOMAINS = _buildDomainMap();
+            const counts = {}; // { domain: { Nulo:0, Bajo:0, Medio:0, Alto:0, 'Muy alto':0 } }
+            Object.keys(DOMAINS).forEach(d => { counts[d] = { 'Nulo':0, 'Bajo':0, 'Medio':0, 'Alto':0, 'Muy alto':0 }; });
+
+            _colabData.forEach(row => {
+                try {
+                    let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    const resp = parsed || {};
+                    Object.entries(DOMAINS).forEach(([domain, ids]) => {
+                        const scores = ids.map(id => parseFloat(resp[id])).filter(v => !isNaN(v));
+                        if (!scores.length) return;
+                        const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+                        const nivel = getDomainNivel(domain, avg);
+                        if (counts[domain][nivel] !== undefined) counts[domain][nivel]++;
+                    });
+                } catch(e) {}
+            });
+
+            // Sort domains by Alto+Muy alto count desc
+            const rows = Object.entries(counts).map(([domain, c]) => ({
+                domain, c, altoCrit: c['Alto'] + c['Muy alto']
+            })).sort((a,b) => b.altoCrit - a.altoCrit);
+
+            container.innerHTML = `
+            <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-slate-50 border-b border-slate-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold text-slate-600">Dominio</th>
+                                <th class="px-4 py-3 text-center font-semibold text-slate-400">Nulo</th>
+                                <th class="px-4 py-3 text-center font-semibold text-slate-400">Bajo</th>
+                                <th class="px-4 py-3 text-center font-semibold text-amber-600">Medio</th>
+                                <th class="px-4 py-3 text-center font-semibold text-orange-600">Alto</th>
+                                <th class="px-4 py-3 text-center font-semibold text-red-600">Muy alto</th>
+                                <th class="px-4 py-3 text-center font-semibold text-red-700 bg-red-50">⚠ Alto + Muy alto</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${rows.map(({domain, c, altoCrit}) => `
+                            <tr class="hover:bg-slate-50">
+                                <td class="px-4 py-2.5 font-medium text-slate-700 max-w-xs">${domain}</td>
+                                <td class="px-4 py-2.5 text-center text-slate-400">${c['Nulo']||0}</td>
+                                <td class="px-4 py-2.5 text-center text-blue-600">${c['Bajo']||0}</td>
+                                <td class="px-4 py-2.5 text-center text-amber-600">${c['Medio']||0}</td>
+                                <td class="px-4 py-2.5 text-center text-orange-600 font-semibold">${c['Alto']||0}</td>
+                                <td class="px-4 py-2.5 text-center text-red-600 font-semibold">${c['Muy alto']||0}</td>
+                                <td class="px-4 py-2.5 text-center">
+                                    ${altoCrit > 0
+                                        ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">${altoCrit}</span>`
+                                        : '<span class="text-slate-300">—</span>'}
+                                </td>
+                            </tr>`).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${_colabData.length}</strong></p>
+            </div>`;
         }
 
         function irAPlanSucursal(sucursal) {
@@ -3147,6 +3275,112 @@
             const safeName = titleText.replace(/\s+/g, '_');
             XLSX.utils.book_append_sheet(wb, ws, safeName.slice(0, 31));
             XLSX.writeFile(wb, `${safeName}_NOM035_${fecha}.xlsx`);
+        }
+
+        async function downloadAutoridadReport() {
+            // Ensure data is loaded
+            if (!_colabData.length || !appState.eventosData) {
+                showToast('Cargando datos... por favor espera un momento e intenta de nuevo.', 'info');
+                if (!_colabData.length) {
+                    try {
+                        const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle');
+                        const r = await res.json();
+                        if (r.status === 'success') _colabData = r.data;
+                    } catch(e) {}
+                }
+                if (!appState.eventosData) await initEventosTraumaticos();
+                if (!_colabData.length) { showToast('No hay datos disponibles.', 'error'); return; }
+            }
+
+            const fecha = new Date().toLocaleDateString('es-MX');
+            const wb = XLSX.utils.book_new();
+
+            // ── Sheet 1: ATS Atención Clínica ──
+            const ATS_TIPOS = [
+                {id:95,label:'Accidente grave'},{id:96,label:'Asalto'},{id:97,label:'Actos violentos'},
+                {id:98,label:'Secuestro'},{id:99,label:'Amenazas'},{id:100,label:'Otro riesgo de vida'}
+            ];
+            const atsRows = (appState.eventosData || []).filter(r => {
+                const sc = getSecCounts(r);
+                return sc.requiere;
+            });
+            const atsData = [
+                ['No. Colaborador','Nombre','Puesto','Sucursal','Cadena','Tipo(s) de Evento','Fecha Evento','Fecha Encuesta','Sec II (Recuerdos)','Sec III (Evitación)','Sec IV (Afectación)','Acción NOM-035']
+            ];
+            atsRows.forEach(r => {
+                let resp = r.respuestas;
+                try { if (typeof resp === 'string') resp = JSON.parse(resp); } catch { resp = {}; }
+                const tipos = ATS_TIPOS.filter(t => String(resp?.[String(t.id)]||'').toUpperCase()==='SI').map(t=>t.label).join(', ');
+                const sc = getSecCounts(r);
+                atsData.push([
+                    r.empId||'', r.nombre||'', r.puesto||'', r.sucursal||'', r.cadena||'',
+                    tipos, r.eventoFecha||'', r.fecha||'',
+                    `${sc.secII}/2`, `${sc.secIII}/7`, `${sc.secIV}/5`,
+                    'Atención clínica requerida'
+                ]);
+            });
+            const wsATS = XLSX.utils.aoa_to_sheet(atsData);
+            wsATS['!cols'] = [12,30,20,25,20,35,15,15,12,12,12,25].map(w=>({wch:w}));
+            XLSX.utils.book_append_sheet(wb, wsATS, 'ATS - Atención Clínica');
+
+            // ── Sheet 2: Riesgo Psicosocial Alto/Muy alto ──
+            const DOMAINS = _buildDomainMap();
+            const psicRows = [['No. Colaborador','Nombre','Puesto','Sucursal','Cadena','Riesgo Global','Dominios en Alto o Muy alto','Detalle por Dominio']];
+            _colabData.forEach(r => {
+                try {
+                    let parsed = typeof r.respuestas === 'string' ? JSON.parse(r.respuestas) : (r.respuestas||{});
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    const resp = parsed || {};
+                    const critDomains = [];
+                    const allDomains = [];
+                    Object.entries(DOMAINS).forEach(([domain, ids]) => {
+                        const scores = ids.map(id => parseFloat(resp[id])).filter(v=>!isNaN(v));
+                        if (!scores.length) return;
+                        const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+                        const nivel = getDomainNivel(domain, avg);
+                        allDomains.push(`${domain}: ${nivel}`);
+                        if (nivel === 'Alto' || nivel === 'Muy alto') critDomains.push(`${domain} (${nivel})`);
+                    });
+                    if (!critDomains.length) return;
+                    psicRows.push([
+                        r.empId||'', r.nombre||'', r.puesto||'', r.sucursal||'', r.cadena||'',
+                        r.riesgoGlobal||'',
+                        critDomains.join(' | '),
+                        allDomains.join(' | ')
+                    ]);
+                } catch(e) {}
+            });
+            const wsPsic = XLSX.utils.aoa_to_sheet(psicRows);
+            wsPsic['!cols'] = [12,30,20,25,20,12,60,80].map(w=>({wch:w}));
+            XLSX.utils.book_append_sheet(wb, wsPsic, 'Riesgo Psicosocial');
+
+            // ── Sheet 3: Resumen ejecutivo ──
+            const totalEncuestas = _colabData.length;
+            const totalATS = atsRows.length;
+            const totalPsic = psicRows.length - 1; // minus header
+            const resumenData = [
+                ['REPORTE PARA AUTORIDAD — NOM-035-STPS-2018'],
+                ['Fecha de generación:', fecha],
+                [''],
+                ['RESUMEN EJECUTIVO'],
+                ['Total de encuestas respondidas:', totalEncuestas],
+                [''],
+                ['ACONTECIMIENTO TRAUMÁTICO SEVERO (ATS)'],
+                ['Colaboradores que requieren atención clínica:', totalATS],
+                ['% del total:', totalEncuestas > 0 ? `${Math.round(totalATS/totalEncuestas*100)}%` : '0%'],
+                [''],
+                ['RIESGO PSICOSOCIAL'],
+                ['Colaboradores con al menos un dominio en Alto o Muy alto:', totalPsic],
+                ['% del total:', totalEncuestas > 0 ? `${Math.round(totalPsic/totalEncuestas*100)}%` : '0%'],
+                [''],
+                ['Ver hojas "ATS - Atención Clínica" y "Riesgo Psicosocial" para el detalle por colaborador.'],
+            ];
+            const wsRes = XLSX.utils.aoa_to_sheet(resumenData);
+            wsRes['!cols'] = [50, 20].map(w=>({wch:w}));
+            XLSX.utils.book_append_sheet(wb, wsRes, 'Resumen');
+
+            XLSX.writeFile(wb, `Reporte_Autoridad_NOM035_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast(`Reporte generado: ${totalATS} ATS, ${totalPsic} riesgo psicosocial.`, 'success');
         }
 
         // Mapa canvasId → clave en appState.charts
