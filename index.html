@@ -4522,7 +4522,32 @@
                 if (!isNaN(d)) return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
                 return String(f);
             };
+            // Solo mostrar los que requieren atención clínica
+            const atencionRows = data.filter(r => { const sc = getSecCounts(r); return sc.requiere; });
+
+            if (atencionRows.length === 0) {
+                container.innerHTML = `
+                    <div class="p-12 text-center">
+                        <div class="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-3xl"></i></div>
+                        <h3 class="text-lg font-bold text-slate-700 mb-1">Sin casos de atención clínica</h3>
+                        <p class="text-sm text-slate-500">Ningún colaborador con el filtro actual requiere atención clínica.</p>
+                        <p class="text-xs text-slate-400 mt-2">${data.length} colaborador${data.length !== 1 ? 'es' : ''} con eventos traumáticos registrados, ninguno en umbral clínico.</p>
+                    </div>`;
+                return;
+            }
+
+            const SEG_OPTS   = ['Compartido a RH', 'No aplica', 'Nulo'];
+            const SEG_COLORS = {'Compartido a RH':'#2563eb', 'No aplica':'#94a3b8', 'Nulo':'#ef4444'};
+            const SEG_DEF    = 'Compartido a RH';
+
             container.innerHTML = `
+                <p class="text-xs text-slate-500 mb-3 font-medium">
+                    <span class="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-full">
+                        <i class="ph ph-warning-circle"></i>
+                        ${atencionRows.length} colaborador${atencionRows.length !== 1 ? 'es' : ''} requieren atención clínica
+                        ${data.length > atencionRows.length ? ` <span class="text-red-400 font-normal">de ${data.length} con eventos traumáticos</span>` : ''}
+                    </span>
+                </p>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-xs">
                         <thead class="bg-slate-50 border-b border-slate-200 sticky top-0">
@@ -4539,19 +4564,17 @@
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec II — Recuerdos (q101-102)">Sec II<br><span class="font-normal text-slate-400">Recuerdos</span></th>
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec III — Esfuerzo por evitar (q103-109)">Sec III<br><span class="font-normal text-slate-400">Evitación</span></th>
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec IV — Afectación (q110-114)">Sec IV<br><span class="font-normal text-slate-400">Afectación</span></th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Acción NOM-035</th>
                                 <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Seguimiento RH</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             ${(() => {
                                 const segData = getNOM035Seg();
-                                const SEG_OPTS = ['Pendiente','En proceso','Aplicado','Nulo','N/A'];
-                                const SEG_COLORS = {'Pendiente':'#64748b','En proceso':'#2563eb','Aplicado':'#059669','Nulo':'#ef4444','N/A':'#94a3b8'};
-                                return data.map(r => {
+                                return atencionRows.map(r => {
                                 const sc = getSecCounts(r);
                                 const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
-                                const segVal = segData[segKey] || 'Pendiente';
+                                const rawVal = segData[segKey];
+                                const segVal = SEG_OPTS.includes(rawVal) ? rawVal : SEG_DEF;
                                 const segOpts = SEG_OPTS.map(o => `<option value="${o}"${o===segVal?' selected':''}>${o}</option>`).join('');
                                 return `
                                 <tr class="hover:bg-red-50 transition-colors">
@@ -4567,18 +4590,16 @@
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secII, 2, 'Recuerdos recurrentes, sueños recurrentes')}</td>
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIII, 7, 'Evitar sentimientos, lugares, personas; dificultad para recordar; distanciamiento; dificultad para expresar; sensación de futuro limitado')}</td>
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIV, 5, 'Dificultad para dormir, irritabilidad, falta de concentración, alerta constante, sobresalto')}</td>
-                                    <td class="px-3 py-3">${accionBadge(sc.requiere, sc.tieneSI)}</td>
                                     <td class="px-3 py-3">
-                                        <select onchange="saveNOM035Seg('${segKey}', this.value); this.style.color=({'Pendiente':'#64748b','En proceso':'#2563eb','Aplicado':'#059669','Nulo':'#ef4444','N/A':'#94a3b8'})[this.value]||'#64748b'"
-                                                style="color:${SEG_COLORS[segVal]||'#64748b'}"
-                                                class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-blue-300 cursor-pointer w-28">
+                                        <select onchange="saveNOM035Seg('${segKey}', this.value); this.style.color=(${JSON.stringify(SEG_COLORS)})[this.value]||'#94a3b8'"
+                                                style="color:${SEG_COLORS[segVal]||'#94a3b8'}"
+                                                class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-blue-300 cursor-pointer w-36">
                                             ${segOpts}
                                         </select>
                                     </td>
                                 </tr>`;
                                 }).join('');
                             })()}
-                            }).join('')}
                         </tbody>
                     </table>
                 </div>`;
@@ -4606,6 +4627,7 @@
             const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
             const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
             const tipoId   = document.getElementById('ev-filter-tipo')?.value     || '';
+            const anio     = document.getElementById('ev-filter-anio')?.value     || '';
             let data = allData;
             if (cadena)   data = data.filter(d => d.cadena   === cadena);
             if (sucursal) data = data.filter(d => d.sucursal === sucursal);
@@ -4618,8 +4640,16 @@
                     } catch(e) { return false; }
                 });
             }
+            if (anio) {
+                data = data.filter(d => {
+                    const m = String(d.eventoFecha || '').match(/\b(20\d{2})\b/);
+                    return m && m[1] === anio;
+                });
+            }
+            // Solo atención clínica
+            data = data.filter(d => { const sc = getSecCounts(d); return sc.requiere; });
             if (!data || data.length === 0) {
-                showToast('No hay colaboradores con eventos traumáticos para reportar.', 'error');
+                showToast('No hay colaboradores con atención clínica para el filtro actual.', 'error');
                 return;
             }
             const { jsPDF } = window.jspdf;
@@ -4632,11 +4662,11 @@
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(16);
             doc.setTextColor(30, 58, 138);
-            doc.text('Reporte — Eventos Traumáticos Severos', pageW / 2, y + 7, { align: 'center' });
+            doc.text('Reporte — Atención Clínica ATS (NOM-035)', pageW / 2, y + 7, { align: 'center' });
             doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(100, 116, 139);
-            const filtroTexto = [cadena, sucursal, tipoId ? ATS_TIPOS.find(t => String(t.id) === tipoId)?.label : ''].filter(Boolean).join(' · ');
+            const filtroTexto = [cadena, sucursal, tipoId ? ATS_TIPOS.find(t => String(t.id) === tipoId)?.label : '', anio].filter(Boolean).join(' · ');
             doc.text('NOM-035-STPS-2018 | Generado: ' + new Date().toLocaleDateString('es-MX') + (filtroTexto ? '  |  Filtro: ' + filtroTexto : ''), pageW / 2, y + 13, { align: 'center' });
             y += 22;
 
@@ -4644,34 +4674,42 @@
             doc.line(margin, y, pageW - margin, y);
             y += 6;
 
+            const segData = getNOM035Seg();
             doc.setFontSize(9);
             doc.setTextColor(15, 23, 42);
             doc.setFont('helvetica', 'bold');
-            doc.text(`Total de colaboradores afectados: ${data.length}`, margin, y);
+            doc.text(`Colaboradores que requieren atención clínica: ${data.length}`, margin, y);
             y += 8;
 
             doc.autoTable({
                 startY: y,
-                head: [['No. Colaborador', 'Nombre', 'Puesto', 'Sucursal', 'Cadena', 'Tipo(s) de acontecimiento', 'Fecha Encuesta', 'Fecha Evento', 'Involucrados', 'Descripción']],
-                body: data.map(r => [
-                    r.empId || '', r.nombre || '', r.puesto || '', r.sucursal || '',
-                    r.cadena || '', getTipos(r), r.fecha || '', r.eventoFecha || '',
-                    r.eventoInvolucrados || '', r.eventoDescripcion || ''
-                ]),
+                head: [['No. Colaborador', 'Nombre', 'Puesto', 'Sucursal', 'Cadena', 'Tipo(s)', 'F. Encuesta', 'F. Evento', 'Sec II', 'Sec III', 'Sec IV', 'Seguimiento RH']],
+                body: data.map(r => {
+                    const sc = getSecCounts(r);
+                    const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
+                    const segVal = segData[segKey] || 'Compartido a RH';
+                    return [
+                        r.empId || '', r.nombre || '', r.puesto || '', r.sucursal || '',
+                        r.cadena || '', getTipos(r), r.fecha || '', r.eventoFecha || '',
+                        `${sc.secII}/2`, `${sc.secIII}/7`, `${sc.secIV}/5`, segVal
+                    ];
+                }),
                 styles: { fontSize: 7, cellPadding: 2.5, overflow: 'linebreak' },
-                headStyles: { fillColor: [30, 58, 138], textColor: 255, fontStyle: 'bold' },
+                headStyles: { fillColor: [185, 28, 28], textColor: 255, fontStyle: 'bold' },
                 alternateRowStyles: { fillColor: [254, 242, 242] },
-                columnStyles: { 5: { cellWidth: 38 }, 9: { cellWidth: 45 } },
+                columnStyles: { 5: { cellWidth: 32 }, 8: { cellWidth: 12 }, 9: { cellWidth: 12 }, 10: { cellWidth: 12 }, 11: { cellWidth: 28 } },
                 margin: { left: margin, right: margin }
             });
 
-            doc.save(`Reporte_EventosTraumaticos_${new Date().toLocaleDateString('es-MX').replace(/\//g,'-')}.pdf`);
+            doc.save(`AtencionClinica_ATS_${new Date().toLocaleDateString('es-MX').replace(/\//g,'-')}.pdf`);
             showToast('Reporte PDF descargado.');
         }
 
         async function downloadEncuestasATS() {
             const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
             const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
+            const tipoId   = document.getElementById('ev-filter-tipo')?.value     || '';
+            const anio     = document.getElementById('ev-filter-anio')?.value     || '';
 
             showToast('Obteniendo datos, espera un momento...', 'info');
 
@@ -4688,8 +4726,32 @@
             if (cadena)   respondents = respondents.filter(r => r.cadena   === cadena);
             if (sucursal) respondents = respondents.filter(r => r.sucursal === sucursal);
 
+            // Cruzar con eventosData para filtros de tipo/año y Atención clínica
+            const eventosIdx = {};
+            (appState.eventosData || []).forEach(ev => {
+                eventosIdx[String(ev.empId || '').trim()] = ev;
+            });
+            respondents = respondents.filter(r => {
+                const ev = eventosIdx[String(r.empId || '').trim()];
+                if (!ev) return false;
+                if (tipoId) {
+                    try {
+                        let resp = ev.respuestas;
+                        if (typeof resp === 'string') resp = JSON.parse(resp);
+                        if (String(resp?.[tipoId] ?? '').toUpperCase() !== 'SI') return false;
+                    } catch { return false; }
+                }
+                if (anio) {
+                    const m = String(ev.eventoFecha || '').match(/\b(20\d{2})\b/);
+                    if (!m || m[1] !== anio) return false;
+                }
+                // Solo atención clínica
+                const sc = getSecCounts(ev);
+                return sc.requiere;
+            });
+
             if (!respondents.length) {
-                showToast('No hay encuestas respondidas con el filtro actual.', 'error');
+                showToast('No hay encuestas con atención clínica para el filtro actual.', 'error');
                 return;
             }
 
