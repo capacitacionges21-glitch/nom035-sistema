@@ -1490,6 +1490,7 @@
                               <th class="text-left py-1 pr-3 font-medium">No.</th>
                               <th class="text-left py-1 pr-3 font-medium">Nombre</th>
                               <th class="text-left py-1 pr-3 font-medium">Puesto</th>
+                              ${scopeType === 'cadena' ? '<th class="text-left py-1 pr-3 font-medium">Sucursal</th>' : ''}
                               <th class="text-center py-1 pr-3 font-medium">Puntaje</th>
                               <th class="text-center py-1 font-medium">Riesgo</th>
                               <th class="py-1"></th>
@@ -1504,6 +1505,7 @@
                                   <td class="py-1.5 pr-3 font-mono text-slate-400">${r.empId || r.id || '—'}</td>
                                   <td class="py-1.5 pr-3 font-medium text-slate-700 whitespace-nowrap">${r.nombre || '—'}</td>
                                   <td class="py-1.5 pr-3 text-slate-500 whitespace-nowrap">${r.puesto || '—'}</td>
+                                  ${scopeType === 'cadena' ? `<td class="py-1.5 pr-3 text-slate-500 whitespace-nowrap">${r.sucursal || '—'}</td>` : ''}
                                   <td class="py-1.5 pr-3 text-center font-semibold text-slate-700">${r.puntajeTotal || '—'}</td>
                                   <td class="py-1.5 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${badge}">${rg}</span></td>
                                   <td class="py-1.5 pl-2">
