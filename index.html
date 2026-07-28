@@ -396,6 +396,8 @@
 
                     <!-- Contenedor dinámico de planes de acción -->
                     <div id="action-plan-container"></div>
+                    <!-- Desglose por sucursal (solo visible cuando el alcance es Por Cadena) -->
+                    <div id="action-plan-sucursales"></div>
                 </div>
 
                 <div id="tab-sucursales" class="fade-in hidden">
@@ -543,6 +545,17 @@
                             <p class="text-sm text-slate-500 mb-2">Colaboradores con <strong>ATS que requieren atención clínica</strong> y colaboradores con <strong>riesgo psicosocial Alto o Muy alto</strong> por dominio.</p>
                             <p class="text-xs text-slate-400 mb-6">Para presentar a la autoridad laboral y canalizar con el RH de zona.</p>
                             <button onclick="downloadAutoridadReport()" class="inline-flex px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium items-center">
+                                <i class="ph ph-download-simple mr-2"></i> Generar Reporte Excel
+                            </button>
+                        </div>
+
+                        <!-- Reporte por Dominio y Categoría -->
+                        <div class="bg-white p-8 rounded-2xl border border-indigo-100 text-center hover:shadow-md transition-shadow md:col-span-2">
+                            <div class="h-16 w-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-chart-bar-horizontal text-3xl"></i></div>
+                            <h3 class="text-xl font-bold mb-2">Reporte por Dominio y Categoría</h3>
+                            <p class="text-sm text-slate-500 mb-2">Distribución de colaboradores por nivel de riesgo desglosada por <strong>dominio</strong> y por <strong>categoría</strong> NOM-035.</p>
+                            <p class="text-xs text-slate-400 mb-6">Útil para identificar qué áreas de la organización concentran el mayor riesgo psicosocial.</p>
+                            <button onclick="downloadDominioCategoriaReport()" class="inline-flex px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium items-center">
                                 <i class="ph ph-download-simple mr-2"></i> Generar Reporte Excel
                             </button>
                         </div>
@@ -1252,6 +1265,57 @@
                              : scopeType === 'cadena'  ? `Cadena: ${scopeValue}` : `Sucursal: ${scopeValue}`;
             const planKey = `plan_${scopeType}_${(scopeValue||'general').replace(/\s/g,'_')}`;
             renderPlanTable(highRisk, scores, scopeLabel, planKey, loadPlanLocally(planKey), scopeType, scopeValue);
+            const sucContainer = document.getElementById('action-plan-sucursales');
+            if (sucContainer) {
+                if (scopeType === 'cadena' && scopeValue) renderSucursalPlansForCadena(scopeValue);
+                else sucContainer.innerHTML = '';
+            }
+        }
+
+        function renderSucursalPlansForCadena(cadenaValue) {
+            const container = document.getElementById('action-plan-sucursales');
+            if (!container) return;
+            const sucursales = [...new Set(_colabData
+                .filter(r => r.cadena === cadenaValue).map(r => r.sucursal).filter(Boolean))].sort();
+            if (!sucursales.length) { container.innerHTML = ''; return; }
+            const NIVEL_ORDER = { 'Muy alto':5,'Alto':4,'Medio':3,'Bajo':2,'Nulo':1 };
+            const BADGE = {
+                'Muy alto':'bg-red-100 text-red-700 border-red-200',
+                'Alto':'bg-orange-100 text-orange-700 border-orange-200',
+                'Medio':'bg-amber-100 text-amber-700 border-amber-200',
+                'Bajo':'bg-blue-100 text-blue-700 border-blue-200',
+                'Nulo':'bg-emerald-100 text-emerald-700 border-emerald-200',
+            };
+            const cards = sucursales.map(suc => {
+                const scores = calcDomainScoresForScope('sucursal', suc);
+                if (!scores) return null;
+                const n = scores[0]?.n || 0;
+                const criticos = scores.filter(s => s.riesgo === 'Alto' || s.riesgo === 'Muy alto');
+                const nivelMax = scores.reduce((best,s) =>
+                    (NIVEL_ORDER[s.riesgo]||0) > (NIVEL_ORDER[best]||0) ? s.riesgo : best, 'Nulo');
+                return { suc, n, criticos, nivelMax };
+            }).filter(Boolean).sort((a,b) =>
+                (NIVEL_ORDER[b.nivelMax]||0)-(NIVEL_ORDER[a.nivelMax]||0) || a.suc.localeCompare(b.suc));
+            container.innerHTML = `
+            <div class="mt-8">
+                <h2 class="text-lg font-bold text-slate-800 mb-1">Desglose por Sucursal — ${cadenaValue}</h2>
+                <p class="text-xs text-slate-400 mb-4">Nivel de riesgo máximo detectado por sucursal dentro de la cadena</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    ${cards.map(({suc, n, criticos, nivelMax}) => {
+                        const hasCrit = criticos.length > 0;
+                        return `<div class="bg-white rounded-xl border ${hasCrit?'border-orange-100':'border-slate-100'} p-4 hover:shadow-sm transition-shadow">
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <p class="font-semibold text-slate-800 text-sm leading-snug">${suc}</p>
+                                <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${BADGE[nivelMax]}">${nivelMax}</span>
+                            </div>
+                            <p class="text-xs text-slate-400 mb-2">${n} encuesta${n!==1?'s':''}</p>
+                            ${hasCrit
+                                ? criticos.map(d=>`<div class="text-xs text-slate-600 flex items-center gap-1 mt-0.5"><i class="ph ph-warning text-orange-400 shrink-0"></i><span>${d.domain} <span class="text-orange-600 font-medium">(${d.riesgo})</span></span></div>`).join('')
+                                : '<div class="text-xs text-emerald-600 flex items-center gap-1"><i class="ph ph-check-circle"></i> Sin dominios críticos</div>'}
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
         }
 
         function getPeriodoDates(scopeType, scopeValue) {
@@ -3381,6 +3445,116 @@
 
             XLSX.writeFile(wb, `Reporte_Autoridad_NOM035_${new Date().toISOString().slice(0,10)}.xlsx`);
             showToast(`Reporte generado: ${totalATS} ATS, ${totalPsic} riesgo psicosocial.`, 'success');
+        }
+
+        function downloadDominioCategoriaReport() {
+            if (!_colabData.length) {
+                showToast('Carga los datos primero desde Resumen Global.', 'error'); return;
+            }
+            const DOMAINS = _buildDomainMap();
+            const NIVELES = ['Nulo','Bajo','Medio','Alto','Muy alto'];
+
+            // Build category→questions map from surveyQuestions (exclude TraumaFiltro/TraumaEval)
+            const catMap = {}; // { categoria: { qId: true } }
+            surveyQuestions.forEach(q => {
+                if (q.categoria === 'TraumaFiltro' || q.categoria === 'TraumaEval') return;
+                if (!catMap[q.categoria]) catMap[q.categoria] = [];
+                catMap[q.categoria].push(q.id);
+            });
+
+            // Build domain→category map
+            const domCatMap = {};
+            surveyQuestions.forEach(q => {
+                if (!domCatMap[q.dominio]) domCatMap[q.dominio] = q.categoria;
+            });
+
+            // ── Per-collaborator domain scores ──
+            const domCounts = {}; // { domain: { Nulo:0, ... } }
+            Object.keys(DOMAINS).forEach(d => { domCounts[d] = { 'Nulo':0,'Bajo':0,'Medio':0,'Alto':0,'Muy alto':0 }; });
+
+            const catCounts = {}; // { categoria: { Nulo:0, ... } }
+            Object.keys(catMap).forEach(c => { catCounts[c] = { 'Nulo':0,'Bajo':0,'Medio':0,'Alto':0,'Muy alto':0 }; });
+
+            _colabData.forEach(row => {
+                try {
+                    let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas||{});
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    const resp = parsed || {};
+
+                    // Domain counts
+                    Object.entries(DOMAINS).forEach(([domain, ids]) => {
+                        const scores = ids.map(id => parseFloat(resp[id])).filter(v => !isNaN(v));
+                        if (!scores.length) return;
+                        const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+                        const nivel = getDomainNivel(domain, avg);
+                        if (domCounts[domain][nivel] !== undefined) domCounts[domain][nivel]++;
+                    });
+
+                    // Category counts
+                    Object.entries(catMap).forEach(([cat, ids]) => {
+                        const scores = ids.map(id => parseFloat(resp[id])).filter(v => !isNaN(v));
+                        if (!scores.length) return;
+                        const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+                        // Use first domain of this category to get thresholds (best approximation)
+                        const refDomain = surveyQuestions.find(q => q.categoria === cat && !['TraumaFiltro','TraumaEval'].includes(q.categoria))?.dominio || '';
+                        const nivel = getDomainNivel(refDomain, avg);
+                        if (catCounts[cat][nivel] !== undefined) catCounts[cat][nivel]++;
+                    });
+                } catch(e) {}
+            });
+
+            const total = _colabData.length;
+            const wb = XLSX.utils.book_new();
+
+            // ── Sheet 1: Por Dominio ──
+            const domHeader = ['Dominio','Categoría','Nulo','Bajo','Medio','Alto','Muy alto','Alto + Muy alto','% Alto + Muy alto'];
+            const domRows = Object.entries(domCounts).map(([domain, c]) => {
+                const critico = (c['Alto']||0) + (c['Muy alto']||0);
+                return [
+                    domain,
+                    domCatMap[domain] || '—',
+                    c['Nulo']||0, c['Bajo']||0, c['Medio']||0, c['Alto']||0, c['Muy alto']||0,
+                    critico,
+                    total > 0 ? `${Math.round(critico/total*100)}%` : '0%'
+                ];
+            }).sort((a,b) => b[7]-a[7]);
+            const wsDom = XLSX.utils.aoa_to_sheet([domHeader, ...domRows]);
+            wsDom['!cols'] = [45,30,8,8,8,8,10,14,14].map(w=>({wch:w}));
+            XLSX.utils.book_append_sheet(wb, wsDom, 'Por Dominio');
+
+            // ── Sheet 2: Por Categoría ──
+            const catHeader = ['Categoría','Nulo','Bajo','Medio','Alto','Muy alto','Alto + Muy alto','% Alto + Muy alto'];
+            const catRows = Object.entries(catCounts).map(([cat, c]) => {
+                const critico = (c['Alto']||0) + (c['Muy alto']||0);
+                return [
+                    cat,
+                    c['Nulo']||0, c['Bajo']||0, c['Medio']||0, c['Alto']||0, c['Muy alto']||0,
+                    critico,
+                    total > 0 ? `${Math.round(critico/total*100)}%` : '0%'
+                ];
+            }).sort((a,b) => b[6]-a[6]);
+            const wsCat = XLSX.utils.aoa_to_sheet([catHeader, ...catRows]);
+            wsCat['!cols'] = [35,8,8,8,8,10,14,14].map(w=>({wch:w}));
+            XLSX.utils.book_append_sheet(wb, wsCat, 'Por Categoría');
+
+            // ── Sheet 3: Por Sucursal × Dominio ──
+            const sucursales = [...new Set(_colabData.map(r=>r.sucursal).filter(Boolean))].sort();
+            const domainList = Object.keys(DOMAINS);
+            const sucHeader = ['Sucursal','Cadena','Encuestas',...domainList];
+            const sucRows = sucursales.map(suc => {
+                const scores = calcDomainScoresForScope('sucursal', suc);
+                const cadena = _colabData.find(r=>r.sucursal===suc)?.cadena || '—';
+                const n = scores?.[0]?.n || 0;
+                const scoreMap = {};
+                (scores||[]).forEach(s => { scoreMap[s.domain] = s.riesgo; });
+                return [suc, cadena, n, ...domainList.map(d => scoreMap[d] || '—')];
+            });
+            const wsSuc = XLSX.utils.aoa_to_sheet([sucHeader, ...sucRows]);
+            wsSuc['!cols'] = [30,25,10,...domainList.map(()=>({wch:12}))].map((w,i)=>i<3?{wch:w}:w);
+            XLSX.utils.book_append_sheet(wb, wsSuc, 'Por Sucursal');
+
+            XLSX.writeFile(wb, `Reporte_Dominio_Categoria_NOM035_${new Date().toISOString().slice(0,10)}.xlsx`);
+            showToast('Reporte por dominio y categoría generado.', 'success');
         }
 
         // Mapa canvasId → clave en appState.charts
