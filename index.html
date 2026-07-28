@@ -1303,15 +1303,20 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     ${cards.map(({suc, n, criticos, nivelMax}) => {
                         const hasCrit = criticos.length > 0;
-                        return `<div class="bg-white rounded-xl border ${hasCrit?'border-orange-100':'border-slate-100'} p-4 hover:shadow-sm transition-shadow">
+                        const safeSuc = suc.replace(/'/g, "\\'");
+                        return `<div onclick="selectSucursalPlan('${safeSuc}')"
+                                    class="bg-white rounded-xl border ${hasCrit?'border-orange-100':'border-slate-100'} p-4 hover:shadow-md hover:border-blue-200 transition-all cursor-pointer group">
                             <div class="flex items-start justify-between gap-2 mb-2">
-                                <p class="font-semibold text-slate-800 text-sm leading-snug">${suc}</p>
+                                <p class="font-semibold text-slate-800 text-sm leading-snug group-hover:text-blue-700 transition-colors">${suc}</p>
                                 <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${BADGE[nivelMax]}">${nivelMax}</span>
                             </div>
                             <p class="text-xs text-slate-400 mb-2">${n} encuesta${n!==1?'s':''}</p>
                             ${hasCrit
                                 ? criticos.map(d=>`<div class="text-xs text-slate-600 flex items-center gap-1 mt-0.5"><i class="ph ph-warning text-orange-400 shrink-0"></i><span>${d.domain} <span class="text-orange-600 font-medium">(${d.riesgo})</span></span></div>`).join('')
                                 : '<div class="text-xs text-emerald-600 flex items-center gap-1"><i class="ph ph-check-circle"></i> Sin dominios críticos</div>'}
+                            <div class="mt-3 pt-2 border-t border-slate-100 text-xs text-blue-500 flex items-center gap-1 group-hover:text-blue-600">
+                                <i class="ph ph-arrow-square-out text-sm"></i> Ver plan de acción
+                            </div>
                         </div>`;
                     }).join('')}
                 </div>
@@ -2789,6 +2794,18 @@
             // Ordenar: primero las de mayor riesgo, luego por nombre
             rows.sort((a, b) => (NIVEL_ORDER[b.nivelMax] || 0) - (NIVEL_ORDER[a.nivelMax] || 0) || a.suc.localeCompare(b.suc));
 
+            // Cache scores for detail expansion
+            window._sucursalScoresCache = {};
+            rows.forEach(r => { window._sucursalScoresCache[r.suc] = r.scores; });
+
+            const NIVEL_BADGE_DETAIL = {
+                'Muy alto': 'bg-red-100 text-red-700',
+                'Alto':     'bg-orange-100 text-orange-700',
+                'Medio':    'bg-amber-100 text-amber-700',
+                'Bajo':     'bg-blue-100 text-blue-700',
+                'Nulo':     'bg-slate-100 text-slate-400',
+            };
+
             container.innerHTML = `
             <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
                 <div class="overflow-x-auto">
@@ -2804,24 +2821,62 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            ${rows.map(r => {
+                            ${rows.map((r, idx) => {
                                 const badge = NIVEL_BADGE[r.nivelMax] || NIVEL_BADGE['Nulo'];
                                 const criticosList = r.criticos.length
                                     ? r.criticos.map(c => `<span title="${c.domain}: ${c.avg.toFixed(2)}"
                                         class="inline-block px-1.5 py-0.5 rounded text-xs mr-1 mb-0.5 ${c.riesgo === 'Muy alto' ? 'bg-red-50 text-red-600' : 'bg-orange-50 text-orange-600'}">${c.domain}</span>`).join('')
                                     : '<span class="text-slate-400 text-xs">—</span>';
                                 const safeSuc = r.suc.replace(/'/g, "\\'");
-                                return `<tr class="hover:bg-slate-50">
-                                    <td class="px-4 py-3 font-medium text-slate-800">${r.suc}</td>
+                                const detailRows = r.scores.map(s => {
+                                    const db = NIVEL_BADGE_DETAIL[s.riesgo] || NIVEL_BADGE_DETAIL['Nulo'];
+                                    const barW = Math.round((s.avg / (s.max || 4)) * 100);
+                                    const isCrit = s.riesgo === 'Alto' || s.riesgo === 'Muy alto';
+                                    return `<tr class="${isCrit ? 'bg-orange-50/40' : ''}">
+                                        <td class="pl-6 pr-3 py-1.5 text-xs text-slate-600 whitespace-nowrap">${s.domain}</td>
+                                        <td class="px-3 py-1.5 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-medium ${db}">${s.riesgo}</span></td>
+                                        <td class="px-3 py-1.5 text-center text-xs text-slate-500">${s.avg.toFixed(2)}</td>
+                                        <td class="px-3 py-1.5 min-w-[120px]">
+                                            <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full ${isCrit ? 'bg-orange-400' : 'bg-blue-300'}" style="width:${barW}%"></div>
+                                            </div>
+                                        </td>
+                                    </tr>`;
+                                }).join('');
+                                return `<tr class="hover:bg-slate-50 cursor-pointer" onclick="toggleSucursalDetail('suc-detail-${idx}')">
+                                    <td class="px-4 py-3 font-medium text-slate-800">
+                                        <span class="flex items-center gap-1.5">
+                                            <i id="suc-icon-${idx}" class="ph ph-caret-right text-slate-400 text-xs transition-transform"></i>
+                                            ${r.suc}
+                                        </span>
+                                    </td>
                                     <td class="px-4 py-3 text-slate-500 text-xs">${r.cadena}</td>
                                     <td class="px-4 py-3 text-center text-slate-600">${r.n}</td>
                                     <td class="px-4 py-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${badge}">${r.nivelMax}</span></td>
                                     <td class="px-4 py-3">${criticosList}</td>
-                                    <td class="px-4 py-3 text-center">
+                                    <td class="px-4 py-3 text-center" onclick="event.stopPropagation()">
                                         <button onclick="irAPlanSucursal('${safeSuc}')"
                                             class="px-3 py-1 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition-colors">
                                             Ver plan
                                         </button>
+                                    </td>
+                                </tr>
+                                <tr id="suc-detail-${idx}" class="hidden bg-slate-50/60">
+                                    <td colspan="6" class="p-0">
+                                        <div class="px-4 py-2">
+                                            <p class="text-xs font-semibold text-slate-500 mb-1 pl-6">Detalle por dominio — ${r.suc}</p>
+                                            <table class="w-full">
+                                                <thead>
+                                                    <tr class="text-xs text-slate-400">
+                                                        <th class="pl-6 pr-3 py-1 text-left font-medium">Dominio</th>
+                                                        <th class="px-3 py-1 text-center font-medium">Nivel</th>
+                                                        <th class="px-3 py-1 text-center font-medium">Prom.</th>
+                                                        <th class="px-3 py-1 font-medium">Barra</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>${detailRows}</tbody>
+                                            </table>
+                                        </div>
                                     </td>
                                 </tr>`;
                             }).join('')}
@@ -2829,7 +2884,7 @@
                     </table>
                 </div>
             </div>
-            <p class="text-xs text-slate-400 mt-2 italic">Ordenado por nivel de riesgo máximo. Haz clic en "Ver plan" para ir al plan de acción de esa sucursal.</p>`;
+            <p class="text-xs text-slate-400 mt-2 italic">Haz clic en una fila para ver el detalle de riesgo por dominio.</p>`;
         }
 
         function renderColabPorDominio() {
@@ -2898,6 +2953,29 @@
                 </div>
                 <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${_colabData.length}</strong></p>
             </div>`;
+        }
+
+        function toggleSucursalDetail(id) {
+            const row = document.getElementById(id);
+            if (!row) return;
+            const idx = id.replace('suc-detail-', '');
+            const icon = document.getElementById('suc-icon-' + idx);
+            const isHidden = row.classList.contains('hidden');
+            row.classList.toggle('hidden', !isHidden);
+            if (icon) icon.style.transform = isHidden ? 'rotate(90deg)' : '';
+        }
+
+        function selectSucursalPlan(sucursal) {
+            const typeEl = document.getElementById('plan-scope-type');
+            const valEl  = document.getElementById('plan-scope-value');
+            if (!typeEl || !valEl) return;
+            typeEl.value = 'sucursal';
+            updatePlanScopeValues();
+            setTimeout(() => {
+                valEl.value = sucursal;
+                generateActionPlan();
+                document.getElementById('action-plan-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
         }
 
         function irAPlanSucursal(sucursal) {
