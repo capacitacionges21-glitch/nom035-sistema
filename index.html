@@ -1481,12 +1481,17 @@
                 }).sort((a, b) => (parseInt(b.puntajeTotal)||0) - (parseInt(a.puntajeTotal)||0));
                 const indAlto    = indHighRows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Alto').length;
                 const indMuyAlto = indHighRows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Muy alto').length;
-                // Solo mostrar detalle de colaboradores al nivel de sucursal
-                const indAlert = indHighRows.length > 0 && scopeType === 'sucursal'
+                const indAlert = indHighRows.length > 0
                     ? `<div class="mt-3 pt-3 border-t border-emerald-200">
-                        <p class="text-sm font-semibold text-amber-700 mb-2"><i class="ph ph-warning mr-1"></i>Atención individual requerida — ${indHighRows.length} colaborador(es):</p>
-                        <div class="overflow-x-auto">
-                          <table class="w-full text-xs">
+                        <button onclick="this.nextElementSibling.classList.toggle('hidden');this.querySelector('i').classList.toggle('rotate-90')"
+                            class="flex items-center gap-2 text-sm font-semibold text-amber-700 w-full text-left mb-1 hover:text-amber-800 transition-colors">
+                            <i class="ph ph-caret-right text-xs transition-transform"></i>
+                            <i class="ph ph-warning"></i>
+                            Atención individual requerida — ${indHighRows.length} colaborador(es)
+                            <span class="text-xs font-normal text-amber-600 ml-1">(clic para expandir)</span>
+                        </button>
+                        <div class="hidden overflow-x-auto">
+                          <table class="w-full text-xs mt-1">
                             <thead><tr class="text-slate-500 border-b border-amber-100">
                               <th class="text-left py-1 pr-3 font-medium">No.</th>
                               <th class="text-left py-1 pr-3 font-medium">Nombre</th>
@@ -1520,16 +1525,6 @@
                             </tbody>
                           </table>
                         </div>
-                      </div>`
-                    : indHighRows.length > 0 && scopeType === 'cadena'
-                    ? `<div class="mt-3 pt-3 border-t border-emerald-200">
-                        <p class="text-sm font-semibold text-amber-700"><i class="ph ph-warning mr-1"></i>Atención individual requerida:</p>
-                        <p class="text-sm text-amber-800 mt-1">
-                            ${indMuyAlto > 0 ? `<span class="font-bold">${indMuyAlto} colaborador(es) con Riesgo Global Muy alto</span>` : ''}
-                            ${indMuyAlto > 0 && indAlto > 0 ? ' · ' : ''}
-                            ${indAlto > 0 ? `<span class="font-bold">${indAlto} colaborador(es) con Riesgo Global Alto</span>` : ''}
-                        </p>
-                        <p class="text-xs text-amber-700 mt-1">Selecciona una sucursal específica para ver el detalle individual.</p>
                       </div>`
                     : '';
                 container.innerHTML = `<div class="bg-emerald-50 border border-emerald-200 p-6 rounded-2xl text-emerald-800">
