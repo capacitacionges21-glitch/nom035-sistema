@@ -1591,16 +1591,16 @@
                                 const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
                                 const badge = rg === 'Muy alto'
                                     ? 'bg-red-100 text-red-700' : 'bg-orange-100 text-orange-700';
-                                const eid = JSON.stringify(String(r.empId || r.id || ''));
+                                const eid = r.empId || r.id || '';
                                 return `<tr class="border-b border-amber-50 hover:bg-amber-50">
-                                  <td class="py-1.5 pr-3 font-mono text-slate-400">${r.empId || r.id || '—'}</td>
+                                  <td class="py-1.5 pr-3 font-mono text-slate-400">${eid || '—'}</td>
                                   <td class="py-1.5 pr-3 font-medium text-slate-700 whitespace-nowrap">${r.nombre || '—'}</td>
                                   <td class="py-1.5 pr-3 text-slate-500 whitespace-nowrap">${r.puesto || '—'}</td>
                                   ${scopeType === 'cadena' ? `<td class="py-1.5 pr-3 text-slate-500 whitespace-nowrap">${r.sucursal || '—'}</td>` : ''}
                                   <td class="py-1.5 pr-3 text-center font-semibold text-slate-700">${r.puntajeTotal || '—'}</td>
                                   <td class="py-1.5 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${badge}">${rg}</span></td>
                                   <td class="py-1.5 pl-2">
-                                    <button onclick="irAPsicoColab(${eid})"
+                                    <button onclick="irAPsicoColab('${eid}')"
                                       class="flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors whitespace-nowrap">
                                       <i class="ph ph-arrow-square-out text-sm"></i> Ver detalle
                                     </button>
