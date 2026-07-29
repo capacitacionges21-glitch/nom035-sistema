@@ -302,6 +302,19 @@
                                     <i class="ph ph-arrow-left"></i> Atrás
                                 </button>
                             </div>
+                            <!-- Info box -->
+                            <div class="mt-3 mb-2 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3 text-xs text-slate-600 flex flex-wrap gap-x-6 gap-y-1.5 items-start">
+                                <div class="flex items-start gap-1.5"><i class="ph ph-info text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">¿Cómo leer esta gráfica?</strong> La altura de cada barra es el promedio de respuestas (escala 0–4). A mayor puntaje, mayor exposición al factor de riesgo psicosocial.</span></div>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <span class="font-semibold text-slate-500">Nivel de riesgo:</span>
+                                    <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-400"></span> Nulo</span>
+                                    <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500"></span> Bajo</span>
+                                    <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400"></span> Medio</span>
+                                    <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-orange-500"></span> Alto</span>
+                                    <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full bg-red-600"></span> Muy alto</span>
+                                </div>
+                                <div class="flex items-start gap-1.5 w-full"><i class="ph ph-cursor-click text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Interactivo:</strong> haz clic en una <strong>Categoría</strong> para ver sus Dominios; dentro de un Dominio puedes ver sus Dimensiones. Usa <em>Atrás</em> o el breadcrumb para navegar. El panel de resumen muestra cuántos colaboradores quedaron en nivel Muy alto y Alto en esa selección. <strong>% Crítico</strong> = colaboradores en Alto + Muy alto.</span></div>
+                            </div>
                             <div id="drilldown-summary" class="hidden mt-3 mb-2 bg-slate-50 rounded-xl px-4 py-3"></div>
                             <div class="relative w-full mt-3" style="height:380px"><canvas id="chart-domains"></canvas></div>
                             <p id="drilldown-hint" class="text-xs text-slate-400 text-center mt-2">Haz clic en una barra para ver el detalle</p>
@@ -355,9 +368,14 @@
                 </div>
 
                 <div id="tab-planes" class="fade-in hidden">
-                    <div class="mb-6">
+                    <div class="mb-4">
                         <h1 class="text-2xl font-bold text-slate-900">Planes de Acción Correctiva</h1>
                         <p class="text-sm text-slate-500 mt-1">Genera planes sugeridos basados en los resultados NOM-035 por cadena o sucursal</p>
+                    </div>
+                    <div class="mb-6 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 text-xs text-slate-600 flex flex-wrap gap-x-6 gap-y-2 items-start">
+                        <div class="flex items-start gap-1.5"><i class="ph ph-info text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">¿Cómo funciona?</strong> Selecciona el alcance (por Cadena, por Sucursal o General) y el sistema generará automáticamente un plan de acción basado en los dominios con mayor riesgo detectados en las encuestas de ese grupo.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-list-checks text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">¿Qué contiene el plan?</strong> Acciones correctivas sugeridas por dominio crítico, ordenadas por nivel de riesgo. Cada acción indica el dominio afectado, la medida recomendada y una prioridad de atención. El plan puede descargarse en Excel.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-warning text-amber-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Obligación NOM-035:</strong> la norma exige que la empresa establezca y documente medidas de control para los factores de riesgo identificados. Este plan sirve como base para el programa de intervención que debe presentarse ante la STPS.</span></div>
                     </div>
 
                     <!-- Selector de alcance -->
@@ -393,13 +411,23 @@
                 </div>
 
                 <div id="tab-sucursales" class="fade-in hidden">
-                    <h1 class="text-2xl font-bold mb-6">Análisis por Sucursal</h1>
+                    <h1 class="text-2xl font-bold mb-3">Análisis por Sucursal</h1>
+                    <div class="mb-6 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 text-xs text-slate-600 flex flex-wrap gap-x-6 gap-y-1.5 items-start">
+                        <div class="flex items-start gap-1.5"><i class="ph ph-info text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">¿Cómo leer estas tarjetas?</strong> Cada tarjeta representa una sucursal. Muestra el porcentaje de participación (encuestas respondidas vs. total de colaboradores registrados) y el nivel de riesgo más alto detectado en los dominios de la NOM-035.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-warning text-amber-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Color del indicador:</strong> el color del borde o badge refleja el nivel de riesgo global de la sucursal — <span class="text-red-600 font-medium">Muy alto</span> / <span class="text-orange-500 font-medium">Alto</span> / <span class="text-amber-500 font-medium">Medio</span> / <span class="text-blue-500 font-medium">Bajo</span> / <span class="text-slate-400 font-medium">Nulo</span>.</span></div>
+                    </div>
                     <div id="sucursales-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <p class="text-slate-400 italic col-span-full text-center py-8">Cargando datos...</p>
                     </div>
                 </div>
 
                 <div id="tab-dominios" class="fade-in hidden">
+                    <!-- Info box general del tab -->
+                    <div class="mb-6 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 text-xs text-slate-600 flex flex-wrap gap-x-6 gap-y-2 items-start">
+                        <div class="flex items-start gap-1.5 w-full"><i class="ph ph-info text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">¿Cómo leer este análisis?</strong> La NOM-035 organiza los factores de riesgo en <strong>Dominios</strong> (áreas temáticas como Carga de trabajo, Liderazgo, etc.) y dentro de cada dominio existen <strong>Dimensiones</strong> más específicas. Aquí se muestra cuántos colaboradores caen en cada nivel de riesgo para cada Dominio y Dimensión.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-ruler text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Escala de clasificación:</strong> se suma el puntaje de las respuestas del colaborador en ese dominio (0–4 por ítem) y se divide entre el número de preguntas. El promedio resultante se clasifica según los umbrales de la Guía II NOM-035: <span class="text-slate-400 font-medium">Nulo &lt;1.0</span> · <span class="text-blue-600 font-medium">Bajo 1.0–1.4</span> · <span class="text-amber-600 font-medium">Medio 1.4–1.9</span> · <span class="text-orange-600 font-medium">Alto 1.9–2.5</span> · <span class="text-red-600 font-medium">Muy alto ≥2.5</span>.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-cursor-click text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Interactivo:</strong> haz clic en cualquier fila de Dominio para expandir las Dimensiones que lo componen y ver el desglose de colaboradores por nivel en cada una.</span></div>
+                    </div>
                     <!-- Conteo por colaborador -->
                     <div>
                         <div class="flex items-center justify-between mb-3">
@@ -631,6 +659,12 @@
                             </button>
                         </div>
                     </div>
+                    <!-- Info box eventos -->
+                    <div class="mb-4 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 text-xs text-slate-600 flex flex-wrap gap-x-6 gap-y-2 items-start">
+                        <div class="flex items-start gap-1.5"><i class="ph ph-info text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">¿Qué es un Acontecimiento Traumático Severo (ATS)?</strong> Es un evento de alto impacto emocional ocurrido con motivo del trabajo: accidente grave, asalto, actos de violencia extrema, secuestro, amenazas o situaciones similares. La NOM-035 obliga a identificar a los colaboradores expuestos y proporcionarles atención.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-clipboard-text text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Columna "Seguimiento RH":</strong> registra si el colaborador ya recibió atención médica o psicológica, o si está pendiente de ser contactado. Este campo es editable directamente desde la tabla.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-warning text-amber-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Obligación NOM-035:</strong> todo colaborador que reportó un ATS debe recibir atención clínica o psicológica y contar con un registro documental de la acción tomada. El reporte PDF descargable sirve como evidencia ante una auditoría de la STPS.</span></div>
+                    </div>
                     <!-- Filtros Eventos -->
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-5 flex flex-wrap items-end gap-3">
                         <div class="flex items-center gap-2 text-slate-500 text-sm font-medium mr-1">
@@ -693,7 +727,7 @@
 
                 <!-- TAB: RIESGOS PSICOSOCIALES -->
                 <div id="tab-psicosocial" class="fade-in hidden">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <div>
                             <h1 class="text-2xl font-bold text-slate-800">Riesgos Psicosociales</h1>
                             <p class="text-sm text-slate-500 mt-1">Colaboradores con riesgo global <strong>Alto</strong> o <strong>Muy alto</strong> que requieren seguimiento.</p>
@@ -703,6 +737,12 @@
                                 <i class="ph ph-microsoft-excel-logo mr-2 text-base"></i> Descargar Excel
                             </button>
                         </div>
+                    </div>
+                    <!-- Info box psicosocial -->
+                    <div class="mb-4 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 text-xs text-slate-600 flex flex-wrap gap-x-6 gap-y-2 items-start">
+                        <div class="flex items-start gap-1.5"><i class="ph ph-info text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">¿Quiénes aparecen aquí?</strong> Solo los colaboradores cuyo <strong>Riesgo Global</strong> resultó <span class="text-orange-600 font-medium">Alto</span> o <span class="text-red-600 font-medium">Muy alto</span>. El Riesgo Global se calcula sumando el puntaje de las 46 preguntas de la Guía II NOM-035 y comparándolo contra los umbrales de la <strong>Tabla 1</strong> de la norma.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-clipboard-text text-blue-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Columna "Seguimiento RH":</strong> indica si ya se registró una acción de atención para ese colaborador (entrevista, canalización, etc.). Haz clic en <em>Ver detalle</em> para ir al perfil individual.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-warning text-amber-500 mt-0.5 shrink-0"></i><span><strong class="text-slate-700">Obligación NOM-035:</strong> la norma exige implementar medidas de prevención y control para los colaboradores identificados con riesgo Alto o Muy alto. Este listado es el punto de partida para los Planes de Acción.</span></div>
                     </div>
                     <!-- Filtros -->
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mb-5 flex flex-wrap items-end gap-3">
