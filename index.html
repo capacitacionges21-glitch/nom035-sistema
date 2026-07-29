@@ -3129,9 +3129,37 @@
             return c;
         }
 
+        function _calcPreguntaCounts(qId, isInversa, sourceData) {
+            const c = { 'Nulo':0, 'Bajo':0, 'Medio':0, 'Alto':0, 'Muy alto':0 };
+            const data = sourceData || (_drillRows.length ? _drillRows : _colabData);
+            const levelMap = ['Nulo','Bajo','Medio','Alto','Muy alto'];
+            data.forEach(row => {
+                try {
+                    let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    const resp = parsed || {};
+                    const rawVal = parseFloat(resp[qId]);
+                    if (isNaN(rawVal)) return;
+                    const score = isInversa ? (4 - rawVal) : rawVal;
+                    const nivel = levelMap[Math.round(Math.max(0, Math.min(4, score)))] || 'Nulo';
+                    if (c[nivel] !== undefined) c[nivel]++;
+                } catch(e) {}
+            });
+            return c;
+        }
+
         function toggleDominioDrilldown(domainKey) {
             const el = document.getElementById('dim-detail-' + domainKey);
             const icon = document.getElementById('dim-icon-' + domainKey);
+            if (!el) return;
+            const hidden = el.classList.contains('hidden');
+            el.classList.toggle('hidden', !hidden);
+            if (icon) icon.style.transform = hidden ? 'rotate(90deg)' : '';
+        }
+
+        function toggleDimensionDrilldown(key) {
+            const el = document.getElementById('q-detail-' + key);
+            const icon = document.getElementById('qdim-icon-' + key);
             if (!el) return;
             const hidden = el.classList.contains('hidden');
             el.classList.toggle('hidden', !hidden);
@@ -3169,13 +3197,18 @@
                 domain, c, altoCrit: c['Alto'] + c['Muy alto']
             })).sort((a,b) => b.altoCrit - a.altoCrit);
 
-            // Pre-compute dimension data for all domains
+            // Pre-compute dimension + question data for all domains
             const dimData = {};
             rows.forEach(({domain}) => {
                 const dims = _buildDimensionMapForDomain(domain);
                 dimData[domain] = Object.entries(dims).map(([dim, qIds]) => {
                     const dc = _calcNivelCounts(qIds, activeData);
-                    return { dim, dc, altoCrit: dc['Alto'] + dc['Muy alto'] };
+                    const qs = qIds.map(qId => {
+                        const q = surveyQuestions.find(sq => sq.id === qId);
+                        const qc = _calcPreguntaCounts(qId, q ? q.inversa : false, activeData);
+                        return { qId, pregunta: q ? q.pregunta : qId, qc, altoCrit: qc['Alto'] + qc['Muy alto'] };
+                    });
+                    return { dim, dc, altoCrit: dc['Alto'] + dc['Muy alto'], qs };
                 }).sort((a,b) => b.altoCrit - a.altoCrit);
             });
 
@@ -3223,21 +3256,50 @@
                                     <td colspan="8" class="px-0 py-0 bg-slate-50 border-b border-slate-200">
                                         <table class="min-w-full text-xs">
                                             <tbody>
-                                                ${dimData[domain].map(({dim, dc, altoCrit: dac}) => `
-                                                <tr class="border-t border-slate-200 hover:bg-slate-100">
-                                                    <td class="w-8 px-4 py-2"></td>
-                                                    <td class="px-4 py-2 text-slate-500 pl-8">↳ ${dim}</td>
-                                                    <td class="px-4 py-2 text-center text-slate-400">${dc['Nulo']||0}</td>
-                                                    <td class="px-4 py-2 text-center text-blue-500">${dc['Bajo']||0}</td>
-                                                    <td class="px-4 py-2 text-center text-amber-500">${dc['Medio']||0}</td>
-                                                    <td class="px-4 py-2 text-center text-orange-500 font-semibold">${dc['Alto']||0}</td>
-                                                    <td class="px-4 py-2 text-center text-red-500 font-semibold">${dc['Muy alto']||0}</td>
-                                                    <td class="px-4 py-2 text-center">
-                                                        ${dac > 0
-                                                            ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-600">${dac}</span>`
-                                                            : '<span class="text-slate-300">—</span>'}
-                                                    </td>
-                                                </tr>`).join('')}
+                                                ${dimData[domain].map(({dim, dc, altoCrit: dac, qs}, dimIdx) => {
+                                                    const qKey = key + '_' + dimIdx;
+                                                    const hasQs = qs && qs.length > 0;
+                                                    let qRowsHtml = '';
+                                                    if (hasQs) {
+                                                        qs.forEach(function(qItem) {
+                                                            const shortQ = qItem.pregunta.length > 90 ? qItem.pregunta.substring(0,87)+'...' : qItem.pregunta;
+                                                            const qac = qItem.altoCrit;
+                                                            const qc = qItem.qc;
+                                                            qRowsHtml += '<tr class="border-t border-slate-100">'
+                                                                + '<td class="w-8 px-4 py-1.5"></td>'
+                                                                + '<td class="px-4 py-1.5 pl-14 text-xs leading-snug text-slate-400">↳↳ ' + shortQ + '</td>'
+                                                                + '<td class="px-3 py-1.5 text-center text-slate-400">' + (qc['Nulo']||0) + '</td>'
+                                                                + '<td class="px-3 py-1.5 text-center text-blue-400">' + (qc['Bajo']||0) + '</td>'
+                                                                + '<td class="px-3 py-1.5 text-center text-amber-400">' + (qc['Medio']||0) + '</td>'
+                                                                + '<td class="px-3 py-1.5 text-center text-orange-400 font-semibold">' + (qc['Alto']||0) + '</td>'
+                                                                + '<td class="px-3 py-1.5 text-center text-red-400 font-semibold">' + (qc['Muy alto']||0) + '</td>'
+                                                                + '<td class="px-3 py-1.5 text-center">'
+                                                                + (qac > 0 ? '<span class="inline-flex items-center px-1.5 py-0 rounded-full text-xs font-bold bg-red-50 text-red-500">' + qac + '</span>' : '<span class="text-slate-200">—</span>')
+                                                                + '</td></tr>';
+                                                        });
+                                                    }
+                                                    const iconTd = hasQs
+                                                        ? '<td class="w-8 px-4 py-2 text-center"><i id="qdim-icon-' + qKey + '" class="ph ph-caret-right transition-transform duration-200 text-xs text-slate-300"></i></td>'
+                                                        : '<td class="w-8 px-4 py-2"></td>';
+                                                    const trAttrs = hasQs
+                                                        ? ' class="border-t border-slate-200 hover:bg-slate-100 cursor-pointer" onclick="toggleDimensionDrilldown(\'' + qKey + '\')"'
+                                                        : ' class="border-t border-slate-200 hover:bg-slate-100"';
+                                                    let rowHtml = '<tr' + trAttrs + '>'
+                                                        + iconTd
+                                                        + '<td class="px-4 py-2 text-slate-500 pl-8">↳ ' + dim + '</td>'
+                                                        + '<td class="px-4 py-2 text-center text-slate-400">' + (dc['Nulo']||0) + '</td>'
+                                                        + '<td class="px-4 py-2 text-center text-blue-500">' + (dc['Bajo']||0) + '</td>'
+                                                        + '<td class="px-4 py-2 text-center text-amber-500">' + (dc['Medio']||0) + '</td>'
+                                                        + '<td class="px-4 py-2 text-center text-orange-500 font-semibold">' + (dc['Alto']||0) + '</td>'
+                                                        + '<td class="px-4 py-2 text-center text-red-500 font-semibold">' + (dc['Muy alto']||0) + '</td>'
+                                                        + '<td class="px-4 py-2 text-center">'
+                                                        + (dac > 0 ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-600">' + dac + '</span>' : '<span class="text-slate-300">—</span>')
+                                                        + '</td></tr>';
+                                                    if (hasQs) {
+                                                        rowHtml += '<tr id="q-detail-' + qKey + '" class="hidden"><td colspan="8" class="px-0 py-0 bg-white"><table class="min-w-full text-xs"><tbody>' + qRowsHtml + '</tbody></table></td></tr>';
+                                                    }
+                                                    return rowHtml;
+                                                }).join('')}
                                             </tbody>
                                         </table>
                                     </td>
@@ -3246,7 +3308,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${activeData.length}</strong> · Haz clic en un dominio para ver el detalle por dimensión</p>
+                <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${activeData.length}</strong> · Haz clic en un dominio para ver dimensiones · Haz clic en una dimensión para ver preguntas individuales</p>
             </div>`;
         }
 
