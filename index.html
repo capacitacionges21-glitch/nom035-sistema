@@ -400,32 +400,8 @@
                 </div>
 
                 <div id="tab-dominios" class="fade-in hidden">
-                    <h1 class="text-2xl font-bold mb-2">Riesgos y Dominios NOM-035</h1>
-                    <div class="mb-4 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-600 items-center">
-                        <span class="font-semibold text-blue-800">¿Cómo leer el puntaje promedio?</span>
-                        <span>Escala <strong>0 a 4</strong> por dominio. <strong>Mayor puntaje = mayor exposición al factor de riesgo.</strong> Los umbrales varían por dominio según la Guía II NOM-035 (rango aprox.):</span>
-                        <span class="text-green-600 font-medium">Nulo &lt;~1.0</span>
-                        <span class="text-blue-600 font-medium">Bajo ~1.0–1.4</span>
-                        <span class="text-yellow-600 font-medium">Medio ~1.4–1.9</span>
-                        <span class="text-orange-600 font-medium">Alto ~1.9–2.5</span>
-                        <span class="text-red-600 font-medium">Muy alto ≥~2.2–3.0</span>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-slate-50 border-b border-slate-200">
-                                <tr>
-                                    <th class="px-5 py-3 text-left font-semibold text-slate-600">Dominio</th>
-                                    <th class="px-5 py-3 text-center font-semibold text-slate-600">Puntaje Promedio (0–4)</th>
-                                    <th class="px-5 py-3 text-center font-semibold text-slate-600">Nivel de Riesgo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="dominios-table-body"></tbody>
-                        </table>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-3 italic">Promedio calculado sobre todas las encuestas del filtro activo. Los valores se actualizan conforme se acumulan encuestas.</p>
-
                     <!-- Conteo por colaborador -->
-                    <div class="mt-8">
+                    <div>
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-800">Colaboradores en Riesgo por Dominio</h2>
@@ -3056,6 +3032,43 @@
             <p class="text-xs text-slate-400 mt-2 italic">Haz clic en una fila para ver el detalle de riesgo por dominio.</p>`;
         }
 
+        function _buildDimensionMapForDomain(domain) {
+            const dims = {};
+            surveyQuestions
+                .filter(q => q.dominio === domain && q.dimension && !q.dominio.includes('(no puntúa)') && !q.dominio.includes('traumático'))
+                .forEach(q => {
+                    if (!dims[q.dimension]) dims[q.dimension] = [];
+                    if (!dims[q.dimension].includes(q.id)) dims[q.dimension].push(q.id);
+                });
+            return dims;
+        }
+
+        function _calcNivelCounts(qIds) {
+            const c = { 'Nulo':0, 'Bajo':0, 'Medio':0, 'Alto':0, 'Muy alto':0 };
+            _colabData.forEach(row => {
+                try {
+                    let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    const resp = parsed || {};
+                    const scores = qIds.map(id => parseFloat(resp[id])).filter(v => !isNaN(v));
+                    if (!scores.length) return;
+                    const avg = scores.reduce((a,b)=>a+b,0) / scores.length;
+                    const nivel = getDomainNivel('', avg);
+                    if (c[nivel] !== undefined) c[nivel]++;
+                } catch(e) {}
+            });
+            return c;
+        }
+
+        function toggleDominioDrilldown(domainKey) {
+            const el = document.getElementById('dim-detail-' + domainKey);
+            const icon = document.getElementById('dim-icon-' + domainKey);
+            if (!el) return;
+            const hidden = el.classList.contains('hidden');
+            el.classList.toggle('hidden', !hidden);
+            if (icon) icon.style.transform = hidden ? 'rotate(90deg)' : '';
+        }
+
         function renderColabPorDominio() {
             const container = document.getElementById('colab-dominio-container');
             if (!container) return;
@@ -3064,7 +3077,7 @@
                 return;
             }
             const DOMAINS = _buildDomainMap();
-            const counts = {}; // { domain: { Nulo:0, Bajo:0, Medio:0, Alto:0, 'Muy alto':0 } }
+            const counts = {};
             Object.keys(DOMAINS).forEach(d => { counts[d] = { 'Nulo':0, 'Bajo':0, 'Medio':0, 'Alto':0, 'Muy alto':0 }; });
 
             _colabData.forEach(row => {
@@ -3082,10 +3095,21 @@
                 } catch(e) {}
             });
 
-            // Sort domains by Alto+Muy alto count desc
             const rows = Object.entries(counts).map(([domain, c]) => ({
                 domain, c, altoCrit: c['Alto'] + c['Muy alto']
             })).sort((a,b) => b.altoCrit - a.altoCrit);
+
+            // Pre-compute dimension data for all domains
+            const dimData = {};
+            rows.forEach(({domain}) => {
+                const dims = _buildDimensionMapForDomain(domain);
+                dimData[domain] = Object.entries(dims).map(([dim, qIds]) => {
+                    const dc = _calcNivelCounts(qIds);
+                    return { dim, dc, altoCrit: dc['Alto'] + dc['Muy alto'] };
+                }).sort((a,b) => b.altoCrit - a.altoCrit);
+            });
+
+            const NIVEL_COLOR = { 'Nulo':'text-slate-400', 'Bajo':'text-blue-600', 'Medio':'text-amber-600', 'Alto':'text-orange-600 font-semibold', 'Muy alto':'text-red-600 font-semibold' };
 
             container.innerHTML = `
             <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -3093,34 +3117,66 @@
                     <table class="min-w-full text-xs">
                         <thead class="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th class="px-4 py-3 text-left font-semibold text-slate-600">Dominio</th>
+                                <th class="px-4 py-3 text-left font-semibold text-slate-600 w-8"></th>
+                                <th class="px-4 py-3 text-left font-semibold text-slate-600">Dominio / Dimensión</th>
                                 <th class="px-4 py-3 text-center font-semibold text-slate-400">Nulo</th>
                                 <th class="px-4 py-3 text-center font-semibold text-slate-400">Bajo</th>
                                 <th class="px-4 py-3 text-center font-semibold text-amber-600">Medio</th>
                                 <th class="px-4 py-3 text-center font-semibold text-orange-600">Alto</th>
                                 <th class="px-4 py-3 text-center font-semibold text-red-600">Muy alto</th>
-                                <th class="px-4 py-3 text-center font-semibold text-red-700 bg-red-50">⚠ Alto + Muy alto</th>
+                                <th class="px-4 py-3 text-center font-semibold text-red-700 bg-red-50">⚠ Crítico</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
-                            ${rows.map(({domain, c, altoCrit}) => `
-                            <tr class="hover:bg-slate-50">
-                                <td class="px-4 py-2.5 font-medium text-slate-700 max-w-xs">${domain}</td>
-                                <td class="px-4 py-2.5 text-center text-slate-400">${c['Nulo']||0}</td>
-                                <td class="px-4 py-2.5 text-center text-blue-600">${c['Bajo']||0}</td>
-                                <td class="px-4 py-2.5 text-center text-amber-600">${c['Medio']||0}</td>
-                                <td class="px-4 py-2.5 text-center text-orange-600 font-semibold">${c['Alto']||0}</td>
-                                <td class="px-4 py-2.5 text-center text-red-600 font-semibold">${c['Muy alto']||0}</td>
-                                <td class="px-4 py-2.5 text-center">
-                                    ${altoCrit > 0
-                                        ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">${altoCrit}</span>`
-                                        : '<span class="text-slate-300">—</span>'}
-                                </td>
-                            </tr>`).join('')}
+                            ${rows.map(({domain, c, altoCrit}, idx) => {
+                                const key = idx;
+                                const hasDims = dimData[domain] && dimData[domain].length > 0;
+                                return `
+                                <tr class="hover:bg-slate-50 ${hasDims ? 'cursor-pointer' : ''}" onclick="${hasDims ? `toggleDominioDrilldown(${key})` : ''}">
+                                    <td class="px-4 py-2.5 text-center text-slate-400">
+                                        ${hasDims ? `<i id="dim-icon-${key}" class="ph ph-caret-right transition-transform duration-200 text-slate-400"></i>` : ''}
+                                    </td>
+                                    <td class="px-4 py-2.5 font-semibold text-slate-700">${domain}</td>
+                                    <td class="px-4 py-2.5 text-center text-slate-400">${c['Nulo']||0}</td>
+                                    <td class="px-4 py-2.5 text-center text-blue-600">${c['Bajo']||0}</td>
+                                    <td class="px-4 py-2.5 text-center text-amber-600">${c['Medio']||0}</td>
+                                    <td class="px-4 py-2.5 text-center text-orange-600 font-semibold">${c['Alto']||0}</td>
+                                    <td class="px-4 py-2.5 text-center text-red-600 font-semibold">${c['Muy alto']||0}</td>
+                                    <td class="px-4 py-2.5 text-center">
+                                        ${altoCrit > 0
+                                            ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">${altoCrit}</span>`
+                                            : '<span class="text-slate-300">—</span>'}
+                                    </td>
+                                </tr>
+                                ${hasDims ? `
+                                <tr id="dim-detail-${key}" class="hidden">
+                                    <td colspan="8" class="px-0 py-0 bg-slate-50 border-b border-slate-200">
+                                        <table class="min-w-full text-xs">
+                                            <tbody>
+                                                ${dimData[domain].map(({dim, dc, altoCrit: dac}) => `
+                                                <tr class="border-t border-slate-200 hover:bg-slate-100">
+                                                    <td class="w-8 px-4 py-2"></td>
+                                                    <td class="px-4 py-2 text-slate-500 pl-8">↳ ${dim}</td>
+                                                    <td class="px-4 py-2 text-center text-slate-400">${dc['Nulo']||0}</td>
+                                                    <td class="px-4 py-2 text-center text-blue-500">${dc['Bajo']||0}</td>
+                                                    <td class="px-4 py-2 text-center text-amber-500">${dc['Medio']||0}</td>
+                                                    <td class="px-4 py-2 text-center text-orange-500 font-semibold">${dc['Alto']||0}</td>
+                                                    <td class="px-4 py-2 text-center text-red-500 font-semibold">${dc['Muy alto']||0}</td>
+                                                    <td class="px-4 py-2 text-center">
+                                                        ${dac > 0
+                                                            ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-600">${dac}</span>`
+                                                            : '<span class="text-slate-300">—</span>'}
+                                                    </td>
+                                                </tr>`).join('')}
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>` : ''}`;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
-                <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${_colabData.length}</strong></p>
+                <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${_colabData.length}</strong> · Haz clic en un dominio para ver el detalle por dimensión</p>
             </div>`;
         }
 
