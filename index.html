@@ -5772,6 +5772,45 @@
             'Alto': '#f97316', 'Muy alto': '#ef4444'
         };
 
+        // Tabla 2 NOM-035: umbrales de suma raw por categoría [muy_alto, alto, medio, bajo]
+        const CATEGORIA_THRESHOLDS = {
+            'Ambiente de trabajo':                   [14, 11,  9,  5],
+            'Factores propios de la actividad':      [60, 45, 30, 15],
+            'Organización del tiempo de trabajo':    [13, 10,  7,  5],
+            'Liderazgo y relaciones en el trabajo':  [58, 42, 29, 14],
+            'Entorno organizacional':                [23, 18, 14, 10],
+        };
+
+        function _drillClassifyCategory(rawSum, categoria) {
+            const t = CATEGORIA_THRESHOLDS[categoria];
+            if (!t) return null;
+            const [ma, a, m, b] = t;
+            if (rawSum >= ma) return 'Muy alto';
+            if (rawSum >= a)  return 'Alto';
+            if (rawSum >= m)  return 'Medio';
+            if (rawSum >= b)  return 'Bajo';
+            return 'Nulo';
+        }
+
+        // Versión categoría: usa suma raw para clasificar, promedio para la barra
+        function _drillComputeCategoryDist(rows, qIds, categoria) {
+            const dist = { 'Nulo': 0, 'Bajo': 0, 'Medio': 0, 'Alto': 0, 'Muy alto': 0 };
+            let sumAvg = 0, count = 0;
+            rows.forEach(row => {
+                const resp = _drillParseResp(row);
+                const scores = qIds.map(id => parseFloat(resp[id])).filter(v => !isNaN(v));
+                if (!scores.length) return;
+                const rawSum = scores.reduce((a,b) => a+b, 0);
+                const avg    = rawSum / scores.length;
+                const nivel  = _drillClassifyCategory(rawSum, categoria)
+                            || getDomainNivel('', avg); // fallback si no hay umbral oficial
+                dist[nivel]++;
+                sumAvg += avg;
+                count++;
+            });
+            return { ...dist, total: count, avgScore: count > 0 ? +(sumAvg / count).toFixed(2) : 0 };
+        }
+
         function _drillScoringQuestions() {
             return surveyQuestions.filter(q =>
                 q.categoria && q.categoria !== 'TraumaFiltro' && q.categoria !== 'TraumaEval' &&
@@ -5809,9 +5848,11 @@
             return [...new Set(qs.map(q => q.categoria))].map(cat => {
                 const catQs = qs.filter(q => q.categoria === cat);
                 const qIds  = catQs.map(q => q.id);
-                const refDom = catQs[0]?.dominio || '';
-                const dist  = _drillComputeDist(rows, qIds, refDom);
-                return { name: cat, dist, nivel: getDomainNivel(refDom, dist.avgScore), avgScore: dist.avgScore };
+                const dist  = _drillComputeCategoryDist(rows, qIds, cat);
+                // Nivel representativo: el que tiene más colaboradores en riesgo alto/muy alto
+                const nivelRep = _drillClassifyCategory(dist.avgScore * qIds.length, cat)
+                              || getDomainNivel(catQs[0]?.dominio || '', dist.avgScore);
+                return { name: cat, dist, nivel: nivelRep, avgScore: dist.avgScore };
             }).sort((a, b) => b.avgScore - a.avgScore);
         }
 
@@ -5871,12 +5912,13 @@
 
             // Summary panel (visible cuando se ha hecho drill-in)
             if (summaryEl && _drillState.level > 0) {
-                const qs2      = _drillState.level === 1
+                const qs2   = _drillState.level === 1
                     ? _drillScoringQuestions().filter(q => q.categoria === _drillState.categoria)
                     : _drillScoringQuestions().filter(q => q.dominio   === _drillState.dominio);
-                const qIds2    = qs2.map(q => q.id);
-                const refDom2  = qs2[0]?.dominio || _drillState.dominio || '';
-                const agg      = _drillComputeDist(rows, qIds2, refDom2);
+                const qIds2 = qs2.map(q => q.id);
+                const agg   = _drillState.level === 1
+                    ? _drillComputeCategoryDist(rows, qIds2, _drillState.categoria)
+                    : _drillComputeDist(rows, qIds2, _drillState.dominio || '');
                 const pctCrit  = agg.total > 0 ? Math.round(((agg['Alto']||0)+(agg['Muy alto']||0))/agg.total*100) : 0;
                 summaryEl.classList.remove('hidden');
                 summaryEl.innerHTML = `
