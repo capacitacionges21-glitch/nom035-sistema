@@ -3148,6 +3148,40 @@
             return c;
         }
 
+        function _calcPreguntaCountsBySucursal(qId, isInversa, sourceData) {
+            const data = sourceData || (_drillRows.length ? _drillRows : _colabData);
+            const levelMap = ['Nulo','Bajo','Medio','Alto','Muy alto'];
+            const bySuc = {};
+            data.forEach(row => {
+                try {
+                    const suc = row.sucursal || '(Sin sucursal)';
+                    if (!bySuc[suc]) bySuc[suc] = { 'Nulo':0, 'Bajo':0, 'Medio':0, 'Alto':0, 'Muy alto':0, total:0 };
+                    let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
+                    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                    const resp = parsed || {};
+                    const rawVal = parseFloat(resp[qId]);
+                    if (isNaN(rawVal)) return;
+                    const score = isInversa ? (4 - rawVal) : rawVal;
+                    const nivel = levelMap[Math.round(Math.max(0, Math.min(4, score)))] || 'Nulo';
+                    bySuc[suc][nivel]++;
+                    bySuc[suc].total++;
+                } catch(e) {}
+            });
+            return Object.entries(bySuc)
+                .map(([suc, c]) => ({ suc, c, altoCrit: c['Alto'] + c['Muy alto'], total: c.total }))
+                .filter(s => s.total > 0)
+                .sort((a,b) => b.altoCrit - a.altoCrit);
+        }
+
+        function toggleQuestionDrilldown(key) {
+            const el = document.getElementById('suc-q-detail-' + key);
+            const icon = document.getElementById('qsuc-icon-' + key);
+            if (!el) return;
+            const hidden = el.classList.contains('hidden');
+            el.classList.toggle('hidden', !hidden);
+            if (icon) icon.style.transform = hidden ? 'rotate(90deg)' : '';
+        }
+
         function toggleDominioDrilldown(domainKey) {
             const el = document.getElementById('dim-detail-' + domainKey);
             const icon = document.getElementById('dim-icon-' + domainKey);
@@ -3205,8 +3239,10 @@
                     const dc = _calcNivelCounts(qIds, activeData);
                     const qs = qIds.map(qId => {
                         const q = surveyQuestions.find(sq => sq.id === qId);
-                        const qc = _calcPreguntaCounts(qId, q ? q.inversa : false, activeData);
-                        return { qId, pregunta: q ? q.pregunta : qId, qc, altoCrit: qc['Alto'] + qc['Muy alto'] };
+                        const inv = q ? q.inversa : false;
+                        const qc = _calcPreguntaCounts(qId, inv, activeData);
+                        const sucData = _calcPreguntaCountsBySucursal(qId, inv, activeData);
+                        return { qId, pregunta: q ? q.pregunta : qId, qc, altoCrit: qc['Alto'] + qc['Muy alto'], sucData };
                     });
                     return { dim, dc, altoCrit: dc['Alto'] + dc['Muy alto'], qs };
                 }).sort((a,b) => b.altoCrit - a.altoCrit);
@@ -3261,12 +3297,38 @@
                                                     const hasQs = qs && qs.length > 0;
                                                     let qRowsHtml = '';
                                                     if (hasQs) {
-                                                        qs.forEach(function(qItem) {
+                                                        qs.forEach(function(qItem, qIdx) {
+                                                            const qSucKey = qKey + '_' + qIdx;
                                                             const shortQ = qItem.pregunta.length > 90 ? qItem.pregunta.substring(0,87)+'...' : qItem.pregunta;
                                                             const qac = qItem.altoCrit;
                                                             const qc = qItem.qc;
-                                                            qRowsHtml += '<tr class="border-t border-slate-100">'
-                                                                + '<td class="w-8 px-4 py-1.5"></td>'
+                                                            const hasSuc = qItem.sucData && qItem.sucData.length > 0;
+                                                            // Build sucursal sub-rows
+                                                            let sucRowsHtml = '';
+                                                            if (hasSuc) {
+                                                                qItem.sucData.forEach(function(sd) {
+                                                                    const sac = sd.altoCrit;
+                                                                    sucRowsHtml += '<tr class="border-t border-slate-50">'
+                                                                        + '<td class="w-8 px-4 py-1"></td>'
+                                                                        + '<td class="px-4 py-1 pl-20 text-xs text-slate-300 leading-tight">↳↳↳ ' + sd.suc + '</td>'
+                                                                        + '<td class="px-3 py-1 text-center text-slate-300 text-xs">' + (sd.c['Nulo']||0) + '</td>'
+                                                                        + '<td class="px-3 py-1 text-center text-blue-300 text-xs">' + (sd.c['Bajo']||0) + '</td>'
+                                                                        + '<td class="px-3 py-1 text-center text-amber-300 text-xs">' + (sd.c['Medio']||0) + '</td>'
+                                                                        + '<td class="px-3 py-1 text-center text-orange-300 font-semibold text-xs">' + (sd.c['Alto']||0) + '</td>'
+                                                                        + '<td class="px-3 py-1 text-center text-red-300 font-semibold text-xs">' + (sd.c['Muy alto']||0) + '</td>'
+                                                                        + '<td class="px-3 py-1 text-center">'
+                                                                        + (sac > 0 ? '<span class="inline-flex items-center px-1 py-0 rounded-full text-xs font-bold bg-red-50 text-red-400">' + sac + '</span>' : '<span class="text-slate-200">—</span>')
+                                                                        + '</td></tr>';
+                                                                });
+                                                            }
+                                                            const qIconTd = hasSuc
+                                                                ? '<td class="w-8 px-4 py-1.5 text-center"><i id="qsuc-icon-' + qSucKey + '" class="ph ph-caret-right transition-transform duration-200 text-xs text-slate-200"></i></td>'
+                                                                : '<td class="w-8 px-4 py-1.5"></td>';
+                                                            const qTrAttrs = hasSuc
+                                                                ? ' class="border-t border-slate-100 cursor-pointer hover:bg-slate-50" onclick="toggleQuestionDrilldown(\'' + qSucKey + '\')"'
+                                                                : ' class="border-t border-slate-100"';
+                                                            qRowsHtml += '<tr' + qTrAttrs + '>'
+                                                                + qIconTd
                                                                 + '<td class="px-4 py-1.5 pl-14 text-xs leading-snug text-slate-400">↳↳ ' + shortQ + '</td>'
                                                                 + '<td class="px-3 py-1.5 text-center text-slate-400">' + (qc['Nulo']||0) + '</td>'
                                                                 + '<td class="px-3 py-1.5 text-center text-blue-400">' + (qc['Bajo']||0) + '</td>'
@@ -3276,6 +3338,9 @@
                                                                 + '<td class="px-3 py-1.5 text-center">'
                                                                 + (qac > 0 ? '<span class="inline-flex items-center px-1.5 py-0 rounded-full text-xs font-bold bg-red-50 text-red-500">' + qac + '</span>' : '<span class="text-slate-200">—</span>')
                                                                 + '</td></tr>';
+                                                            if (hasSuc) {
+                                                                qRowsHtml += '<tr id="suc-q-detail-' + qSucKey + '" class="hidden"><td colspan="8" class="px-0 py-0 bg-slate-50"><table class="min-w-full text-xs"><tbody>' + sucRowsHtml + '</tbody></table></td></tr>';
+                                                            }
                                                         });
                                                     }
                                                     const iconTd = hasQs
