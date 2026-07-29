@@ -3109,9 +3109,10 @@
             return dims;
         }
 
-        function _calcNivelCounts(qIds) {
+        function _calcNivelCounts(qIds, sourceData) {
             const c = { 'Nulo':0, 'Bajo':0, 'Medio':0, 'Alto':0, 'Muy alto':0 };
-            _colabData.forEach(row => {
+            const data = sourceData || (_drillRows.length ? _drillRows : _colabData);
+            data.forEach(row => {
                 try {
                     let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
                     if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -3138,7 +3139,8 @@
         function renderColabPorDominio() {
             const container = document.getElementById('colab-dominio-container');
             if (!container) return;
-            if (!_colabData.length) {
+            const activeData = _drillRows.length ? _drillRows : _colabData;
+            if (!activeData.length) {
                 container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-8">No hay datos. Ve a Resumen Global primero.</p>';
                 return;
             }
@@ -3146,7 +3148,7 @@
             const counts = {};
             Object.keys(DOMAINS).forEach(d => { counts[d] = { 'Nulo':0, 'Bajo':0, 'Medio':0, 'Alto':0, 'Muy alto':0 }; });
 
-            _colabData.forEach(row => {
+            activeData.forEach(row => {
                 try {
                     let parsed = typeof row.respuestas === 'string' ? JSON.parse(row.respuestas) : (row.respuestas || {});
                     if (typeof parsed === 'string') parsed = JSON.parse(parsed);
@@ -3170,7 +3172,7 @@
             rows.forEach(({domain}) => {
                 const dims = _buildDimensionMapForDomain(domain);
                 dimData[domain] = Object.entries(dims).map(([dim, qIds]) => {
-                    const dc = _calcNivelCounts(qIds);
+                    const dc = _calcNivelCounts(qIds, activeData);
                     return { dim, dc, altoCrit: dc['Alto'] + dc['Muy alto'] };
                 }).sort((a,b) => b.altoCrit - a.altoCrit);
             });
@@ -3242,7 +3244,7 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${_colabData.length}</strong> · Haz clic en un dominio para ver el detalle por dimensión</p>
+                <p class="text-xs text-slate-400 px-4 py-3 border-t border-slate-100">Total de colaboradores analizados: <strong>${activeData.length}</strong> · Haz clic en un dominio para ver el detalle por dimensión</p>
             </div>`;
         }
 
@@ -3414,7 +3416,10 @@
                     _drillState = { level: 0, categoria: null, dominio: null };
                     _drillRows = filteredColab;
                     renderDrilldownChart();
-                    // Actualizar tabla de dominios
+                    // Re-calcular tab Dominios si ya tiene datos visibles
+                    const domTabContainer = document.getElementById('colab-dominio-container');
+                    if (domTabContainer && !domTabContainer.querySelector('p.italic')) renderColabPorDominio();
+                    // Actualizar tabla de dominios (legacy, ya no existe en DOM pero se deja por si acaso)
                     const tbody = document.getElementById('dominios-table-body');
                     if (tbody) {
                         const NCLS = { 'Muy alto':'text-red-600 font-semibold','Alto':'text-orange-600 font-semibold','Medio':'text-yellow-600 font-semibold','Bajo':'text-blue-600','Nulo':'text-slate-400' };
