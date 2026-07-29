@@ -775,7 +775,7 @@
                         <div class="flex items-center gap-2 text-slate-500 text-sm font-medium mr-1"><i class="ph ph-funnel text-base"></i> Filtrar:</div>
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-slate-400 font-medium pl-1">Cadena</label>
-                            <select id="psico-filter-cadena" onchange="applyPsicoFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[160px]">
+                            <select id="psico-filter-cadena" onchange="onPsicoCadenaChange()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[160px]">
                                 <option value="">Todas las cadenas</option>
                             </select>
                         </div>
@@ -2970,13 +2970,14 @@
         function renderDominiosPorSucursal() {
             const container = document.getElementById('dominios-sucursal-container');
             if (!container) return;
-            if (!_colabData.length) {
+            const activeData = _drillRows.length ? _drillRows : _colabData;
+            if (!activeData.length) {
                 container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-8">No hay datos de encuestas cargados. Ve a Resumen Global primero.</p>';
                 return;
             }
 
             // Sucursales con al menos una encuesta respondida
-            const sucursales = [...new Set(_colabData.map(r => r.sucursal).filter(Boolean))].sort();
+            const sucursales = [...new Set(activeData.map(r => r.sucursal).filter(Boolean))].sort();
             if (!sucursales.length) {
                 container.innerHTML = '<p class="text-sm text-slate-400 italic text-center py-8">No se encontraron sucursales con encuestas respondidas.</p>';
                 return;
@@ -2992,13 +2993,14 @@
             };
 
             const rows = sucursales.map(suc => {
-                const scores = calcDomainScoresForScope('sucursal', suc);
-                if (!scores) return null;
-                const n = scores[0]?.n || 0;
+                const sucData = activeData.filter(r => r.sucursal === suc);
+                const scores = _calcDomainScoresFromRows(sucData);
+                if (!scores || !scores.length) return null;
+                const n = sucData.length;
                 const criticos = scores.filter(s => s.riesgo === 'Alto' || s.riesgo === 'Muy alto');
                 const nivelMax = scores.reduce((best, s) =>
                     (NIVEL_ORDER[s.riesgo] || 0) > (NIVEL_ORDER[best] || 0) ? s.riesgo : best, 'Nulo');
-                const cadena = _colabData.find(r => r.sucursal === suc)?.cadena || '—';
+                const cadena = activeData.find(r => r.sucursal === suc)?.cadena || '—';
                 return { suc, cadena, n, nivelMax, criticos, scores };
             }).filter(Boolean);
 
@@ -3419,6 +3421,8 @@
                     // Re-calcular tab Dominios si ya tiene datos visibles
                     const domTabContainer = document.getElementById('colab-dominio-container');
                     if (domTabContainer && !domTabContainer.querySelector('p.italic')) renderColabPorDominio();
+                    const sucTabContainer = document.getElementById('dominios-sucursal-container');
+                    if (sucTabContainer && !sucTabContainer.querySelector('p.italic')) renderDominiosPorSucursal();
                     // Actualizar tabla de dominios (legacy, ya no existe en DOM pero se deja por si acaso)
                     const tbody = document.getElementById('dominios-table-body');
                     if (tbody) {
@@ -4613,6 +4617,20 @@
 
             renderPsicoKPIs(rows);
             renderPsicoTable(rows);
+        }
+
+        function onPsicoCadenaChange() {
+            const cadena = document.getElementById('psico-filter-cadena')?.value || '';
+            const sucSel = document.getElementById('psico-filter-sucursal');
+            if (!sucSel) { applyPsicoFilters(); return; }
+            const current = sucSel.value;
+            sucSel.innerHTML = '<option value="">Todas las sucursales</option>';
+            const subs = [...new Set(_colabData
+                .filter(r => (!cadena || r.cadena === cadena) && r.sucursal)
+                .map(r => r.sucursal))].sort();
+            subs.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sucSel.appendChild(o); });
+            sucSel.value = subs.includes(current) ? current : '';
+            applyPsicoFilters();
         }
 
         function clearPsicoFilters() {
