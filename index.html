@@ -268,7 +268,7 @@
                         <button onclick="syncData()" class="bg-white border border-slate-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-50 shadow-sm"><i class="ph ph-arrows-clockwise mr-2"></i> Actualizar Datos</button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-3">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center">
                             <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4"><i class="ph ph-users text-2xl"></i></div>
                             <div><p class="text-sm font-medium text-slate-500">Participación</p><p class="text-2xl font-bold text-slate-800" id="kpi-participation">--%</p></div>
@@ -285,6 +285,13 @@
                             <div class="p-3 rounded-full bg-emerald-100 text-emerald-600 mr-4"><i class="ph ph-check-circle text-2xl"></i></div>
                             <div><p class="text-sm font-medium text-slate-500">Cumplimiento</p><p class="text-2xl font-bold text-slate-800">Al día</p></div>
                         </div>
+                    </div>
+                    <!-- Info KPIs -->
+                    <div class="mb-6 bg-blue-50 border border-blue-100 rounded-xl px-5 py-3 text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+                        <div class="flex items-start gap-1.5"><span class="text-blue-500 font-bold shrink-0">%</span><span><strong class="text-slate-700">Participación:</strong> porcentaje de colaboradores que ya completaron la encuesta NOM-035 sobre el total registrado en la plataforma.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-siren text-red-500 shrink-0 mt-0.5"></i><span><strong class="text-slate-700">Riesgo Global:</strong> nivel de riesgo promedio de toda la organización (Nulo / Bajo / Medio / Alto / Muy alto), calculado sumando las 46 preguntas y comparando contra la Tabla 1 de la NOM-035.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-warning-octagon text-amber-500 shrink-0 mt-0.5"></i><span><strong class="text-slate-700">Dominios Críticos:</strong> número de dominios de la NOM-035 cuyo promedio global quedó en nivel Alto o Muy alto y requieren intervención prioritaria.</span></div>
+                        <div class="flex items-start gap-1.5"><i class="ph ph-check-circle text-emerald-500 shrink-0 mt-0.5"></i><span><strong class="text-slate-700">Cumplimiento:</strong> indica si la empresa está dentro del periodo de aplicación establecido por la STPS para el ciclo actual de la NOM-035.</span></div>
                     </div>
 
                     <div class="grid grid-cols-1 gap-6 mb-8">
