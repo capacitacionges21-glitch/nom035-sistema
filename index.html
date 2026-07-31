@@ -3156,8 +3156,8 @@
                     const resp = parsed || {};
                     const rawVal = parseFloat(resp[qId]);
                     if (isNaN(rawVal)) return;
-                    const score = isInversa ? (4 - rawVal) : rawVal;
-                    const nivel = levelMap[Math.round(Math.max(0, Math.min(4, score)))] || 'Nulo';
+                    // Los valores ya están almacenados como puntuación de riesgo (inversión aplicada al guardar)
+                    const nivel = levelMap[Math.round(Math.max(0, Math.min(4, rawVal)))] || 'Nulo';
                     if (c[nivel] !== undefined) c[nivel]++;
                 } catch(e) {}
             });
@@ -3177,8 +3177,8 @@
                     const resp = parsed || {};
                     const rawVal = parseFloat(resp[qId]);
                     if (isNaN(rawVal)) return;
-                    const score = isInversa ? (4 - rawVal) : rawVal;
-                    const nivel = levelMap[Math.round(Math.max(0, Math.min(4, score)))] || 'Nulo';
+                    // Los valores ya están almacenados como puntuación de riesgo (inversión aplicada al guardar)
+                    const nivel = levelMap[Math.round(Math.max(0, Math.min(4, rawVal)))] || 'Nulo';
                     bySuc[suc][nivel]++;
                     bySuc[suc].total++;
                 } catch(e) {}
