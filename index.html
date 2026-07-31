@@ -956,122 +956,115 @@
         const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbySJvazF8nNBT1NuGICDPPg1He-t2B6-lx6-MSGIeL7L_YrA8lXTTbGa8voHr0_oU1D/exec"; 
 
         const surveyQuestions = [
+            // ── Sección 1: Condiciones en el ambiente de trabajo (DOF ítems 1-5) ──
             { id: 1, pregunta: "El espacio donde trabajo me permite realizar mis actividades de manera segura e higiénica", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: true },
-            { id: 2, pregunta: "Mi trabajo me exige hacer mucho esfuerzo físico", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: false },
+            { id: 2, pregunta: "Mi trabajo me exige hacer mucho esfuerzo físico", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: false },
             { id: 3, pregunta: "Me preocupa sufrir un accidente en mi trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: false },
-            { id: 4, pregunta: "Considero que en mi trabajo se aplican las normas de seguridad y salud en el trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: true },
-            { id: 5, pregunta: "Considero que las actividades que realizo son peligrosas", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones peligrosas e inseguras", inversa: false },
-            { id: 6, pregunta: "Tengo suficiente luz en mi lugar de trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
-            { id: 7, pregunta: "La temperatura es adecuada en mi centro de trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
-            { id: 8, pregunta: "El nivel de ruido en mi centro de trabajo es soportable", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
-            { id: 9, pregunta: "Los sistemas de red funcionan adecuadamente en mi centro de trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
-            { id: 10, pregunta: "Me entregaron al menos un juego de uniforme en buen estado al ingresar a la empresa", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
-            { id: 11, pregunta: "Por la cantidad de trabajo que tengo debo quedarme tiempo adicional a mi turno", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas cuantitativas", inversa: false },
-            { id: 12, pregunta: "Por la cantidad de trabajo que tengo debo trabajar sin parar", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas cuantitativas", inversa: false },
-            { id: 13, pregunta: "Considero que es necesario mantener un ritmo de trabajo acelerado", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Ritmo de trabajo acelerado", inversa: false },
-            { id: 14, pregunta: "Mi trabajo exige que esté muy concentrado", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
-            { id: 15, pregunta: "Mi trabajo requiere que memorice mucha información", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
-            { id: 16, pregunta: "En mi trabajo tengo que tomar decisiones difíciles muy rápido", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
-            { id: 17, pregunta: "Mi trabajo exige que atienda varios asuntos al mismo tiempo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
-            { id: 18, pregunta: "En mi trabajo soy responsable de cosas de mucho valor", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
-            { id: 19, pregunta: "Respondo ante mi jefe por los resultados de toda mi área de trabajo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
-            { id: 20, pregunta: "En el trabajo me dan órdenes contradictorias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
-            { id: 21, pregunta: "Considero que en mi trabajo me piden hacer cosas innecesarias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
-            { id: 22, pregunta: "Trabajo horas extras más de tres veces a la semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
-            { id: 23, pregunta: "Mi trabajo me exige laborar en días de descanso, festivos o fines de semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
-            { id: 24, pregunta: "Considero que el tiempo en el trabajo es mucho y perjudica mis actividades familiares o personales", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia del trabajo fuera del centro laboral", inversa: false },
-            { id: 25, pregunta: "Debo atender asuntos de trabajo cuando estoy en casa", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia del trabajo fuera del centro laboral", inversa: false },
-            { id: 26, pregunta: "Pienso en las actividades familiares o personales cuando estoy en mi trabajo", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia de las responsabilidades familiares", inversa: false },
-            { id: 27, pregunta: "Pienso que mis responsabilidades familiares afectan mi trabajo", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia de las responsabilidades familiares", inversa: false },
-            { id: 28, pregunta: "Mi trabajo permite que desarrolle nuevas habilidades", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Posibilidad de desarrollo", inversa: true },
-            { id: 29, pregunta: "En mi trabajo puedo aspirar a un mejor puesto", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Posibilidad de desarrollo", inversa: true },
-            { id: 30, pregunta: "Durante mi jornada de trabajo puedo tomar pausas cuando las necesito", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
-            { id: 31, pregunta: "Puedo decidir cuánto trabajo realizo durante la jornada laboral", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
-            { id: 32, pregunta: "Puedo decidir la velocidad a la que realizo mis actividades en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
-            { id: 33, pregunta: "Puedo cambiar el orden de las actividades que realizo en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
-            { id: 34, pregunta: "Los cambios que se presentan en mi trabajo dificultan mi labor", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Participación y manejo del cambio", inversa: false },
-            { id: 35, pregunta: "Cuando se presentan cambios en mi trabajo se tienen en cuenta mis ideas o aportaciones", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Participación y manejo del cambio", inversa: true },
-            { id: 36, pregunta: "Al ingresar recibí inducción y orientación", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
-            { id: 37, pregunta: "Me informan con claridad cuáles son mis funciones", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
-            { id: 38, pregunta: "Me explican claramente los resultados que debo obtener en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
-            { id: 39, pregunta: "Me explican claramente los objetivos de mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
-            { id: 40, pregunta: "Me informan con quién puedo resolver problemas o asuntos de trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
-            { id: 41, pregunta: "Me permiten asistir a capacitaciones relacionadas con mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
-            { id: 42, pregunta: "Recibo capacitación útil para hacer mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Capacitación e información", inversa: true },
-            { id: 43, pregunta: "Las instrucciones que mi jefe nos da son bastantes claras y específicas", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Escasa claridad de funciones", inversa: true },
-            { id: 44, pregunta: "Cuando cometo un error mi líder me corrige y me llama la atención con respeto y a solas", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 45, pregunta: "Considero adecuado el nivel de exigencia por parte de mi líder", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 46, pregunta: "Mi líder supervisa equitativamente y está pendiente de nuestro trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 47, pregunta: "Mi jefe en mi centro de trabajo me tratan bien, con amabilidad y de forma respetuosa", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 48, pregunta: "Mi jefe ayuda a organizar mejor el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 49, pregunta: "Mi jefe tiene en cuenta mis puntos de vista y opiniones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 50, pregunta: "Mi jefe me comunica a tiempo la información relacionada con el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 51, pregunta: "La orientación que me da mi jefe me ayuda a realizar mejor mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 52, pregunta: "Mi jefe ayuda a solucionar los problemas que se presentan en el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
-            { id: 53, pregunta: "Puedo confiar en mis compañeros de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
-            { id: 54, pregunta: "Entre compañeros solucionamos los problemas de trabajo de forma respetuosa", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
-            { id: 55, pregunta: "En mi trabajo me hacen sentir parte del grupo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
-            { id: 56, pregunta: "Cuando tenemos que realizar trabajo de equipo los compañeros colaboran", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
-            { id: 57, pregunta: "Mis compañeros de trabajo me ayudan cuando tengo dificultades", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
-            { id: 58, pregunta: "Conozco bien qué aporto con mi trabajo a la empresa", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
-            { id: 59, pregunta: "Me informan sobre lo que hago bien en mi trabajo", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
-            { id: 60, pregunta: "La forma como evalúan mi trabajo en mi centro de trabajo me ayuda a mejorar mi desempeño", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
-            { id: 61, pregunta: "En mi centro de trabajo me pagan a tiempo mi salario", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
-            { id: 62, pregunta: "El pago que recibo es el que merezco por el trabajo que realizo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
-            { id: 63, pregunta: "Me entregan mi recibo de nómina", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
-            { id: 64, pregunta: "Si obtengo los resultados esperados en mi trabajo me recompensan o reconocen", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
-            { id: 65, pregunta: "En mi empresa existen posibilidades reales de movilidad (cambios de puesto, sucursal, plan de sucesión)", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
-            { id: 66, pregunta: "Considero que mi trabajo es estable", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Inestabilidad laboral", inversa: true },
-            { id: 67, pregunta: "En mi trabajo existe continua rotación de personal", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Inestabilidad laboral", inversa: false },
-            { id: 68, pregunta: "Siento orgullo de laborar en este centro de trabajo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
-            { id: 69, pregunta: "Me siento comprometido con mi trabajo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
-            { id: 70, pregunta: "El puesto que ocupo en la empresa está en relación a la experiencia que poseo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
-            { id: 71, pregunta: "Mi puesto está en relación con mi nivel académico", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
-            { id: 72, pregunta: "Estoy satisfecho(a) con mi trayectoria en la empresa", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
-            { id: 73, pregunta: "De haber sabido como iban a ser la cosas en mi empresa igual hubiera entrado en ella", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
-            { id: 74, pregunta: "Si pudiera dejar la empresa por otro trabajo, a igualdad de sueldo y mismas condiciones, lo haría", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: false },
-            { id: 75, pregunta: "Me gusta la empresa", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
-            { id: 76, pregunta: "Me siento integrado en la empresa", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
-            { id: 77, pregunta: "En mi trabajo puedo expresarme libremente sin interrupciones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: true },
-            { id: 78, pregunta: "Recibo críticas constantes a mi persona y/o trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
-            { id: 79, pregunta: "Recibo burlas, calumnias, difamaciones, humillaciones o ridiculizaciones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
-            { id: 80, pregunta: "Se ignora mi presencia o se me excluye de las reuniones de trabajo y en la toma de decisiones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
-            { id: 81, pregunta: "Se manipulan las situaciones de trabajo para hacerme parecer un mal trabajador", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
-            { id: 82, pregunta: "Se ignoran mis éxitos laborales y se atribuyen a otros trabajadores", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
-            { id: 83, pregunta: "Me bloquean o impiden las oportunidades que tengo para obtener ascenso o mejora en mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
-            { id: 84, pregunta: "He presenciado actos de violencia en mi centro de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
-            { id: 85, pregunta: "En mi trabajo debo brindar servicio a clientes o usuarios (si la respuesta es \"SI\", responda las preguntas siguientes. Si su respuesta fue \"NO\" pase a las preguntas de la sección siguiente).", categoria: "Control", dominio: "Filtro (no puntúa)", dimension: "", inversa: false },
-            { id: 86, pregunta: "Atiendo clientes o usuarios muy enojados", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
-            { id: 87, pregunta: "Mi trabajo me exige atender personas muy necesitadas de ayuda o enfermas", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
-            { id: 88, pregunta: "Para hacer mi trabajo debo demostrar sentimientos distintos a los míos", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
-            { id: 89, pregunta: "Mi trabajo me exige atender situaciones de violencia", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
-            { id: 90, pregunta: "Tengo colaboradores a mi cargo (si la respuesta es \"SI\", responda las preguntas siguientes. Si su respuesta fue \"NO\" pase a las preguntas de la sección siguiente).", categoria: "Control", dominio: "Filtro (no puntúa)", dimension: "", inversa: false },
-            { id: 91, pregunta: "Le comunican tarde los asuntos de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
-            { id: 92, pregunta: "Dificultan el logro de los resultados del trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
-            { id: 93, pregunta: "Cooperan poco cuando se necesita", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
-            { id: 94, pregunta: "Ignoran las sugerencias para mejorar su trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
-            // ── Sección 15: Acontecimiento Traumático Severo – Filtro ──
-            { id: 95, pregunta: "Accidente que haya tenido como consecuencia la muerte, la pérdida de un miembro o una lesión grave", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
-            { id: 96, pregunta: "Asalto", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
-            { id: 97, pregunta: "Actos violentos que hayan derivado en lesiones graves", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
-            { id: 98, pregunta: "Secuestro", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
-            { id: 99, pregunta: "Amenazas", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
-            { id: 100, pregunta: "Cualquier otro acontecimiento que haya puesto en riesgo su vida y/o su salud", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
-            // ── Sección 16: Evaluación de efectos (Secciones II, III y IV) ──
-            { id: 101, pregunta: "¿Ha tenido recuerdos recurrentes sobre el acontecimiento que le provocan malestar?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Recuerdos persistentes", inversa: false },
-            { id: 102, pregunta: "¿Ha tenido sueños de carácter recurrente sobre el acontecimiento que le producen malestar?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Recuerdos persistentes", inversa: false },
-            { id: 103, pregunta: "¿Se ha esforzado por evitar todo tipo de sentimientos, conversaciones o situaciones que le puedan recordar el acontecimiento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
-            { id: 104, pregunta: "¿Se ha esforzado por evitar todo tipo de actividades, lugares o personas que le motivan recuerdos del acontecimiento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
-            { id: 105, pregunta: "¿Ha tenido dificultad para recordar alguna parte importante del evento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
-            { id: 106, pregunta: "¿Ha disminuido su interés en sus actividades cotidianas?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
-            { id: 107, pregunta: "¿Se ha sentido alejado o distante de los demás?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
-            { id: 108, pregunta: "¿Ha notado que tiene dificultad para expresar sus sentimientos?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
-            { id: 109, pregunta: "¿Ha tenido la impresión de que su vida se va a acortar, que va a morir antes que otras personas o que tiene un futuro limitado?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
-            { id: 110, pregunta: "¿Ha tenido usted dificultades para dormir?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
-            { id: 111, pregunta: "¿Ha estado particularmente irritable o le han dado arranques de coraje?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
-            { id: 112, pregunta: "¿Ha tenido dificultad para concentrarse?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
-            { id: 113, pregunta: "¿Ha estado nervioso o constantemente en alerta?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
-            { id: 114, pregunta: "¿Se ha sobresaltado fácilmente por cualquier cosa?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false }
+            { id: 4, pregunta: "Considero que en mi trabajo se aplican las normas de seguridad y salud en el trabajo", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Condiciones deficientes e insalubres", inversa: true },
+            { id: 5, pregunta: "Considero que las actividades que realizo son peligrosas", categoria: "Ambiente de trabajo", dominio: "Condiciones en el ambiente de trabajo", dimension: "Trabajos peligrosos", inversa: false },
+            // ── Sección 2: Cargas cuantitativas y ritmo (DOF ítems 6-8) ──
+            { id: 6, pregunta: "Por la cantidad de trabajo que tengo debo quedarme tiempo adicional a mi turno", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas cuantitativas", inversa: false },
+            { id: 7, pregunta: "Por la cantidad de trabajo que tengo debo trabajar sin parar", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas cuantitativas", inversa: false },
+            { id: 8, pregunta: "Considero que es necesario mantener un ritmo de trabajo acelerado", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Ritmo de trabajo acelerado", inversa: false },
+            // ── Sección 3: Carga mental (DOF ítems 9-12) ──
+            { id: 9, pregunta: "Mi trabajo exige que esté muy concentrado", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            { id: 10, pregunta: "Mi trabajo requiere que memorice mucha información", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            { id: 11, pregunta: "En mi trabajo tengo que tomar decisiones difíciles muy rápido", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            { id: 12, pregunta: "Mi trabajo exige que atienda varios asuntos al mismo tiempo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Carga mental", inversa: false },
+            // ── Sección 4: Responsabilidades y cargas contradictorias (DOF ítems 13-16) ──
+            { id: 13, pregunta: "En mi trabajo soy responsable de cosas de mucho valor", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
+            { id: 14, pregunta: "Respondo ante mi jefe por los resultados de toda mi área de trabajo", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Responsabilidades del puesto", inversa: false },
+            { id: 15, pregunta: "En el trabajo me dan órdenes contradictorias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
+            { id: 16, pregunta: "Considero que en mi trabajo me piden hacer cosas innecesarias", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas contradictorias o inconsistentes", inversa: false },
+            // ── Sección 5: Jornada de trabajo (DOF ítems 17-22) ──
+            { id: 17, pregunta: "Trabajo horas extras más de tres veces a la semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
+            { id: 18, pregunta: "Mi trabajo me exige laborar en días de descanso, festivos o fines de semana", categoria: "Organización del tiempo de trabajo", dominio: "Jornada de trabajo", dimension: "Jornadas de trabajo extensas", inversa: false },
+            { id: 19, pregunta: "Considero que el tiempo en el trabajo es mucho y perjudica mis actividades familiares o personales", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia del trabajo fuera del centro laboral", inversa: false },
+            { id: 20, pregunta: "Debo atender asuntos de trabajo cuando estoy en casa", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia del trabajo fuera del centro laboral", inversa: false },
+            { id: 21, pregunta: "Pienso en las actividades familiares o personales cuando estoy en mi trabajo", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia de las responsabilidades familiares", inversa: false },
+            { id: 22, pregunta: "Pienso que mis responsabilidades familiares afectan mi trabajo", categoria: "Organización del tiempo de trabajo", dominio: "Interferencia en la relación trabajo-familia", dimension: "Influencia de las responsabilidades familiares", inversa: false },
+            // ── Sección 6: Control sobre el trabajo (DOF ítems 23-30) ──
+            { id: 23, pregunta: "Mi trabajo permite que desarrolle nuevas habilidades", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Posibilidad de desarrollo", inversa: true },
+            { id: 24, pregunta: "En mi trabajo puedo aspirar a un mejor puesto", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Posibilidad de desarrollo", inversa: true },
+            { id: 25, pregunta: "Durante mi jornada de trabajo puedo tomar pausas cuando las necesito", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 26, pregunta: "Puedo decidir cuánto trabajo realizo durante la jornada laboral", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 27, pregunta: "Puedo decidir la velocidad a la que realizo mis actividades en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 28, pregunta: "Puedo cambiar el orden de las actividades que realizo en mi trabajo", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Control y autonomía sobre el trabajo", inversa: true },
+            { id: 29, pregunta: "Los cambios que se presentan en mi trabajo dificultan mi labor", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Participación y manejo del cambio", inversa: false },
+            { id: 30, pregunta: "Cuando se presentan cambios en mi trabajo se tienen en cuenta mis ideas o aportaciones", categoria: "Factores propios de la actividad", dominio: "Falta de control sobre el trabajo", dimension: "Participación y manejo del cambio", inversa: true },
+            // ── Sección 7: Liderazgo – Claridad de funciones (DOF ítems 31-34) ──
+            { id: 31, pregunta: "Me informan con claridad cuáles son mis funciones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Escasa claridad de funciones", inversa: true },
+            { id: 32, pregunta: "Me explican claramente los resultados que debo obtener en mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Escasa claridad de funciones", inversa: true },
+            { id: 33, pregunta: "Me explican claramente los objetivos de mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Escasa claridad de funciones", inversa: true },
+            { id: 34, pregunta: "Me informan con quién puedo resolver problemas o asuntos de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Escasa claridad de funciones", inversa: true },
+            // ── Sección 8: Liderazgo – Características del liderazgo (DOF ítems 35-43) ──
+            { id: 35, pregunta: "Las instrucciones que me da mi jefe son bastante claras y específicas", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 36, pregunta: "Cuando cometo un error mi jefe me llama la atención con respeto y a solas", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 37, pregunta: "Considero adecuado el nivel de exigencia por parte de mi jefe", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 38, pregunta: "Mi jefe supervisa equitativamente y está pendiente de nuestro trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 39, pregunta: "Mi jefe me trata bien, con amabilidad y de forma respetuosa", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 40, pregunta: "Mi jefe ayuda a organizar mejor el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 41, pregunta: "Mi jefe tiene en cuenta mis puntos de vista y opiniones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 42, pregunta: "Mi jefe me comunica a tiempo la información relacionada con el trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            { id: 43, pregunta: "La orientación que me da mi jefe me ayuda a realizar mejor mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Liderazgo", dimension: "Características del liderazgo", inversa: true },
+            // ── Sección 9: Relaciones con compañeros (DOF ítems 44-46) ──
+            { id: 44, pregunta: "Puedo confiar en mis compañeros de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            { id: 45, pregunta: "Entre compañeros solucionamos los problemas de trabajo de forma respetuosa", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            { id: 46, pregunta: "En mi trabajo me hacen sentir parte del grupo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Relaciones sociales en el trabajo", inversa: true },
+            // ── Sección 10: Reconocimiento, pertenencia e inestabilidad (DOF ítems 47-56) ──
+            { id: 47, pregunta: "Conozco bien qué aporto con mi trabajo a la empresa", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
+            { id: 48, pregunta: "Me informan sobre lo que hago bien en mi trabajo", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
+            { id: 49, pregunta: "La forma como evalúan mi trabajo en mi centro de trabajo me ayuda a mejorar mi desempeño", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escasa o nula retroalimentación del desempeño", inversa: true },
+            { id: 50, pregunta: "En mi centro de trabajo me pagan a tiempo mi salario", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 51, pregunta: "El pago que recibo es el que merezco por el trabajo que realizo", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 52, pregunta: "Las personas que hacen bien el trabajo pueden crecer laboralmente", categoria: "Entorno organizacional", dominio: "Reconocimiento del desempeño", dimension: "Escaso o nulo reconocimiento y compensación", inversa: true },
+            { id: 53, pregunta: "Considero que mi trabajo es estable", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Inestabilidad laboral", inversa: true },
+            { id: 54, pregunta: "En mi trabajo existe continua rotación de personal", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Inestabilidad laboral", inversa: false },
+            { id: 55, pregunta: "Siento orgullo de laborar en este centro de trabajo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            { id: 56, pregunta: "Me siento comprometido con mi trabajo", categoria: "Entorno organizacional", dominio: "Insuficiente sentido de pertenencia e inestabilidad", dimension: "Limitado sentido de pertenencia", inversa: true },
+            // ── Sección 11: Violencia (DOF ítems 57-64) ──
+            { id: 57, pregunta: "En mi trabajo puedo expresarme libremente sin interrupciones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: true },
+            { id: 58, pregunta: "Recibo críticas constantes a mi persona y/o trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 59, pregunta: "Recibo burlas, calumnias, difamaciones, humillaciones o ridiculizaciones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 60, pregunta: "Se ignora mi presencia o se me excluye de las reuniones de trabajo y en la toma de decisiones", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 61, pregunta: "Se manipulan las situaciones de trabajo para hacerme parecer un mal trabajador", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 62, pregunta: "Se ignoran mis éxitos laborales y se atribuyen a otros trabajadores", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 63, pregunta: "Me bloquean o impiden las oportunidades que tengo para obtener ascenso o mejora en mi trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            { id: 64, pregunta: "He presenciado actos de violencia en mi centro de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Violencia", dimension: "Acoso, acoso psicológico", inversa: false },
+            // ── Sección 12: Atención a clientes (DOF ítems 65-68) ──
+            { id: 65, pregunta: "En mi trabajo debo brindar servicio a clientes o usuarios (si la respuesta es \"SI\", responda las preguntas siguientes. Si su respuesta fue \"NO\" pase a las preguntas de la sección siguiente).", categoria: "Control", dominio: "Filtro (no puntúa)", dimension: "", inversa: false },
+            { id: 66, pregunta: "Atiendo clientes o usuarios muy enojados", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            { id: 67, pregunta: "Mi trabajo me exige atender personas muy necesitadas de ayuda o enfermas", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            { id: 68, pregunta: "Para hacer mi trabajo debo demostrar sentimientos distintos a los míos", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            { id: 69, pregunta: "Mi trabajo me exige atender situaciones de violencia", categoria: "Factores propios de la actividad", dominio: "Carga de trabajo", dimension: "Cargas emocionales", inversa: false },
+            // ── Sección 13: Supervisión de colaboradores (DOF ítems 69-72) ──
+            { id: 70, pregunta: "Tengo colaboradores a mi cargo (si la respuesta es \"SI\", responda las preguntas siguientes. Si su respuesta fue \"NO\" pase a las preguntas de la sección siguiente).", categoria: "Control", dominio: "Filtro (no puntúa)", dimension: "", inversa: false },
+            { id: 71, pregunta: "Le comunican tarde los asuntos de trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            { id: 72, pregunta: "Dificultan el logro de los resultados del trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            { id: 73, pregunta: "Cooperan poco cuando se necesita", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            { id: 74, pregunta: "Ignoran las sugerencias para mejorar su trabajo", categoria: "Liderazgo y relaciones en el trabajo", dominio: "Relaciones en el trabajo", dimension: "Deficiente relación con los colaboradores", inversa: false },
+            // ── Sección 14: Acontecimiento Traumático Severo – Filtro ──
+            { id: 75, pregunta: "Accidente que haya tenido como consecuencia la muerte, la pérdida de un miembro o una lesión grave", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 76, pregunta: "Asalto", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 77, pregunta: "Actos violentos que hayan derivado en lesiones graves", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 78, pregunta: "Secuestro", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 79, pregunta: "Amenazas", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            { id: 80, pregunta: "Cualquier otro acontecimiento que haya puesto en riesgo su vida y/o su salud", categoria: "TraumaFiltro", dominio: "Acontecimiento traumático (no puntúa)", dimension: "Filtro", inversa: false },
+            // ── Sección 15: Evaluación de efectos (Secciones II, III y IV) ──
+            { id: 81, pregunta: "¿Ha tenido recuerdos recurrentes sobre el acontecimiento que le provocan malestar?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Recuerdos persistentes", inversa: false },
+            { id: 82, pregunta: "¿Ha tenido sueños de carácter recurrente sobre el acontecimiento que le producen malestar?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Recuerdos persistentes", inversa: false },
+            { id: 83, pregunta: "¿Se ha esforzado por evitar todo tipo de sentimientos, conversaciones o situaciones que le puedan recordar el acontecimiento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 84, pregunta: "¿Se ha esforzado por evitar todo tipo de actividades, lugares o personas que le motivan recuerdos del acontecimiento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 85, pregunta: "¿Ha tenido dificultad para recordar alguna parte importante del evento?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 86, pregunta: "¿Ha disminuido su interés en sus actividades cotidianas?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 87, pregunta: "¿Se ha sentido alejado o distante de los demás?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 88, pregunta: "¿Ha notado que tiene dificultad para expresar sus sentimientos?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 89, pregunta: "¿Ha tenido la impresión de que su vida se va a acortar, que va a morir antes que otras personas o que tiene un futuro limitado?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Esfuerzo por evitar", inversa: false },
+            { id: 90, pregunta: "¿Ha tenido usted dificultades para dormir?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 91, pregunta: "¿Ha estado particularmente irritable o le han dado arranques de coraje?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 92, pregunta: "¿Ha tenido dificultad para concentrarse?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 93, pregunta: "¿Ha estado nervioso o constantemente en alerta?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false },
+            { id: 94, pregunta: "¿Se ha sobresaltado fácilmente por cualquier cosa?", categoria: "TraumaEval", dominio: "Eventos traumáticos (no puntúa)", dimension: "Afectación", inversa: false }
         ];
 
         const scaleOptions = [
@@ -1083,23 +1076,22 @@
         ];
 
         const surveyBlocks = [
-            { id: 1, title: "Sección 1", desc: "Para cada afirmación, selecciona la opción que mejor refleje la frecuencia con la que has experimentado esa situación en tu lugar de trabajo.", start: 1, end: 10 },
-            { id: 2, title: "Sección 2", desc: "Para responder a las preguntas siguientes piense en la cantidad y ritmo de trabajo que tiene.", start: 11, end: 13 },
-            { id: 3, title: "Sección 3", desc: "Las preguntas siguientes están relacionadas con el esfuerzo mental que le exige su trabajo.", start: 14, end: 17 },
-            { id: 4, title: "Sección 4", desc: "Las preguntas siguientes están relacionadas con las activities que realiza en su trabajo y las responsabilidades que tiene.", start: 18, end: 21 },
-            { id: 5, title: "Sección 5", desc: "Las preguntas siguientes están relacionadas con su jornada de trabajo.", start: 22, end: 27 },
-            { id: 6, title: "Sección 6", desc: "Las preguntas siguientes están relacionadas con las decisiones que puede tomar en su trabajo.", start: 28, end: 33 },
-            { id: 7, title: "Sección 7", desc: "Las preguntas siguientes están relacionadas con cualquier tipo de cambio que ocurra en su trabajo (considere los últimos cambios realizados).", start: 34, end: 35 },
-            { id: 8, title: "Sección 8", desc: "Las preguntas siguientes están relacionadas con la capacitación e información que se le proporciona sobre su trabajo.", start: 36, end: 42 },
-            { id: 9, title: "Sección 9", desc: "Las preguntas siguientes están relacionadas con el o los jefes con quien tiene contacto.", start: 43, end: 52 },
-            { id: 10, title: "Sección 10", desc: "Las preguntas siguientes se refieren a las relaciones con sus compañeros.", start: 53, end: 57 },
-            { id: 11, title: "Sección 11", desc: "Las preguntas siguientes están relacionadas con la información que recibe sobre su rendimiento en el trabajo, el reconocimiento, el sentido de pertenencia y la estabilidad que le ofrece su trabajo.", start: 58, end: 76 },
-            { id: 12, title: "Sección 12", desc: "Las preguntas siguientes están relacionadas con actos de violencia laboral (malos tratos, acoso, hostigamiento, acoso psicológico).", start: 77, end: 84 },
-            { id: 13, title: "Sección 13", desc: "Las preguntas siguientes están relacionadas con la atención a clientes y usuarios.", start: 85, end: 89 },
-            { id: 14, title: "Sección 14", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 90, end: 94 },
-            { id: 15, title: "Acontecimiento Traumático Severo", desc: "¿Ha presenciado o sufrido alguna vez, durante o con motivo del trabajo, alguno de los siguientes acontecimientos? Responda Sí o No a cada opción.", start: 95, end: 100, traumaFiltro: true },
-            { id: 16, title: "Evaluación de Efectos del Acontecimiento", desc: "Las siguientes preguntas hacen referencia al último mes. Contesta Sí o No en relación con el acontecimiento que reportaste.", start: 101, end: 114, traumaEval: true },
-            { id: 17, title: "Comentarios y Observaciones", desc: "¿Tienes algún comentario o sugerencia adicional sobre tu experiencia laboral o sobre la encuesta?", comentarios: true }
+            { id: 1, title: "Sección 1", desc: "Para cada afirmación, selecciona la opción que mejor refleje la frecuencia con la que has experimentado esa situación en tu lugar de trabajo.", start: 1, end: 5 },
+            { id: 2, title: "Sección 2", desc: "Para responder a las preguntas siguientes piense en la cantidad y ritmo de trabajo que tiene.", start: 6, end: 8 },
+            { id: 3, title: "Sección 3", desc: "Las preguntas siguientes están relacionadas con el esfuerzo mental que le exige su trabajo.", start: 9, end: 12 },
+            { id: 4, title: "Sección 4", desc: "Las preguntas siguientes están relacionadas con las actividades que realiza en su trabajo y las responsabilidades que tiene.", start: 13, end: 16 },
+            { id: 5, title: "Sección 5", desc: "Las preguntas siguientes están relacionadas con su jornada de trabajo.", start: 17, end: 22 },
+            { id: 6, title: "Sección 6", desc: "Las preguntas siguientes están relacionadas con las decisiones que puede tomar en su trabajo.", start: 23, end: 30 },
+            { id: 7, title: "Sección 7", desc: "Las preguntas siguientes están relacionadas con la información que recibe sobre sus funciones y los resultados que debe obtener.", start: 31, end: 34 },
+            { id: 8, title: "Sección 8", desc: "Las preguntas siguientes están relacionadas con el o los jefes con quien tiene contacto.", start: 35, end: 43 },
+            { id: 9, title: "Sección 9", desc: "Las preguntas siguientes se refieren a las relaciones con sus compañeros.", start: 44, end: 46 },
+            { id: 10, title: "Sección 10", desc: "Las preguntas siguientes están relacionadas con la información que recibe sobre su rendimiento en el trabajo, el reconocimiento, el sentido de pertenencia y la estabilidad que le ofrece su trabajo.", start: 47, end: 56 },
+            { id: 11, title: "Sección 11", desc: "Las preguntas siguientes están relacionadas con actos de violencia laboral (malos tratos, acoso, hostigamiento, acoso psicológico).", start: 57, end: 64 },
+            { id: 12, title: "Sección 12", desc: "Las preguntas siguientes están relacionadas con la atención a clientes y usuarios.", start: 65, end: 69 },
+            { id: 13, title: "Sección 13", desc: "Las preguntas siguientes están relacionadas con las actitudes de las personas que usted supervisa.", start: 70, end: 74 },
+            { id: 14, title: "Acontecimiento Traumático Severo", desc: "¿Ha presenciado o sufrido alguna vez, durante o con motivo del trabajo, alguno de los siguientes acontecimientos? Responda Sí o No a cada opción.", start: 75, end: 80, traumaFiltro: true },
+            { id: 15, title: "Evaluación de Efectos del Acontecimiento", desc: "Las siguientes preguntas hacen referencia al último mes. Contesta Sí o No en relación con el acontecimiento que reportaste.", start: 81, end: 94, traumaEval: true },
+            { id: 16, title: "Comentarios y Observaciones", desc: "¿Tienes algún comentario o sugerencia adicional sobre tu experiencia laboral o sobre la encuesta?", comentarios: true }
         ];
 
         // Sucursales con acceso anticipado (antes de que abra su cadena completa)
@@ -2269,8 +2261,8 @@
 
         function handleFilterChange(filterId, isYes) {
             let targets = [];
-            if (filterId === 85) targets = [86, 87, 88, 89];
-            if (filterId === 90) targets = [91, 92, 93, 94];
+            if (filterId === 65) targets = [66, 67, 68, 69];
+            if (filterId === 70) targets = [71, 72, 73, 74];
 
             targets.forEach(id => {
                 const el = document.getElementById(`question-card-${id}`);
@@ -2391,7 +2383,7 @@
                     qCard.id = `question-card-${q.id}`;
                     qCard.className = 'question-card bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow';
 
-                    if ((q.id >= 86 && q.id <= 89) || (q.id >= 91 && q.id <= 94) || (q.id >= 103 && q.id <= 114)) {
+                    if ((q.id >= 66 && q.id <= 69) || (q.id >= 71 && q.id <= 74) || (q.id >= 81 && q.id <= 94)) {
                         qCard.classList.add('hidden');
                     }
 
@@ -2604,13 +2596,13 @@
             }
 
             // Saltar sección 16 si menos de 3 respuestas de sección 15 son "Sí" (NOM-035)
-            const traumaIds = [95, 96, 97, 98, 99, 100];
+            const traumaIds = [75, 76, 77, 78, 79, 80];
             const getSiCount = () => traumaIds.filter(id =>
                 document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
             ).length;
             const hasSiTrauma = () => getSiCount() > 0;
 
-            if (delta === 1 && currentSurveyPage === 15 && hasSiTrauma()) {
+            if (delta === 1 && currentSurveyPage === 14 && hasSiTrauma()) {
                 const fechaVal = document.getElementById('trauma-fecha')?.value;
                 const involucradosVal = document.getElementById('trauma-involucrados')?.value?.trim();
                 const descripcionVal = document.getElementById('trauma-descripcion')?.value?.trim();
@@ -2630,14 +2622,14 @@
                     return;
                 }
             }
-            if (delta === 1 && currentSurveyPage === 15 && getSiCount() === 0) {
+            if (delta === 1 && currentSurveyPage === 14 && getSiCount() === 0) {
                 currentSurveyPage = totalBlocks; // skip ATS eval, go to comments page
                 updatePaginationUI();
                 updateProgress();
                 return;
             }
             if (delta === -1 && currentSurveyPage === totalBlocks && getSiCount() === 0) {
-                currentSurveyPage = 15; // back from comments, skip ATS eval
+                currentSurveyPage = 14; // back from comments, skip ATS eval
                 updatePaginationUI();
                 updateProgress();
                 return;
