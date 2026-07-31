@@ -3626,6 +3626,7 @@
             const sf = document.getElementById('subtitle-faltantes'); if (sf) sf.textContent = 'Colaboradores que aún no han completado la encuesta';
             const ta = document.getElementById('title-avance');     if (ta) ta.textContent = 'Avance por Cadena';
             const sa = document.getElementById('subtitle-avance');  if (sa) sa.textContent = '% de participación en cada cadena';
+            _drillRows = [];
             if (_colabData.length) filterColaboradoresTable();
             initDashboard();
         }
