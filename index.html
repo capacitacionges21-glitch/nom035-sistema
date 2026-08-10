@@ -712,12 +712,12 @@
                             <label class="text-xs text-slate-400 font-medium pl-1">Tipo de acontecimiento</label>
                             <select id="ev-filter-tipo" onchange="applyEventosFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-red-400 min-w-[200px]">
                                 <option value="">Todos los tipos</option>
-                                <option value="95">Accidente grave</option>
-                                <option value="96">Asalto</option>
-                                <option value="97">Actos violentos</option>
-                                <option value="98">Secuestro</option>
-                                <option value="99">Amenazas</option>
-                                <option value="100">Otro riesgo de vida</option>
+                                <option value="75">Accidente grave</option>
+                                <option value="76">Asalto</option>
+                                <option value="77">Actos violentos</option>
+                                <option value="78">Secuestro</option>
+                                <option value="79">Amenazas</option>
+                                <option value="80">Otro riesgo de vida</option>
                             </select>
                         </div>
                         <div class="flex flex-col gap-1">
@@ -2209,11 +2209,11 @@
         }
 
         function handleTraumaSecChange() {
-            const anySecII = [101, 102].some(id =>
+            const anySecII = [81, 82].some(id =>
                 document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
             );
-            const secIIIIds = [103,104,105,106,107,108,109];
-            const secIVIds  = [110,111,112,113,114];
+            const secIIIIds = [83,84,85,86,87,88,89];
+            const secIVIds  = [90,91,92,93,94];
             const subHdrIII = document.getElementById('trauma-subhdr-secIII');
             const subHdrIV  = document.getElementById('trauma-subhdr-secIV');
 
@@ -2250,7 +2250,7 @@
         }
 
         function handleTraumaFilterChange() {
-            const hasSi = [95, 96, 97, 98, 99, 100].some(id =>
+            const hasSi = [75, 76, 77, 78, 79, 80].some(id =>
                 document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)
             );
             const extraFields = document.getElementById('trauma-extra-fields');
@@ -2813,7 +2813,7 @@
             const horaFin = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
             const horaInicio = surveyStartTime ? surveyStartTime.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) : horaFin;
 
-            const eventoTraumatico = [95, 96, 97, 98, 99, 100].some(id =>
+            const eventoTraumatico = [75, 76, 77, 78, 79, 80].some(id =>
                 document.querySelector(`input[name="q_${id}"][value="SI"]:checked`)) ? 'SI' : 'NO';
 
             const evFecha        = eventoTraumatico === 'SI' ? (document.getElementById('trauma-fecha')?.value || '') : '';
@@ -3901,8 +3901,8 @@
 
             // ── Sheet 1: ATS Atención Clínica ──
             const ATS_TIPOS = [
-                {id:95,label:'Accidente grave'},{id:96,label:'Asalto'},{id:97,label:'Actos violentos'},
-                {id:98,label:'Secuestro'},{id:99,label:'Amenazas'},{id:100,label:'Otro riesgo de vida'}
+                {id:75,label:'Accidente grave'},{id:76,label:'Asalto'},{id:77,label:'Actos violentos'},
+                {id:78,label:'Secuestro'},{id:79,label:'Amenazas'},{id:80,label:'Otro riesgo de vida'}
             ];
             let atsRows = (appState.eventosData || []).filter(r => {
                 const sc = getSecCounts(r);
@@ -5340,10 +5340,10 @@
             if (typeof resp === 'string') try { resp = JSON.parse(resp); } catch { resp = {}; }
             if (!resp || typeof resp !== 'object') resp = {};
             const si = id => String(resp[String(id)] || '').toUpperCase() === 'SI';
-            const tieneSI  = [95,96,97,98,99,100].some(si);
-            const secII    = [101,102].filter(si).length;
-            const secIII   = [103,104,105,106,107,108,109].filter(si).length;
-            const secIV    = [110,111,112,113,114].filter(si).length;
+            const tieneSI  = [75,76,77,78,79,80].some(si);
+            const secII    = [81,82].filter(si).length;
+            const secIII   = [83,84,85,86,87,88,89].filter(si).length;
+            const secIV    = [90,91,92,93,94].filter(si).length;
             const requiere = tieneSI && (secII >= 1 || secIII >= 3 || secIV >= 2);
             return { secII, secIII, secIV, requiere, tieneSI };
         }
@@ -5395,9 +5395,9 @@
                 return;
             }
             const ATS_TIPOS = [
-                { id: 95, label: 'Accidente grave' }, { id: 96, label: 'Asalto' },
-                { id: 97, label: 'Actos violentos' }, { id: 98, label: 'Secuestro' },
-                { id: 99, label: 'Amenazas' }, { id: 100, label: 'Otro riesgo de vida' },
+                { id: 75, label: 'Accidente grave' }, { id: 76, label: 'Asalto' },
+                { id: 77, label: 'Actos violentos' }, { id: 78, label: 'Secuestro' },
+                { id: 79, label: 'Amenazas' }, { id: 80, label: 'Otro riesgo de vida' },
             ];
             const getTiposRow = r => {
                 try {
@@ -5461,9 +5461,9 @@
                                 <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">F. Evento</th>
                                 <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Involucrados</th>
                                 <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap max-w-[160px]">Descripción</th>
-                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec II — Recuerdos (q101-102)">Sec II<br><span class="font-normal text-slate-400">Recuerdos</span></th>
-                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec III — Esfuerzo por evitar (q103-109)">Sec III<br><span class="font-normal text-slate-400">Evitación</span></th>
-                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec IV — Afectación (q110-114)">Sec IV<br><span class="font-normal text-slate-400">Afectación</span></th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec II — Recuerdos (q81-82)">Sec II<br><span class="font-normal text-slate-400">Recuerdos</span></th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec III — Esfuerzo por evitar (q83-89)">Sec III<br><span class="font-normal text-slate-400">Evitación</span></th>
+                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec IV — Afectación (q90-94)">Sec IV<br><span class="font-normal text-slate-400">Afectación</span></th>
                                 <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Seguimiento RH</th>
                             </tr>
                         </thead>
@@ -5507,12 +5507,12 @@
 
         async function downloadEventosPDF() {
             const ATS_TIPOS = [
-                { id: 95,  label: 'Accidente grave' },
-                { id: 96,  label: 'Asalto' },
-                { id: 97,  label: 'Actos violentos' },
-                { id: 98,  label: 'Secuestro' },
-                { id: 99,  label: 'Amenazas' },
-                { id: 100, label: 'Otro riesgo de vida' },
+                { id: 75, label: 'Accidente grave' },
+                { id: 76, label: 'Asalto' },
+                { id: 77, label: 'Actos violentos' },
+                { id: 78, label: 'Secuestro' },
+                { id: 79, label: 'Amenazas' },
+                { id: 80, label: 'Otro riesgo de vida' },
             ];
             const getTipos = r => {
                 try {
@@ -5662,28 +5662,28 @@
             });
 
             const ATS_PREGUNTAS = [
-                { id: 95,  texto: 'Accidente que haya tenido como consecuencia la muerte, la perdida de un miembro o una lesion grave' },
-                { id: 96,  texto: 'Asalto' },
-                { id: 97,  texto: 'Actos violentos que hayan derivado en lesiones graves' },
-                { id: 98,  texto: 'Secuestro' },
-                { id: 99,  texto: 'Amenazas' },
-                { id: 100, texto: 'Cualquier otro acontecimiento que haya puesto en riesgo su vida y/o su salud' },
+                { id: 75, texto: 'Accidente que haya tenido como consecuencia la muerte, la perdida de un miembro o una lesion grave' },
+                { id: 76, texto: 'Asalto' },
+                { id: 77, texto: 'Actos violentos que hayan derivado en lesiones graves' },
+                { id: 78, texto: 'Secuestro' },
+                { id: 79, texto: 'Amenazas' },
+                { id: 80, texto: 'Cualquier otro acontecimiento que haya puesto en riesgo su vida y/o su salud' },
             ];
             const EVAL_PREGUNTAS = [
-                { id: 101, dim: 'Seccion II — Recuerdos persistentes',   texto: 'Ha tenido recuerdos recurrentes sobre el acontecimiento que le provocan malestar?' },
-                { id: 102, dim: '',                                        texto: 'Ha tenido suenos de caracter recurrente sobre el acontecimiento que le producen malestar?' },
-                { id: 103, dim: 'Seccion III — Esfuerzo por evitar',      texto: 'Se ha esforzado por evitar todo tipo de sentimientos, conversaciones o situaciones que le puedan recordar el acontecimiento?' },
-                { id: 104, dim: '',                                        texto: 'Se ha esforzado por evitar actividades, lugares o personas que le motivan recuerdos del acontecimiento?' },
-                { id: 105, dim: '',                                        texto: 'Ha tenido dificultad para recordar alguna parte importante del evento?' },
-                { id: 106, dim: '',                                        texto: 'Ha disminuido su interes en sus actividades cotidianas?' },
-                { id: 107, dim: '',                                        texto: 'Se ha sentido alejado o distante de los demas?' },
-                { id: 108, dim: '',                                        texto: 'Ha notado que tiene dificultad para expresar sus sentimientos?' },
-                { id: 109, dim: '',                                        texto: 'Ha tenido la impresion de que su vida se va a acortar o que tiene un futuro limitado?' },
-                { id: 110, dim: 'Seccion IV — Afectacion',                texto: 'Ha tenido usted dificultades para dormir?' },
-                { id: 111, dim: '',                                        texto: 'Ha estado particularmente irritable o le han dado arranques de coraje?' },
-                { id: 112, dim: '',                                        texto: 'Ha tenido dificultad para concentrarse?' },
-                { id: 113, dim: '',                                        texto: 'Ha estado nervioso o constantemente en alerta?' },
-                { id: 114, dim: '',                                        texto: 'Se ha sobresaltado facilmente por cualquier cosa?' },
+                { id: 81, dim: 'Seccion II — Recuerdos persistentes',   texto: 'Ha tenido recuerdos recurrentes sobre el acontecimiento que le provocan malestar?' },
+                { id: 82, dim: '',                                        texto: 'Ha tenido suenos de caracter recurrente sobre el acontecimiento que le producen malestar?' },
+                { id: 83, dim: 'Seccion III — Esfuerzo por evitar',      texto: 'Se ha esforzado por evitar todo tipo de sentimientos, conversaciones o situaciones que le puedan recordar el acontecimiento?' },
+                { id: 84, dim: '',                                        texto: 'Se ha esforzado por evitar actividades, lugares o personas que le motivan recuerdos del acontecimiento?' },
+                { id: 85, dim: '',                                        texto: 'Ha tenido dificultad para recordar alguna parte importante del evento?' },
+                { id: 86, dim: '',                                        texto: 'Ha disminuido su interes en sus actividades cotidianas?' },
+                { id: 87, dim: '',                                        texto: 'Se ha sentido alejado o distante de los demas?' },
+                { id: 88, dim: '',                                        texto: 'Ha notado que tiene dificultad para expresar sus sentimientos?' },
+                { id: 89, dim: '',                                        texto: 'Ha tenido la impresion de que su vida se va a acortar o que tiene un futuro limitado?' },
+                { id: 90, dim: 'Seccion IV — Afectacion',                texto: 'Ha tenido usted dificultades para dormir?' },
+                { id: 91, dim: '',                                        texto: 'Ha estado particularmente irritable o le han dado arranques de coraje?' },
+                { id: 92, dim: '',                                        texto: 'Ha tenido dificultad para concentrarse?' },
+                { id: 93, dim: '',                                        texto: 'Ha estado nervioso o constantemente en alerta?' },
+                { id: 94, dim: '',                                        texto: 'Se ha sobresaltado facilmente por cualquier cosa?' },
             ];
 
             const { jsPDF } = window.jspdf;
