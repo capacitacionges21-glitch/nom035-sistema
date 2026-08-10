@@ -756,7 +756,7 @@
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <div>
                             <h1 class="text-2xl font-bold text-slate-800">Riesgos Psicosociales</h1>
-                            <p class="text-sm text-slate-500 mt-1">Colaboradores con riesgo global <strong>Alto</strong> o <strong>Muy alto</strong> que requieren seguimiento.</p>
+                            <p class="text-sm text-slate-500 mt-1">Colaboradores con riesgo global <strong>Medio</strong>, <strong>Alto</strong> o <strong>Muy alto</strong> que requieren seguimiento.</p>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap justify-end">
                             <button onclick="downloadPsicoExcel()" class="shrink-0 flex items-center px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors shadow-sm">
@@ -788,9 +788,10 @@
                         <div class="flex flex-col gap-1">
                             <label class="text-xs text-slate-400 font-medium pl-1">Nivel de riesgo</label>
                             <select id="psico-filter-nivel" onchange="applyPsicoFilters()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 min-w-[140px]">
-                                <option value="">Alto y Muy alto</option>
-                                <option value="Alto">Solo Alto</option>
+                                <option value="">Medio, Alto y Muy alto</option>
                                 <option value="Muy alto">Solo Muy alto</option>
+                                <option value="Alto">Solo Alto</option>
+                                <option value="Medio">Solo Medio</option>
                             </select>
                         </div>
                         <button onclick="clearPsicoFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
@@ -4752,7 +4753,7 @@
 
             let rows = _colabData.filter(r => {
                 const rg = r.riesgoGlobal || (r.puntajeTotal ? calcRiesgoGlobal(r.puntajeTotal) : '');
-                return rg === 'Alto' || rg === 'Muy alto';
+                return rg === 'Medio' || rg === 'Alto' || rg === 'Muy alto';
             });
             if (cadena)   rows = rows.filter(r => r.cadena   === cadena);
             if (sucursal) rows = rows.filter(r => r.sucursal === sucursal);
@@ -4763,7 +4764,7 @@
 
             const total = _colabData.filter(r => {
                 const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
-                return rg === 'Alto' || rg === 'Muy alto';
+                return rg === 'Medio' || rg === 'Alto' || rg === 'Muy alto';
             }).length;
             const infoEl = document.getElementById('psico-filter-info');
             if (infoEl) infoEl.textContent = (cadena || sucursal || nivel) ? `${rows.length} de ${total} colaboradores` : `${total} colaboradores`;
@@ -4797,27 +4798,33 @@
         function renderPsicoKPIs(rows) {
             const kpiEl = document.getElementById('psico-kpis');
             if (!kpiEl) return;
-            const muyAlto = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Muy alto').length;
-            const alto    = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Alto').length;
-            const cadenas = new Set(rows.map(r => r.cadena).filter(Boolean)).size;
+            const muyAlto    = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Muy alto').length;
+            const alto       = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Alto').length;
+            const medio      = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Medio').length;
+            const cadenas    = new Set(rows.map(r => r.cadena).filter(Boolean)).size;
             const sucursales = new Set(rows.map(r => r.sucursal).filter(Boolean)).size;
             kpiEl.innerHTML = `
-                <div class="bg-white rounded-2xl border border-red-100 p-4 flex items-center gap-3">
-                    <div class="h-10 w-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-warning text-xl"></i></div>
-                    <div><p class="text-xs text-slate-400 font-medium">Muy alto</p><p class="text-2xl font-bold text-red-600">${muyAlto}</p></div>
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style="background:#fde8e8;color:#1e3a5f"><i class="ph ph-warning text-xl"></i></div>
+                    <div><p class="text-xs text-slate-400 font-medium">Muy alto</p><p class="text-2xl font-bold" style="color:#1e3a5f">${muyAlto}</p></div>
                 </div>
-                <div class="bg-white rounded-2xl border border-orange-100 p-4 flex items-center gap-3">
-                    <div class="h-10 w-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-warning-circle text-xl"></i></div>
-                    <div><p class="text-xs text-slate-400 font-medium">Alto</p><p class="text-2xl font-bold text-orange-600">${alto}</p></div>
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style="background:#dbeafe;color:#2563eb"><i class="ph ph-warning-circle text-xl"></i></div>
+                    <div><p class="text-xs text-slate-400 font-medium">Alto</p><p class="text-2xl font-bold" style="color:#2563eb">${alto}</p></div>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style="background:#e0f0ff;color:#60a5fa"><i class="ph ph-minus-circle text-xl"></i></div>
+                    <div><p class="text-xs text-slate-400 font-medium">Medio</p><p class="text-2xl font-bold" style="color:#60a5fa">${medio}</p></div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3">
-                    <div class="h-10 w-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-buildings text-xl"></i></div>
+                    <div class="h-10 w-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-buildings text-xl"></i></div>
                     <div><p class="text-xs text-slate-400 font-medium">Cadenas involucradas</p><p class="text-2xl font-bold text-slate-700">${cadenas}</p></div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3">
-                    <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-xl"></i></div>
+                    <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-xl"></i></div>
                     <div><p class="text-xs text-slate-400 font-medium">Sucursales</p><p class="text-2xl font-bold text-slate-700">${sucursales}</p></div>
                 </div>`;
+            kpiEl.className = 'grid grid-cols-2 sm:grid-cols-5 gap-4 mb-5';
         }
 
         function renderPsicoChart() {
@@ -4983,12 +4990,14 @@
             const BADGE = {
                 'Muy alto': 'bg-red-100 text-red-700 border border-red-200',
                 'Alto':     'bg-orange-100 text-orange-700 border border-orange-200',
+                'Medio':    'bg-yellow-100 text-yellow-700 border border-yellow-200',
             };
-            // Sort: Muy alto first, then by score desc
+            const ORDEN = { 'Muy alto': 0, 'Alto': 1, 'Medio': 2 };
+            // Sort: Muy alto → Alto → Medio, luego por puntaje desc
             rows = [...rows].sort((a, b) => {
                 const ra = a.riesgoGlobal || calcRiesgoGlobal(a.puntajeTotal);
                 const rb = b.riesgoGlobal || calcRiesgoGlobal(b.puntajeTotal);
-                if (ra !== rb) return ra === 'Muy alto' ? -1 : 1;
+                if (ra !== rb) return (ORDEN[ra] ?? 9) - (ORDEN[rb] ?? 9);
                 return (parseInt(b.puntajeTotal) || 0) - (parseInt(a.puntajeTotal) || 0);
             });
             container.innerHTML = `
