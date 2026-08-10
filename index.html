@@ -796,6 +796,8 @@
                         <button onclick="clearPsicoFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
                         <span id="psico-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
+                    <!-- Gráfica por sucursal -->
+                    <div id="psico-chart-wrap" class="mb-5"></div>
                     <!-- KPIs -->
                     <div id="psico-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5"></div>
                     <!-- Tabla -->
@@ -4767,6 +4769,7 @@
             if (infoEl) infoEl.textContent = (cadena || sucursal || nivel) ? `${rows.length} de ${total} colaboradores` : `${total} colaboradores`;
 
             renderPsicoKPIs(rows);
+            renderPsicoChart();
             renderPsicoTable(rows);
         }
 
@@ -4815,6 +4818,155 @@
                     <div class="h-10 w-10 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-xl"></i></div>
                     <div><p class="text-xs text-slate-400 font-medium">Sucursales</p><p class="text-2xl font-bold text-slate-700">${sucursales}</p></div>
                 </div>`;
+        }
+
+        function renderPsicoChart() {
+            const wrap = document.getElementById('psico-chart-wrap');
+            if (!wrap || !_colabData.length) return;
+
+            const cadFilter = document.getElementById('psico-filter-cadena')?.value  || '';
+            const sucFilter = document.getElementById('psico-filter-sucursal')?.value || '';
+
+            let chartData = _colabData.filter(r => {
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                return rg === 'Medio' || rg === 'Alto' || rg === 'Muy alto';
+            });
+            if (cadFilter) chartData = chartData.filter(r => r.cadena   === cadFilter);
+            if (sucFilter) chartData = chartData.filter(r => r.sucursal === sucFilter);
+
+            if (!chartData.length) { wrap.innerHTML = ''; return; }
+
+            const bySucc = {};
+            chartData.forEach(r => {
+                const suc = r.sucursal || '(Sin sucursal)';
+                if (!bySucc[suc]) bySucc[suc] = { cadena: r.cadena || '', medio: [], alto: [], muyAlto: [] };
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                if (rg === 'Muy alto') bySucc[suc].muyAlto.push(r);
+                else if (rg === 'Alto') bySucc[suc].alto.push(r);
+                else bySucc[suc].medio.push(r);
+            });
+
+            const plantilla = {};
+            (loadedEmployees || []).forEach(e => {
+                const suc = e.sucursal || '(Sin sucursal)';
+                plantilla[suc] = (plantilla[suc] || 0) + 1;
+            });
+
+            const sorted = Object.entries(bySucc).sort((a, b) => {
+                const ta = a[1].muyAlto.length + a[1].alto.length + a[1].medio.length;
+                const tb = b[1].muyAlto.length + b[1].alto.length + b[1].medio.length;
+                return tb - ta;
+            });
+
+            const maxVal = Math.max(...sorted.map(([, v]) => v.muyAlto.length + v.alto.length + v.medio.length), 1);
+            const CHART_H = 160;
+            const BAR_W   = 36;
+            const GAP     = 5;
+
+            const barsHTML = sorted.map(([suc, data]) => {
+                const total    = data.muyAlto.length + data.alto.length + data.medio.length;
+                const hMuyAlto = Math.round((data.muyAlto.length / maxVal) * CHART_H);
+                const hAlto    = Math.round((data.alto.length    / maxVal) * CHART_H);
+                const hMedio   = Math.round((data.medio.length   / maxVal) * CHART_H);
+                const shortLbl = suc.length > 14 ? suc.substring(0, 13) + '…' : suc;
+                return `<div class="psico-bar-col flex flex-col items-center cursor-pointer shrink-0"
+                             data-suc="${suc.replace(/"/g,'&quot;')}"
+                             style="min-width:${BAR_W}px; margin:0 ${GAP/2}px">
+                    <span class="text-[10px] font-bold text-slate-600 mb-1">${total}</span>
+                    <div style="width:${BAR_W}px; height:${CHART_H}px; display:flex; flex-direction:column; justify-content:flex-end; border-radius:4px 4px 0 0; overflow:hidden;">
+                        ${hMuyAlto ? `<div style="height:${hMuyAlto}px;background:#ef4444;"></div>` : ''}
+                        ${hAlto    ? `<div style="height:${hAlto}px;background:#fb923c;"></div>`    : ''}
+                        ${hMedio   ? `<div style="height:${hMedio}px;background:#fbbf24;"></div>`   : ''}
+                    </div>
+                    <div style="width:${BAR_W+16}px; text-align:center; margin-top:4px;">
+                        <span style="font-size:8px; color:#94a3b8; word-break:break-word; line-height:1.1; display:block; max-height:2.4em; overflow:hidden;">${shortLbl}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            wrap.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-100 p-5">
+                    <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700">Riesgo por Sucursal</h3>
+                            <p class="text-xs text-slate-400">Pasa el cursor sobre una barra para ver el detalle</p>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-slate-500">
+                            <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#ef4444"></span> Muy alto</span>
+                            <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fb923c"></span> Alto</span>
+                            <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fbbf24"></span> Medio</span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto pb-1">
+                        <div id="psico-bars" class="flex items-end" style="min-height:${CHART_H+52}px; padding-bottom:2px;">
+                            ${barsHTML}
+                        </div>
+                    </div>
+                </div>
+                <div id="psico-tooltip" class="hidden fixed z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-4 pointer-events-none" style="min-width:240px;max-width:320px;font-size:12px;"></div>`;
+
+            const tooltip = document.getElementById('psico-tooltip');
+
+            function positionTooltip(e) {
+                const tw = tooltip.offsetWidth || 280, th = tooltip.offsetHeight || 200;
+                let x = e.clientX + 18, y = e.clientY - 16;
+                if (x + tw > window.innerWidth  - 8) x = e.clientX - tw - 18;
+                if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+                if (y < 8) y = 8;
+                tooltip.style.left = x + 'px';
+                tooltip.style.top  = y + 'px';
+            }
+
+            document.querySelectorAll('.psico-bar-col').forEach(col => {
+                col.addEventListener('mouseenter', function(e) {
+                    const suc  = this.dataset.suc;
+                    const data = bySucc[suc];
+                    if (!data) return;
+
+                    const plantTotal = plantilla[suc]
+                        ? `<strong>${plantilla[suc]}</strong> colaboradores`
+                        : `<strong>${data.muyAlto.length + data.alto.length + data.medio.length}</strong> respondieron`;
+
+                    const renderNames = (arr, cls) => {
+                        if (!arr.length) return '';
+                        const shown = arr.slice(0, 4);
+                        const extra = arr.length - shown.length;
+                        return shown.map(r => `<div style="padding-left:8px" class="${cls} truncate">${r.nombre || r.empId || '—'}</div>`).join('')
+                             + (extra ? `<div style="padding-left:8px;color:#94a3b8">+${extra} más</div>` : '');
+                    };
+
+                    let domHTML = '';
+                    try {
+                        const allR = [...data.muyAlto, ...data.alto, ...data.medio];
+                        const domCnt = {};
+                        allR.forEach(r => {
+                            try {
+                                (_calcDomainScoresFromRows([r]) || [])
+                                    .filter(s => s.riesgo === 'Alto' || s.riesgo === 'Muy alto')
+                                    .forEach(s => { domCnt[s.domain] = (domCnt[s.domain] || 0) + 1; });
+                            } catch(e2) {}
+                        });
+                        const top = Object.entries(domCnt).sort((a,b)=>b[1]-a[1]).slice(0,4);
+                        if (top.length) domHTML = `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9">
+                            <div style="font-weight:600;color:#475569;margin-bottom:3px">Dominios críticos:</div>
+                            ${top.map(([d,c])=>`<div style="display:flex;justify-content:space-between;gap:8px"><span style="color:#64748b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d}</span><span style="font-weight:600;color:#f97316;shrink:0">${c} colab.</span></div>`).join('')}
+                        </div>`;
+                    } catch(e2) {}
+
+                    tooltip.innerHTML = `
+                        <div style="font-weight:700;color:#1e293b;font-size:13px;margin-bottom:2px">${suc}</div>
+                        <div style="color:#94a3b8;margin-bottom:6px">${data.cadena}</div>
+                        <div style="color:#64748b;margin-bottom:8px">Plantilla: ${plantTotal}</div>
+                        ${data.muyAlto.length ? `<div style="margin-bottom:4px"><span style="font-weight:600;color:#ef4444">Muy alto (${data.muyAlto.length})</span>${renderNames(data.muyAlto,'text-red-500')}</div>` : ''}
+                        ${data.alto.length    ? `<div style="margin-bottom:4px"><span style="font-weight:600;color:#f97316">Alto (${data.alto.length})</span>${renderNames(data.alto,'text-orange-500')}</div>`    : ''}
+                        ${data.medio.length   ? `<div style="margin-bottom:4px"><span style="font-weight:600;color:#d97706">Medio (${data.medio.length})</span>${renderNames(data.medio,'text-yellow-600')}</div>`  : ''}
+                        ${domHTML}`;
+                    tooltip.classList.remove('hidden');
+                    positionTooltip(e);
+                });
+                col.addEventListener('mousemove', positionTooltip);
+                col.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
+            });
         }
 
         function renderPsicoTable(rows) {
