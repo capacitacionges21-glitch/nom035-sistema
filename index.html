@@ -5103,7 +5103,7 @@
                 const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle');
                 const result = await res.json();
                 const todos = result.status === 'success' ? result.data : [];
-                const ATS_IDS = [95, 96, 97, 98, 99, 100];
+                const ATS_IDS = [75, 76, 77, 78, 79, 80];
                 // Enrich each record with event details from the JSON blob when direct fields are empty
                 todos.forEach(r => {
                     try {
@@ -5211,12 +5211,12 @@
 
             // ── Gráfica 1: distribución por tipo ──────────────────────
             const ATS = [
-                { id: 95,  label: 'Accidente\ngrave' },
-                { id: 96,  label: 'Asalto' },
-                { id: 97,  label: 'Actos\nviolentos' },
-                { id: 98,  label: 'Secuestro' },
-                { id: 99,  label: 'Amenazas' },
-                { id: 100, label: 'Otro riesgo\nde vida' },
+                { id: 75, label: 'Accidente\ngrave' },
+                { id: 76, label: 'Asalto' },
+                { id: 77, label: 'Actos\nviolentos' },
+                { id: 78, label: 'Secuestro' },
+                { id: 79, label: 'Amenazas' },
+                { id: 80, label: 'Otro riesgo\nde vida' },
             ];
             const COLORS_BASE = ['#001a3e','#002856','#0a4a8c','#2563eb','#60a5fa','#93c5fd'];
             const tipoFiltro  = document.getElementById('ev-filter-tipo')?.value || '';
@@ -5270,9 +5270,9 @@
 
             // ── Gráfica 2: afectados por año con desglose por tipo ───────
             const ATS_NOMBRES = [
-                { id: 95, label: 'Accidente grave' }, { id: 96, label: 'Asalto' },
-                { id: 97, label: 'Actos violentos' }, { id: 98, label: 'Secuestro' },
-                { id: 99, label: 'Amenazas' },        { id: 100, label: 'Otro riesgo de vida' },
+                { id: 75, label: 'Accidente grave' }, { id: 76, label: 'Asalto' },
+                { id: 77, label: 'Actos violentos' }, { id: 78, label: 'Secuestro' },
+                { id: 79, label: 'Amenazas' },        { id: 80, label: 'Otro riesgo de vida' },
             ];
             const anioDesglose = {}; // { '2026': { total: N, tipos: { 'Asalto': 3, ... } } }
             data.forEach(r => {
