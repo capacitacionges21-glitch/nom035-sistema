@@ -4761,7 +4761,13 @@
             const infoEl = document.getElementById('psico-filter-info');
             if (infoEl) infoEl.textContent = (cadena || sucursal || nivel) ? `${rows.length} de ${total} colaboradores` : `${total} colaboradores`;
 
-            renderPsicoKPIs(rows);
+            // Totales filtrados para denominadores de KPIs
+            const baseEnc = _colabData.filter(r => (!cadena || r.cadena === cadena) && (!sucursal || r.sucursal === sucursal)).length;
+            const baseCad = cadena ? 1 : new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set(_colabData.map(r => r.cadena).filter(Boolean)).size;
+            const baseSuc = cadena
+                ? new Set(loadedEmployees.filter(e => e.cadena === cadena).map(e => e.sucursal).filter(Boolean)).size || new Set(_colabData.filter(r => r.cadena === cadena).map(r => r.sucursal).filter(Boolean)).size
+                : new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set(_colabData.map(r => r.sucursal).filter(Boolean)).size;
+            renderPsicoKPIs(rows, { totalEnc: baseEnc, totalCad: baseCad, totalSuc: baseSuc });
             renderPsicoChart();
             renderPsicoTable(rows);
         }
@@ -4787,7 +4793,7 @@
             applyPsicoFilters();
         }
 
-        function renderPsicoKPIs(rows) {
+        function renderPsicoKPIs(rows, totals) {
             const kpiEl = document.getElementById('psico-kpis');
             if (!kpiEl) return;
             const muyAlto    = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Muy alto').length;
@@ -4795,9 +4801,9 @@
             const medio      = rows.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === 'Medio').length;
             const cadenas    = new Set(rows.map(r => r.cadena).filter(Boolean)).size;
             const sucursales = new Set(rows.map(r => r.sucursal).filter(Boolean)).size;
-            const totalEnc   = _colabData.length;
-            const totalCad   = new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set(_colabData.map(r => r.cadena).filter(Boolean)).size;
-            const totalSuc   = new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set(_colabData.map(r => r.sucursal).filter(Boolean)).size;
+            const totalEnc   = totals?.totalEnc ?? _colabData.length;
+            const totalCad   = totals?.totalCad ?? (new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set(_colabData.map(r => r.cadena).filter(Boolean)).size);
+            const totalSuc   = totals?.totalSuc ?? (new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set(_colabData.map(r => r.sucursal).filter(Boolean)).size);
             const sub = (n, label) => totalEnc ? `<p class="text-[10px] text-slate-400 leading-tight mt-0.5">de ${n} ${label}</p>` : '';
             kpiEl.innerHTML = `
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
@@ -5335,7 +5341,14 @@
             }
             const infoEl = document.getElementById('ev-filter-info');
             if (infoEl) infoEl.textContent = (cadena || sucursal || tipoId || anio) ? `${subset.length} de ${data.length} registros` : '';
-            renderEventosKPIs(subset, document.getElementById('eventos-kpis'));
+
+            // Totales filtrados para denominadores de KPIs
+            const evBaseEnc = _colabData.filter(r => (!cadena || r.cadena === cadena) && (!sucursal || r.sucursal === sucursal)).length || _colabData.length;
+            const evBaseCad = cadena ? 1 : (new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set(data.map(d => d.cadena).filter(Boolean)).size);
+            const evBaseSuc = cadena
+                ? new Set(loadedEmployees.filter(e => e.cadena === cadena).map(e => e.sucursal).filter(Boolean)).size || new Set(data.filter(d => d.cadena === cadena).map(d => d.sucursal).filter(Boolean)).size
+                : new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set(data.map(d => d.sucursal).filter(Boolean)).size;
+            renderEventosKPIs(subset, document.getElementById('eventos-kpis'), { totalEnc: evBaseEnc, totalCad: evBaseCad, totalSuc: evBaseSuc });
             renderEventosBarChart(subset);
             renderEventosChart(subset);
             renderEventosTab(subset, document.getElementById('eventos-container'));
@@ -5622,14 +5635,14 @@
             onEvCadenaChange();
         }
 
-        function renderEventosKPIs(data, el) {
+        function renderEventosKPIs(data, el, totals) {
             if (!el) return;
             const total      = data.length;
             const cadenas    = [...new Set(data.map(d => d.cadena).filter(Boolean))].length;
             const sucursales = [...new Set(data.map(d => d.sucursal).filter(Boolean))].length;
-            const totalEnc   = _colabData.length || (appState.eventosData || []).length;
-            const totalCad   = new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.cadena).filter(Boolean)).size;
-            const totalSuc   = new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.sucursal).filter(Boolean)).size;
+            const totalEnc   = totals?.totalEnc ?? (_colabData.length || (appState.eventosData || []).length);
+            const totalCad   = totals?.totalCad ?? (new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.cadena).filter(Boolean)).size);
+            const totalSuc   = totals?.totalSuc ?? (new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.sucursal).filter(Boolean)).size);
             el.innerHTML = `
                 <div class="bg-white rounded-2xl border border-red-100 p-5 flex items-center gap-4">
                     <div class="h-12 w-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-users text-2xl"></i></div>
