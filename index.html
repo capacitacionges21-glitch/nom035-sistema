@@ -680,6 +680,9 @@
                             <button onclick="downloadEncuestasATS()" class="shrink-0 flex items-center px-4 py-2.5 bg-blue-700 text-white rounded-lg hover:bg-blue-800 text-sm font-medium transition-colors shadow-sm">
                                 <i class="ph ph-files mr-2 text-base"></i> Descargar Encuestas ATS
                             </button>
+                            <button onclick="downloadEventosExcel()" class="shrink-0 flex items-center px-4 py-2.5 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium transition-colors shadow-sm">
+                                <i class="ph ph-microsoft-excel-logo mr-2 text-base"></i> Descargar Excel
+                            </button>
                             <button onclick="downloadEventosPDF()" class="shrink-0 flex items-center px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors shadow-sm">
                                 <i class="ph ph-file-pdf mr-2 text-base"></i> Descargar Reporte PDF
                             </button>
@@ -5443,8 +5446,9 @@
                 if (!isNaN(d)) return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
                 return String(f);
             };
-            // Mostrar TODOS los que tuvieron evento; marcar quiénes requieren atención clínica
-            const atencionCount = data.filter(r => getSecCounts(r).requiere).length;
+            // Solo mostrar los que requieren atención clínica en la tabla
+            const atencionRows = data.filter(r => getSecCounts(r).requiere);
+            const atencionCount = atencionRows.length;
 
             const SEG_OPTS   = ['Pendiente', 'Compartido a RH', 'No aplica', 'Nulo'];
             const SEG_COLORS = {'Pendiente':'#64748b', 'Compartido a RH':'#2563eb', 'No aplica':'#94a3b8', 'Nulo':'#ef4444'};
@@ -5481,7 +5485,7 @@
                         <tbody class="divide-y divide-slate-100">
                             ${(() => {
                                 const segData = getNOM035Seg();
-                                return data.map(r => {
+                                return atencionRows.map(r => {
                                 const sc = getSecCounts(r);
                                 const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
                                 const rawVal = segData[segKey];
@@ -5515,6 +5519,85 @@
                         </tbody>
                     </table>
                 </div>`;
+        }
+
+        function downloadEventosExcel() {
+            const ATS_TIPOS = [
+                { id: 75, label: 'Accidente grave' }, { id: 76, label: 'Asalto' },
+                { id: 77, label: 'Actos violentos' }, { id: 78, label: 'Secuestro' },
+                { id: 79, label: 'Amenazas' },        { id: 80, label: 'Otro riesgo de vida' },
+            ];
+            const getTipos = r => {
+                try {
+                    let resp = r.respuestas;
+                    if (typeof resp === 'string') resp = JSON.parse(resp);
+                    return ATS_TIPOS.filter(t => String(resp?.[String(t.id)] ?? '').toUpperCase() === 'SI').map(t => t.label).join(', ') || '—';
+                } catch { return '—'; }
+            };
+            const formatFecha = f => {
+                if (!f) return '';
+                const d = new Date(f);
+                return !isNaN(d) ? d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' }) : String(f);
+            };
+            const cadena   = document.getElementById('ev-filter-cadena')?.value   || '';
+            const sucursal = document.getElementById('ev-filter-sucursal')?.value || '';
+            const tipoId   = document.getElementById('ev-filter-tipo')?.value     || '';
+            const anio     = document.getElementById('ev-filter-anio')?.value     || '';
+
+            let data = appState.eventosData || [];
+            if (cadena)   data = data.filter(d => d.cadena   === cadena);
+            if (sucursal) data = data.filter(d => d.sucursal === sucursal);
+            if (tipoId) {
+                data = data.filter(d => {
+                    try { let r = d.respuestas; if (typeof r === 'string') r = JSON.parse(r); return String(r?.[tipoId]??'').toUpperCase() === 'SI'; } catch { return false; }
+                });
+            }
+            if (anio) data = data.filter(d => { const m = String(d.eventoFecha||'').match(/\b(20\d{2})\b/); return m && m[1] === anio; });
+
+            if (!data.length) { showToast('No hay datos para el filtro actual.', 'error'); return; }
+
+            const segData = getNOM035Seg();
+            const header = [
+                'No. Colaborador','Nombre','Puesto','Sucursal','Cadena',
+                'Tipo(s) de evento','F. Encuesta','F. Evento','Involucrados','Descripción',
+                'Sec II Recuerdos (0-2)','Sec III Evitación (0-7)','Sec IV Afectación (0-5)',
+                'Acción NOM-035','Seguimiento RH'
+            ];
+            const rows = data.map(r => {
+                const sc = getSecCounts(r);
+                const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
+                const segVal = segData[segKey] || 'Pendiente';
+                const accion = sc.requiere ? 'Atención clínica' : sc.tieneSI ? 'Seguimiento' : 'N/A';
+                return [
+                    r.empId||'', r.nombre||'', r.puesto||'', r.sucursal||'', r.cadena||'',
+                    getTipos(r), formatFecha(r.fecha), formatFecha(r.eventoFecha),
+                    r.eventoInvolucrados||'', r.eventoDescripcion||'',
+                    sc.secII, sc.secIII, sc.secIV,
+                    accion, segVal
+                ];
+            });
+
+            const wb = XLSX.utils.book_new();
+
+            // Hoja 1: Todos los colaboradores con evento
+            const wsAll = XLSX.utils.aoa_to_sheet([header, ...rows]);
+            wsAll['!cols'] = [
+                {wch:16},{wch:32},{wch:20},{wch:28},{wch:18},
+                {wch:30},{wch:14},{wch:14},{wch:22},{wch:36},
+                {wch:12},{wch:12},{wch:12},{wch:18},{wch:18}
+            ];
+            XLSX.utils.book_append_sheet(wb, wsAll, 'Todos con evento');
+
+            // Hoja 2: Solo atención clínica
+            const rowsClin = rows.filter(r => r[13] === 'Atención clínica');
+            const wsClin = XLSX.utils.aoa_to_sheet([header, ...rowsClin]);
+            wsClin['!cols'] = wsAll['!cols'];
+            XLSX.utils.book_append_sheet(wb, wsClin, 'Atencion clinica');
+
+            const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
+            const suf = sucursal ? `_${sucursal.replace(/\s+/g,'_').substring(0,20)}` : cadena ? `_${cadena.replace(/\s+/g,'_').substring(0,20)}` : '';
+            XLSX.writeFile(wb, `EventosTraumaticos${suf}_${fecha}.xlsx`);
+            showToast(`Excel descargado: ${data.length} colaboradores (${rowsClin.length} requieren atención clínica).`);
         }
 
         async function downloadEventosPDF() {
