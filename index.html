@@ -720,7 +720,7 @@
                         <button onclick="clearEventosFilters()" class="text-xs text-slate-400 hover:text-slate-600 underline self-end pb-2">Limpiar</button>
                         <span id="ev-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
-                    <div id="eventos-kpis" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
+                    <div id="eventos-kpis" class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6"></div>
                     <div id="eventos-bar-chart-wrap" class="mb-6"></div>
                     <div id="eventos-chart-wrapper" class="hidden bg-white rounded-2xl border border-slate-100 p-5 mb-6">
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -5660,32 +5660,35 @@
             const totalEnc   = totals?.totalEnc ?? (_colabData.length || (appState.eventosData || []).length);
             const totalCad   = totals?.totalCad ?? (new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.cadena).filter(Boolean)).size);
             const totalSuc   = totals?.totalSuc ?? (new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.sucursal).filter(Boolean)).size);
-            const evFmt = (val, tot) => tot
-                ? `<p class="text-3xl font-bold text-slate-800 leading-tight">${val} <span class="text-base font-normal text-slate-400">de ${tot}</span></p>`
-                : `<p class="text-3xl font-bold text-slate-800 leading-tight">${val}</p>`;
+            const clinica = data.filter(r => getSecCounts(r).requiere).length;
+            const evFmt = (val, tot, lbl) => `<p class="text-3xl font-bold text-slate-800 leading-tight">${val}${tot ? ` <span class="text-base font-normal text-slate-400">de ${tot}</span>` : ''}</p>${lbl ? `<p class="text-[10px] text-slate-400 mt-0.5">${lbl}</p>` : ''}`;
             el.innerHTML = `
                 <div class="bg-white rounded-2xl border border-red-100 p-5 flex items-center gap-4">
                     <div class="h-12 w-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-users text-2xl"></i></div>
                     <div>
-                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Colaboradores con evento</p>
-                        ${evFmt(total, totalEnc)}
-                        <p class="text-[10px] text-slate-400 mt-0.5">encuestados en el periodo</p>
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Colabs. con evento traumático</p>
+                        ${evFmt(total, totalEnc, 'del total encuestados')}
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl border border-orange-100 p-5 flex items-center gap-4">
+                    <div class="h-12 w-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-first-aid text-2xl"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Requieren atención clínica</p>
+                        ${evFmt(clinica, total, 'de colabs. con evento')}
                     </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4">
                     <div class="h-12 w-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-buildings text-2xl"></i></div>
                     <div>
                         <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Cadenas afectadas</p>
-                        ${evFmt(cadenas, totalCad)}
-                        <p class="text-[10px] text-slate-400 mt-0.5">cadenas totales</p>
+                        ${evFmt(cadenas, totalCad, 'cadenas totales')}
                     </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4">
                     <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-2xl"></i></div>
                     <div>
                         <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Sucursales afectadas</p>
-                        ${evFmt(sucursales, totalSuc)}
-                        <p class="text-[10px] text-slate-400 mt-0.5">sucursales totales</p>
+                        ${evFmt(sucursales, totalSuc, 'sucursales totales')}
                     </div>
                 </div>
             `;
