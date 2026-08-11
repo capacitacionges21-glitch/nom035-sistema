@@ -4871,8 +4871,9 @@
 
             const maxVal = Math.max(...sorted.map(([, v]) => v.muyAlto.length + v.alto.length + v.medio.length), 1);
             const CHART_H = 160;
-            const BAR_W   = 36;
-            const GAP     = 5;
+            const n       = sorted.length;
+            const BAR_W   = n <= 20 ? Math.min(64, Math.max(36, Math.floor(560 / Math.max(n, 1)))) : 36;
+            const GAP     = n <= 20 ? 8 : 5;
 
             const barsHTML = sorted.map(([suc, data]) => {
                 const total    = data.muyAlto.length + data.alto.length + data.medio.length;
@@ -5368,8 +5369,9 @@
 
             const maxVal  = Math.max(...sorted.map(([, v]) => v.clinica.length + v.seguimiento.length), 1);
             const CHART_H = 150;
-            const BAR_W   = 36;
-            const GAP     = 5;
+            const n       = sorted.length;
+            const BAR_W   = n <= 20 ? Math.min(64, Math.max(36, Math.floor(560 / Math.max(n, 1)))) : 36;
+            const GAP     = n <= 20 ? 8 : 5;
 
             const barsHTML = sorted.map(([suc, d]) => {
                 const total   = d.clinica.length + d.seguimiento.length;
