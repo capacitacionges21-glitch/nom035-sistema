@@ -727,12 +727,14 @@
                             <div>
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="font-semibold text-slate-700 text-sm">Distribución por tipo de acontecimiento</h3>
+                                    <button onclick="downloadChart('eventos-chart','Eventos_por_Tipo')" title="Descargar imagen" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-base"></i></button>
                                 </div>
                                 <div class="relative" style="height:220px"><canvas id="eventos-chart"></canvas></div>
                             </div>
                             <div>
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="font-semibold text-slate-700 text-sm">Afectados por año de encuesta</h3>
+                                    <button onclick="downloadChart('eventos-chart-anio','Eventos_por_Anio')" title="Descargar imagen" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-base"></i></button>
                                 </div>
                                 <div class="relative" style="height:220px"><canvas id="eventos-chart-anio"></canvas></div>
                             </div>
@@ -4157,6 +4159,29 @@
             'chart-cadenas':'cadenas','chart-puestos':'puestos','chart-faltantes':'faltantes'
         };
 
+        async function downloadHTMLChart(elementId, filename) {
+            const el = document.getElementById(elementId);
+            if (!el) { showToast('Gráfico no disponible.', 'error'); return; }
+            if (typeof html2canvas === 'undefined') {
+                await new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                    s.onload = resolve; s.onerror = reject;
+                    document.head.appendChild(s);
+                }).catch(() => null);
+            }
+            if (typeof html2canvas === 'undefined') { showToast('No se pudo cargar la librería.', 'error'); return; }
+            try {
+                showToast('Generando imagen...', 'info');
+                const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 3, useCORS: true, logging: false, imageTimeout: 0 });
+                const a = document.createElement('a');
+                a.download = filename + '.png';
+                a.href = canvas.toDataURL('image/png');
+                a.click();
+                showToast('Gráfico descargado.', 'success');
+            } catch(e) { showToast('Error al capturar el gráfico.', 'error'); }
+        }
+
         function downloadChart(canvasId, filename) {
             const canvas = document.getElementById(canvasId);
             if (!canvas) { showToast('Gráfico no disponible.', 'error'); return; }
@@ -4922,6 +4947,7 @@
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1e3a5f"></span> Muy alto</span>
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2d72b8"></span> Alto</span>
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#7aafd4"></span> Medio</span>
+                            <button onclick="downloadHTMLChart('psico-chart-wrap','Riesgo_por_Sucursal')" title="Descargar imagen" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-base"></i></button>
                         </div>
                     </div>
                     <div class="relative">
@@ -5433,6 +5459,7 @@
                         <div class="flex items-center gap-3 text-xs text-slate-500">
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1e3a5f"></span> Atención clínica</span>
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb"></span> Seguimiento</span>
+                            <button onclick="downloadHTMLChart('eventos-bar-chart-wrap','Eventos_por_Sucursal')" title="Descargar imagen" class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i class="ph ph-download-simple text-base"></i></button>
                         </div>
                     </div>
                     <div class="relative">
