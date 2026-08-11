@@ -5381,7 +5381,7 @@
                              style="min-width:${BAR_W}px;margin:0 ${GAP/2}px">
                     <span class="text-[10px] font-bold text-slate-600 mb-1">${total}</span>
                     <div style="width:${BAR_W}px;height:${CHART_H}px;display:flex;flex-direction:column;justify-content:flex-end;border-radius:4px 4px 0 0;overflow:hidden;">
-                        ${hClin  ? `<div style="height:${hClin}px;background:#991b1b;"></div>`  : ''}
+                        ${hClin  ? `<div style="height:${hClin}px;background:#1e3a5f;"></div>`  : ''}
                         ${hSeg   ? `<div style="height:${hSeg}px;background:#2563eb;"></div>`   : ''}
                     </div>
                     <div style="width:${BAR_W+16}px;text-align:center;margin-top:4px;">
@@ -5398,7 +5398,7 @@
                             <p class="text-xs text-slate-400">Pasa el cursor sobre una barra para ver el detalle · Haz clic para filtrar</p>
                         </div>
                         <div class="flex items-center gap-3 text-xs text-slate-500">
-                            <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#991b1b"></span> Atención clínica</span>
+                            <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1e3a5f"></span> Atención clínica</span>
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb"></span> Seguimiento</span>
                         </div>
                     </div>
@@ -5438,7 +5438,7 @@
                         <div style="font-weight:700;color:#1e293b;font-size:13px;margin-bottom:2px">${suc}</div>
                         <div style="color:#94a3b8;margin-bottom:6px">${d.cadena}</div>
                         <div style="color:#64748b;margin-bottom:8px"><strong>${total}</strong> con evento traumático</div>
-                        ${d.clinica.length ? `<div style="margin-bottom:4px"><span style="font-weight:600;color:#991b1b">Atención clínica (${d.clinica.length})</span>${renderNames(d.clinica,'#991b1b')}</div>` : ''}
+                        ${d.clinica.length ? `<div style="margin-bottom:4px"><span style="font-weight:600;color:#1e3a5f">Atención clínica (${d.clinica.length})</span>${renderNames(d.clinica,'#1e3a5f')}</div>` : ''}
                         ${d.seguimiento.length ? `<div><span style="font-weight:600;color:#2563eb">Seguimiento (${d.seguimiento.length})</span>${renderNames(d.seguimiento,'#2563eb')}</div>` : ''}`;
                     tooltip.classList.remove('hidden');
                     posTooltip(e);
