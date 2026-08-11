@@ -4973,6 +4973,27 @@
                 });
                 col.addEventListener('mousemove', positionTooltip);
                 col.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
+                col.addEventListener('click', function() {
+                    tooltip.classList.add('hidden');
+                    const suc = this.dataset.suc;
+                    const sucSel = document.getElementById('psico-filter-sucursal');
+                    if (!sucSel) return;
+                    // Si ya está seleccionada esta sucursal, limpiar (toggle)
+                    if (sucSel.value === suc) {
+                        sucSel.value = '';
+                    } else {
+                        // Asegurarse que la opción existe en el select
+                        if (![...sucSel.options].some(o => o.value === suc)) {
+                            const opt = document.createElement('option');
+                            opt.value = suc; opt.textContent = suc;
+                            sucSel.appendChild(opt);
+                        }
+                        sucSel.value = suc;
+                    }
+                    applyPsicoFilters();
+                    // Scroll suave a la tabla
+                    document.getElementById('psico-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
             });
         }
 
