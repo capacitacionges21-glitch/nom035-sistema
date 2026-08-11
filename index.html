@@ -4909,9 +4909,11 @@
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#93c5fd"></span> Medio</span>
                         </div>
                     </div>
-                    <div class="overflow-x-auto pb-1">
-                        <div id="psico-bars" class="flex items-end" style="min-height:${CHART_H+52}px; padding-bottom:2px;">
+                    <div class="relative">
+                        <div class="overflow-x-scroll pb-3" id="psico-bars-scroll" style="scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;">
+                        <div id="psico-bars" class="flex items-end" style="min-height:${CHART_H+52}px;padding-bottom:2px;width:max-content;">
                             ${barsHTML}
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -5404,8 +5406,10 @@
                             <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb"></span> Seguimiento</span>
                         </div>
                     </div>
-                    <div class="overflow-x-auto pb-1">
-                        <div id="ev-bars" class="flex items-end" style="min-height:${CHART_H+52}px;padding-bottom:2px;">${barsHTML}</div>
+                    <div class="relative">
+                        <div class="overflow-x-scroll pb-3" style="scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;">
+                        <div id="ev-bars" class="flex items-end" style="min-height:${CHART_H+52}px;padding-bottom:2px;width:max-content;">${barsHTML}</div>
+                        </div>
                     </div>
                 </div>
                 <div id="ev-tooltip" class="hidden fixed z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-4 pointer-events-none" style="min-width:220px;max-width:300px;font-size:12px;"></div>`;
