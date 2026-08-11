@@ -4910,7 +4910,7 @@
             });
 
             const maxVal = Math.max(...sorted.map(([, v]) => v.muyAlto.length + v.alto.length + v.medio.length), 1);
-            const CHART_H = 160;
+            const CHART_H = 200;
             const n       = sorted.length;
             const BAR_W   = n <= 20 ? Math.min(64, Math.max(36, Math.floor(560 / Math.max(n, 1)))) : 36;
             const GAP     = n <= 20 ? 8 : 5;
@@ -5425,7 +5425,7 @@
                 .sort((a, b) => (b[1].clinica.length + b[1].seguimiento.length) - (a[1].clinica.length + a[1].seguimiento.length));
 
             const maxVal  = Math.max(...sorted.map(([, v]) => v.clinica.length + v.seguimiento.length), 1);
-            const CHART_H = 150;
+            const CHART_H = 190;
             const n       = sorted.length;
             const BAR_W   = n <= 20 ? Math.min(64, Math.max(36, Math.floor(560 / Math.max(n, 1)))) : 36;
             const GAP     = n <= 20 ? 8 : 5;
