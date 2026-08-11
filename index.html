@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -5262,7 +5262,7 @@
                 });
                 const porAnio = {};
                 matching.forEach(r => {
-                    const m = String(r.fecha || '').match(/\b(20\d{2})\b/);
+                    const m = String(r.eventoFecha || '').match(/\b(20\d{2})\b/);
                     const yr = m ? m[1] : 'Sin año';
                     porAnio[yr] = (porAnio[yr] || 0) + 1;
                 });
@@ -5443,19 +5443,8 @@
                 if (!isNaN(d)) return d.toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
                 return String(f);
             };
-            // Solo mostrar los que requieren atención clínica
-            const atencionRows = data.filter(r => { const sc = getSecCounts(r); return sc.requiere; });
-
-            if (atencionRows.length === 0) {
-                container.innerHTML = `
-                    <div class="p-12 text-center">
-                        <div class="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph ph-check-circle text-3xl"></i></div>
-                        <h3 class="text-lg font-bold text-slate-700 mb-1">Sin casos de atención clínica</h3>
-                        <p class="text-sm text-slate-500">Ningún colaborador con el filtro actual requiere atención clínica.</p>
-                        <p class="text-xs text-slate-400 mt-2">${data.length} colaborador${data.length !== 1 ? 'es' : ''} con eventos traumáticos registrados, ninguno en umbral clínico.</p>
-                    </div>`;
-                return;
-            }
+            // Mostrar TODOS los que tuvieron evento; marcar quiénes requieren atención clínica
+            const atencionCount = data.filter(r => getSecCounts(r).requiere).length;
 
             const SEG_OPTS   = ['Pendiente', 'Compartido a RH', 'No aplica', 'Nulo'];
             const SEG_COLORS = {'Pendiente':'#64748b', 'Compartido a RH':'#2563eb', 'No aplica':'#94a3b8', 'Nulo':'#ef4444'};
@@ -5465,8 +5454,8 @@
                 <p class="text-xs text-slate-500 mb-3 font-medium">
                     <span class="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-full">
                         <i class="ph ph-warning-circle"></i>
-                        ${atencionRows.length} colaborador${atencionRows.length !== 1 ? 'es' : ''} requieren atención clínica
-                        ${data.length > atencionRows.length ? ` <span class="text-red-400 font-normal">de ${data.length} con eventos traumáticos</span>` : ''}
+                        ${atencionCount} colaborador${atencionCount !== 1 ? 'es' : ''} requieren atención clínica
+                        ${atencionCount < data.length ? ` <span class="text-red-400 font-normal">de ${data.length} con eventos traumáticos</span>` : ''}
                     </span>
                 </p>
                 <div class="overflow-x-auto">
@@ -5485,13 +5474,14 @@
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec II — Recuerdos (q81-82)">Sec II<br><span class="font-normal text-slate-400">Recuerdos</span></th>
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec III — Esfuerzo por evitar (q83-89)">Sec III<br><span class="font-normal text-slate-400">Evitación</span></th>
                                 <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec IV — Afectación (q90-94)">Sec IV<br><span class="font-normal text-slate-400">Afectación</span></th>
+                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Acción NOM-035</th>
                                 <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Seguimiento RH</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             ${(() => {
                                 const segData = getNOM035Seg();
-                                return atencionRows.map(r => {
+                                return data.map(r => {
                                 const sc = getSecCounts(r);
                                 const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
                                 const rawVal = segData[segKey];
@@ -5511,6 +5501,7 @@
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secII, 2, 'Recuerdos recurrentes, sueños recurrentes')}</td>
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIII, 7, 'Evitar sentimientos, lugares, personas; dificultad para recordar; distanciamiento; dificultad para expresar; sensación de futuro limitado')}</td>
                                     <td class="px-3 py-3 text-center">${secBadge(sc.secIV, 5, 'Dificultad para dormir, irritabilidad, falta de concentración, alerta constante, sobresalto')}</td>
+                                    <td class="px-3 py-3">${sc.requiere ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">Atencion clinica</span>' : sc.tieneSI ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Seguimiento</span>' : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400">N/A</span>'}</td>
                                     <td class="px-3 py-3">
                                         <select onchange="saveNOM035Seg('${segKey}', this.value); this.style.color=(${JSON.stringify(SEG_COLORS)})[this.value]||'#94a3b8'"
                                                 style="color:${SEG_COLORS[segVal]||'#94a3b8'}"
@@ -5750,9 +5741,9 @@
                 const tieneSI = siCount >= 1; // cualquier "Sí" en Sección I → reportó acontecimiento
 
                 // Evaluación clínica por secciones II, III y IV
-                const secII_si  = [101, 102].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
-                const secIII_si = [103,104,105,106,107,108,109].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
-                const secIV_si  = [110,111,112,113,114].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
+                const secII_si  = [81, 82].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
+                const secIII_si = [83,84,85,86,87,88,89].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
+                const secIV_si  = [90,91,92,93,94].filter(id => String(resp[String(id)]||'').toUpperCase() === 'SI').length;
                 // Requiere atención clínica si cualquier criterio se cumple (NOM-035, Guía III)
                 const requiereAtencion = tieneSI && (secII_si >= 1 || secIII_si >= 3 || secIV_si >= 2);
 
@@ -5892,9 +5883,9 @@
 
                     // Criterios individuales
                     const criterios = [
-                        { label: 'Secc. II  — Recuerdos persistentes',         si: secII_si,  total: 2,  umbral: 1, texto: `${secII_si}/2 respuestas "Sí"  (criterio: ≥ 1)` },
-                        { label: 'Secc. III — Esfuerzo por evitar',             si: secIII_si, total: 7,  umbral: 3, texto: `${secIII_si}/7 respuestas "Sí"  (criterio: ≥ 3)` },
-                        { label: 'Secc. IV  — Afectación',                      si: secIV_si,  total: 5,  umbral: 2, texto: `${secIV_si}/5 respuestas "Sí"  (criterio: ≥ 2)` },
+                        { label: 'Secc. II - Recuerdos persistentes',  si: secII_si,  umbral: 1, texto: `${secII_si}/2 resp. Si (criterio: >= 1)` },
+                        { label: 'Secc. III - Esfuerzo por evitar', si: secIII_si, umbral: 3, texto: `${secIII_si}/7 resp. Si (criterio: >= 3)` },
+                        { label: 'Secc. IV - Afectacion',             si: secIV_si,  umbral: 2, texto: `${secIV_si}/5 resp. Si (criterio: >= 2)` },
                     ];
                     criterios.forEach(cr => {
                         const cumple = cr.si >= cr.umbral;
@@ -5902,9 +5893,8 @@
                         doc.setDrawColor(cumple?252:209, cumple?165:213, cumple?165:219);
                         doc.roundedRect(MG, y, CW, 7, 1, 1, 'FD');
                         doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(cumple?185:71, cumple?28:85, cumple?28:105);
-                        doc.text(`${cumple ? '● CRITERIO CUMPLIDO' : '○ Sin criterio'}  |  ${cr.label}`, MG+3, y+4.5);
+                        doc.text(`${cumple ? '[CUMPLE]' : '[Sin criterio]'}  ${cr.label}`, MG+3, y+4.5);
                         doc.setFont('helvetica','normal'); doc.setTextColor(cumple?185:100, cumple?28:116, cumple?28:139);
-                        doc.text(cr.texto, MG+3, y+4.5, { align: 'left' });
                         // right-align the count text
                         doc.setFont('helvetica','bold'); doc.setFontSize(7);
                         doc.text(cr.texto, PW-MG-3, y+4.5, { align: 'right' });
