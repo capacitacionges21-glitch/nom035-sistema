@@ -4804,27 +4804,44 @@
             const totalEnc   = totals?.totalEnc ?? _colabData.length;
             const totalCad   = totals?.totalCad ?? (new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set(_colabData.map(r => r.cadena).filter(Boolean)).size);
             const totalSuc   = totals?.totalSuc ?? (new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set(_colabData.map(r => r.sucursal).filter(Boolean)).size);
-            const sub = (n, label) => totalEnc ? `<p class="text-[10px] text-slate-400 leading-tight mt-0.5">de ${n} ${label}</p>` : '';
+            const numFmt = (val, tot) => tot
+                ? `<p class="text-2xl font-bold leading-tight">${val} <span class="text-sm font-normal text-slate-400">de ${tot}</span></p>`
+                : `<p class="text-2xl font-bold leading-tight">${val}</p>`;
             kpiEl.innerHTML = `
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
                     <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style="background:#fde8e8;color:#1e3a5f"><i class="ph ph-warning text-xl"></i></div>
-                    <div><p class="text-xs text-slate-400 font-medium">Muy alto</p><p class="text-2xl font-bold leading-tight" style="color:#1e3a5f">${muyAlto}</p>${sub(totalEnc,'encuestados')}</div>
+                    <div style="color:#1e3a5f">
+                        <p class="text-xs text-slate-400 font-medium">Colabs. en riesgo muy alto</p>
+                        ${numFmt(muyAlto, totalEnc)}
+                    </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
                     <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style="background:#dbeafe;color:#2d72b8"><i class="ph ph-warning-circle text-xl"></i></div>
-                    <div><p class="text-xs text-slate-400 font-medium">Alto</p><p class="text-2xl font-bold leading-tight" style="color:#2d72b8">${alto}</p>${sub(totalEnc,'encuestados')}</div>
+                    <div style="color:#2d72b8">
+                        <p class="text-xs text-slate-400 font-medium">Colabs. en riesgo alto</p>
+                        ${numFmt(alto, totalEnc)}
+                    </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
                     <div class="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style="background:#e0f0ff;color:#7aafd4"><i class="ph ph-minus-circle text-xl"></i></div>
-                    <div><p class="text-xs text-slate-400 font-medium">Medio</p><p class="text-2xl font-bold leading-tight" style="color:#7aafd4">${medio}</p>${sub(totalEnc,'encuestados')}</div>
+                    <div style="color:#7aafd4">
+                        <p class="text-xs text-slate-400 font-medium">Colabs. en riesgo medio</p>
+                        ${numFmt(medio, totalEnc)}
+                    </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3">
                     <div class="h-10 w-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-buildings text-xl"></i></div>
-                    <div><p class="text-xs text-slate-400 font-medium">Cadenas involucradas</p><p class="text-2xl font-bold leading-tight text-slate-700">${cadenas}</p>${totalCad ? `<p class="text-[10px] text-slate-400 leading-tight mt-0.5">de ${totalCad} cadenas</p>` : ''}</div>
+                    <div class="text-slate-700">
+                        <p class="text-xs text-slate-400 font-medium">Cadenas afectadas</p>
+                        ${numFmt(cadenas, totalCad)}
+                    </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-4 flex items-center gap-3">
                     <div class="h-10 w-10 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-xl"></i></div>
-                    <div><p class="text-xs text-slate-400 font-medium">Sucursales</p><p class="text-2xl font-bold leading-tight text-slate-700">${sucursales}</p>${totalSuc ? `<p class="text-[10px] text-slate-400 leading-tight mt-0.5">de ${totalSuc} sucursales</p>` : ''}</div>
+                    <div class="text-slate-700">
+                        <p class="text-xs text-slate-400 font-medium">Sucursales afectadas</p>
+                        ${numFmt(sucursales, totalSuc)}
+                    </div>
                 </div>`;
             kpiEl.className = 'grid grid-cols-2 sm:grid-cols-5 gap-4 mb-5';
         }
@@ -5643,29 +5660,32 @@
             const totalEnc   = totals?.totalEnc ?? (_colabData.length || (appState.eventosData || []).length);
             const totalCad   = totals?.totalCad ?? (new Set(loadedEmployees.map(e => e.cadena).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.cadena).filter(Boolean)).size);
             const totalSuc   = totals?.totalSuc ?? (new Set(loadedEmployees.map(e => e.sucursal).filter(Boolean)).size || new Set((appState.eventosData||[]).map(d => d.sucursal).filter(Boolean)).size);
+            const evFmt = (val, tot) => tot
+                ? `<p class="text-3xl font-bold text-slate-800 leading-tight">${val} <span class="text-base font-normal text-slate-400">de ${tot}</span></p>`
+                : `<p class="text-3xl font-bold text-slate-800 leading-tight">${val}</p>`;
             el.innerHTML = `
                 <div class="bg-white rounded-2xl border border-red-100 p-5 flex items-center gap-4">
                     <div class="h-12 w-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-users text-2xl"></i></div>
                     <div>
-                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Colaboradores afectados</p>
-                        <p class="text-3xl font-bold text-slate-800 leading-tight">${total}</p>
-                        ${totalEnc ? `<p class="text-[11px] text-slate-400 leading-tight mt-0.5">de ${totalEnc} encuestados</p>` : ''}
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Colaboradores con evento</p>
+                        ${evFmt(total, totalEnc)}
+                        <p class="text-[10px] text-slate-400 mt-0.5">encuestados en el periodo</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4">
                     <div class="h-12 w-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-buildings text-2xl"></i></div>
                     <div>
-                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Cadenas involucradas</p>
-                        <p class="text-3xl font-bold text-slate-800 leading-tight">${cadenas}</p>
-                        ${totalCad ? `<p class="text-[11px] text-slate-400 leading-tight mt-0.5">de ${totalCad} cadenas</p>` : ''}
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Cadenas afectadas</p>
+                        ${evFmt(cadenas, totalCad)}
+                        <p class="text-[10px] text-slate-400 mt-0.5">cadenas totales</p>
                     </div>
                 </div>
                 <div class="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4">
                     <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0"><i class="ph ph-map-pin text-2xl"></i></div>
                     <div>
-                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Sucursales</p>
-                        <p class="text-3xl font-bold text-slate-800 leading-tight">${sucursales}</p>
-                        ${totalSuc ? `<p class="text-[11px] text-slate-400 leading-tight mt-0.5">de ${totalSuc} sucursales</p>` : ''}
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Sucursales afectadas</p>
+                        ${evFmt(sucursales, totalSuc)}
+                        <p class="text-[10px] text-slate-400 mt-0.5">sucursales totales</p>
                     </div>
                 </div>
             `;
