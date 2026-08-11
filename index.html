@@ -733,6 +733,7 @@
                         <span id="ev-filter-info" class="text-xs text-slate-400 self-end pb-2"></span>
                     </div>
                     <div id="eventos-kpis" class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"></div>
+                    <div id="eventos-bar-chart-wrap" class="mb-6"></div>
                     <div id="eventos-chart-wrapper" class="hidden bg-white rounded-2xl border border-slate-100 p-5 mb-6">
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div>
@@ -5228,8 +5229,127 @@
             const infoEl = document.getElementById('ev-filter-info');
             if (infoEl) infoEl.textContent = (cadena || sucursal || tipoId || anio) ? `${subset.length} de ${data.length} registros` : '';
             renderEventosKPIs(subset, document.getElementById('eventos-kpis'));
+            renderEventosBarChart(subset);
             renderEventosChart(subset);
             renderEventosTab(subset, document.getElementById('eventos-container'));
+        }
+
+        function renderEventosBarChart(data) {
+            const wrap = document.getElementById('eventos-bar-chart-wrap');
+            if (!wrap) return;
+            if (!data || !data.length) { wrap.innerHTML = ''; return; }
+
+            // Agrupar por sucursal: atención clínica vs seguimiento
+            const bySuc = {};
+            data.forEach(r => {
+                const suc = r.sucursal || '(Sin sucursal)';
+                if (!bySuc[suc]) bySuc[suc] = { cadena: r.cadena || '', clinica: [], seguimiento: [] };
+                const sc = getSecCounts(r);
+                if (sc.requiere) bySuc[suc].clinica.push(r);
+                else             bySuc[suc].seguimiento.push(r);
+            });
+
+            const sorted = Object.entries(bySuc)
+                .sort((a, b) => (b[1].clinica.length + b[1].seguimiento.length) - (a[1].clinica.length + a[1].seguimiento.length));
+
+            const maxVal  = Math.max(...sorted.map(([, v]) => v.clinica.length + v.seguimiento.length), 1);
+            const CHART_H = 150;
+            const BAR_W   = 36;
+            const GAP     = 5;
+
+            const barsHTML = sorted.map(([suc, d]) => {
+                const total   = d.clinica.length + d.seguimiento.length;
+                const hClin   = Math.round((d.clinica.length     / maxVal) * CHART_H);
+                const hSeg    = Math.round((d.seguimiento.length / maxVal) * CHART_H);
+                const shortLbl = suc.length > 14 ? suc.substring(0, 13) + '…' : suc;
+                return `<div class="ev-bar-col flex flex-col items-center cursor-pointer shrink-0"
+                             data-suc="${suc.replace(/"/g,'&quot;')}"
+                             style="min-width:${BAR_W}px;margin:0 ${GAP/2}px">
+                    <span class="text-[10px] font-bold text-slate-600 mb-1">${total}</span>
+                    <div style="width:${BAR_W}px;height:${CHART_H}px;display:flex;flex-direction:column;justify-content:flex-end;border-radius:4px 4px 0 0;overflow:hidden;">
+                        ${hClin  ? `<div style="height:${hClin}px;background:#991b1b;"></div>`  : ''}
+                        ${hSeg   ? `<div style="height:${hSeg}px;background:#2563eb;"></div>`   : ''}
+                    </div>
+                    <div style="width:${BAR_W+16}px;text-align:center;margin-top:4px;">
+                        <span style="font-size:8px;color:#94a3b8;word-break:break-word;line-height:1.1;display:block;max-height:2.4em;overflow:hidden;">${shortLbl}</span>
+                    </div>
+                </div>`;
+            }).join('');
+
+            wrap.innerHTML = `
+                <div class="bg-white rounded-2xl border border-slate-100 p-5">
+                    <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700">Eventos Traumáticos por Sucursal</h3>
+                            <p class="text-xs text-slate-400">Pasa el cursor sobre una barra para ver el detalle · Haz clic para filtrar</p>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-slate-500">
+                            <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#991b1b"></span> Atención clínica</span>
+                            <span class="flex items-center gap-1"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2563eb"></span> Seguimiento</span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto pb-1">
+                        <div id="ev-bars" class="flex items-end" style="min-height:${CHART_H+52}px;padding-bottom:2px;">${barsHTML}</div>
+                    </div>
+                </div>
+                <div id="ev-tooltip" class="hidden fixed z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-4 pointer-events-none" style="min-width:220px;max-width:300px;font-size:12px;"></div>`;
+
+            const tooltip = document.getElementById('ev-tooltip');
+
+            function posTooltip(e) {
+                const tw = tooltip.offsetWidth || 260, th = tooltip.offsetHeight || 160;
+                let x = e.clientX + 18, y = e.clientY - 16;
+                if (x + tw > window.innerWidth  - 8) x = e.clientX - tw - 18;
+                if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+                if (y < 8) y = 8;
+                tooltip.style.left = x + 'px';
+                tooltip.style.top  = y + 'px';
+            }
+
+            const renderNames = (arr, color) => {
+                if (!arr.length) return '';
+                const shown = arr.slice(0, 4);
+                const extra = arr.length - shown.length;
+                return shown.map(r => `<div style="padding-left:8px;color:${color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.nombre || r.empId || '—'}</div>`).join('')
+                     + (extra ? `<div style="padding-left:8px;color:#94a3b8">+${extra} más</div>` : '');
+            };
+
+            document.querySelectorAll('.ev-bar-col').forEach(col => {
+                col.addEventListener('mouseenter', function(e) {
+                    const suc = this.dataset.suc;
+                    const d   = bySuc[suc];
+                    if (!d) return;
+                    const total = d.clinica.length + d.seguimiento.length;
+                    tooltip.innerHTML = `
+                        <div style="font-weight:700;color:#1e293b;font-size:13px;margin-bottom:2px">${suc}</div>
+                        <div style="color:#94a3b8;margin-bottom:6px">${d.cadena}</div>
+                        <div style="color:#64748b;margin-bottom:8px"><strong>${total}</strong> con evento traumático</div>
+                        ${d.clinica.length ? `<div style="margin-bottom:4px"><span style="font-weight:600;color:#991b1b">Atención clínica (${d.clinica.length})</span>${renderNames(d.clinica,'#991b1b')}</div>` : ''}
+                        ${d.seguimiento.length ? `<div><span style="font-weight:600;color:#2563eb">Seguimiento (${d.seguimiento.length})</span>${renderNames(d.seguimiento,'#2563eb')}</div>` : ''}`;
+                    tooltip.classList.remove('hidden');
+                    posTooltip(e);
+                });
+                col.addEventListener('mousemove', posTooltip);
+                col.addEventListener('mouseleave', () => tooltip.classList.add('hidden'));
+                col.addEventListener('click', function() {
+                    tooltip.classList.add('hidden');
+                    const suc    = this.dataset.suc;
+                    const sucSel = document.getElementById('ev-filter-sucursal');
+                    if (!sucSel) return;
+                    if (sucSel.value === suc) {
+                        sucSel.value = '';
+                    } else {
+                        if (![...sucSel.options].some(o => o.value === suc)) {
+                            const opt = document.createElement('option');
+                            opt.value = suc; opt.textContent = suc;
+                            sucSel.appendChild(opt);
+                        }
+                        sucSel.value = suc;
+                    }
+                    applyEventosFilters();
+                    document.getElementById('eventos-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
         }
 
         let _eventosChart = null;
