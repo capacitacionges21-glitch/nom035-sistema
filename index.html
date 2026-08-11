@@ -4727,7 +4727,7 @@
                     responsive: true, maintainAspectRatio: false,
                     layout: { padding: { top: 28 } },
                     plugins: { legend: { position:'bottom', labels:{ font:{ size:11 }, padding:12 } } },
-                    scales: { x:{ stacked:true, ticks:{ font:{ size:9 } } }, y:{ stacked:true, beginAtZero:true, ticks:{ stepSize:1 } } }
+                    scales: { x:{ stacked:true, ticks:{ font:{ size:9 } }, grid:{ display:false } }, y:{ stacked:true, beginAtZero:true, ticks:{ stepSize:1 }, grid:{ display:false } } }
                 },
                 plugins: [stackLabelsPlugin]
             });
@@ -4920,7 +4920,7 @@
                 const hMuyAlto = Math.round((data.muyAlto.length / maxVal) * CHART_H);
                 const hAlto    = Math.round((data.alto.length    / maxVal) * CHART_H);
                 const hMedio   = Math.round((data.medio.length   / maxVal) * CHART_H);
-                const shortLbl = suc.length > 14 ? suc.substring(0, 13) + '…' : suc;
+                const shortLbl = suc;
                 return `<div class="psico-bar-col flex flex-col items-center cursor-pointer shrink-0"
                              data-suc="${suc.replace(/"/g,'&quot;')}"
                              style="min-width:${BAR_W}px; margin:0 ${GAP/2}px">
@@ -4931,7 +4931,7 @@
                         ${hMedio   ? `<div style="height:${hMedio}px;background:#7aafd4;"></div>`   : ''}
                     </div>
                     <div style="width:${BAR_W+16}px; text-align:center; margin-top:4px;">
-                        <span style="font-size:8px; color:#94a3b8; word-break:break-word; line-height:1.1; display:block; max-height:2.4em; overflow:hidden;">${shortLbl}</span>
+                        <span style="font-size:8px; color:#94a3b8; word-break:break-word; line-height:1.1; display:block; ">${shortLbl}</span>
                     </div>
                 </div>`;
             }).join('');
@@ -5434,7 +5434,7 @@
                 const total   = d.clinica.length + d.seguimiento.length;
                 const hClin   = Math.round((d.clinica.length     / maxVal) * CHART_H);
                 const hSeg    = Math.round((d.seguimiento.length / maxVal) * CHART_H);
-                const shortLbl = suc.length > 14 ? suc.substring(0, 13) + '…' : suc;
+                const shortLbl = suc;
                 return `<div class="ev-bar-col flex flex-col items-center cursor-pointer shrink-0"
                              data-suc="${suc.replace(/"/g,'&quot;')}"
                              style="min-width:${BAR_W}px;margin:0 ${GAP/2}px">
@@ -5593,7 +5593,7 @@
                             }
                         }
                     },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { color:'#f1f5f9' } }, x: { grid: { display:false } } }
+                    scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { display:false } }, x: { grid: { display:false } } }
                 }
             });
 
@@ -5641,7 +5641,7 @@
                             }
                         }
                     },
-                    scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { color:'#f1f5f9' } }, x: { grid: { display:false } } }
+                    scales: { y: { beginAtZero: true, ticks: { stepSize:1, precision:0 }, grid: { display:false } }, x: { grid: { display:false } } }
                 }
             });
         }
@@ -6600,7 +6600,7 @@
                                 }
                             }
                         },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid:{ display:false } }, x:{ grid:{ display:false } } }
                     }
                 });
             }
@@ -6633,7 +6633,7 @@
                                 }
                             }
                         },
-                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 }, grid:{ display:false } }, y:{ grid:{ display:false } } }
                     }
                 });
             }
@@ -6719,7 +6719,7 @@
                                 }
                             }
                         },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid:{ display:false } }, x:{ grid:{ display:false } } } }
                 });
             }
 
@@ -6948,7 +6948,7 @@
                             }
                         }}
                     },
-                    scales: { y: { beginAtZero: true, max: 4, ticks: { stepSize: 0.5 } } },
+                    scales: { y: { beginAtZero: true, max: 4, ticks: { stepSize: 0.5 }, grid:{ display:false } }, x:{ grid:{ display:false } } },
                     onClick: isLeaf ? undefined : (evt, elements) => {
                         if (!elements.length) return;
                         const idx = elements[0].index;
