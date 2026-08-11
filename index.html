@@ -5372,6 +5372,16 @@
             return { secII, secIII, secIV, requiere, tieneSI };
         }
 
+        function evToggleDetail(id, row) {
+            const det = document.getElementById(id);
+            const icon = document.getElementById(id + '-icon');
+            if (!det) return;
+            const open = !det.classList.contains('hidden');
+            det.classList.toggle('hidden', open);
+            if (icon) icon.style.transform = open ? '' : 'rotate(90deg)';
+            if (row) row.classList.toggle('bg-red-50', !open);
+        }
+
         function clearEventosFilters() {
             const c = document.getElementById('ev-filter-cadena');
             const t = document.getElementById('ev-filter-tipo');
@@ -5455,70 +5465,104 @@
             const SEG_DEF    = 'Pendiente';
 
             container.innerHTML = `
-                <p class="text-xs text-slate-500 mb-3 font-medium">
+                <p class="text-xs text-slate-500 mb-3 font-medium flex items-center gap-3 flex-wrap">
                     <span class="inline-flex items-center gap-1 bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-full">
                         <i class="ph ph-warning-circle"></i>
                         ${atencionCount} colaborador${atencionCount !== 1 ? 'es' : ''} requieren atención clínica
                         ${atencionCount < data.length ? ` <span class="text-red-400 font-normal">de ${data.length} con eventos traumáticos</span>` : ''}
                     </span>
+                    <span class="text-slate-400 text-xs"><i class="ph ph-caret-down mr-1"></i>Haz clic en una fila para ver el detalle del evento</span>
                 </p>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full text-xs">
-                        <thead class="bg-slate-50 border-b border-slate-200 sticky top-0">
-                            <tr>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">No. Colab.</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Nombre</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Puesto</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Sucursal</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Tipo(s)</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">F. Encuesta</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">F. Evento</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Involucrados</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap max-w-[160px]">Descripción</th>
-                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec II — Recuerdos (q81-82)">Sec II<br><span class="font-normal text-slate-400">Recuerdos</span></th>
-                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec III — Esfuerzo por evitar (q83-89)">Sec III<br><span class="font-normal text-slate-400">Evitación</span></th>
-                                <th class="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap" title="Sec IV — Afectación (q90-94)">Sec IV<br><span class="font-normal text-slate-400">Afectación</span></th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Acción NOM-035</th>
-                                <th class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">Seguimiento RH</th>
+                <table class="w-full text-xs border-collapse">
+                    <thead class="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th class="px-3 py-3 text-left font-semibold text-slate-600 w-8"></th>
+                            <th class="px-3 py-3 text-left font-semibold text-slate-600">No. Colab.</th>
+                            <th class="px-3 py-3 text-left font-semibold text-slate-600">Colaborador</th>
+                            <th class="px-3 py-3 text-left font-semibold text-slate-600">Sucursal</th>
+                            <th class="px-3 py-3 text-left font-semibold text-slate-600">Tipo(s) de evento</th>
+                            <th class="px-3 py-3 text-center font-semibold text-slate-600" title="Sec II Recuerdos / Sec III Evitacion / Sec IV Afectacion">Scores ATS</th>
+                            <th class="px-3 py-3 text-left font-semibold text-slate-600">Seguimiento RH</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        ${(() => {
+                            const segData = getNOM035Seg();
+                            return atencionRows.map((r, idx) => {
+                            const sc = getSecCounts(r);
+                            const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
+                            const rawVal = segData[segKey];
+                            const segVal = SEG_OPTS.includes(rawVal) ? rawVal : SEG_DEF;
+                            const segOpts = SEG_OPTS.map(o => `<option value="${o}"${o===segVal?' selected':''}>${o}</option>`).join('');
+                            const detId = `ev-det-${idx}`;
+                            const tipos = getTiposRow(r);
+                            const scoreII  = sc.secII  >= 1 ? 'bg-red-100 text-red-700'  : 'bg-slate-100 text-slate-500';
+                            const scoreIII = sc.secIII >= 3 ? 'bg-red-100 text-red-700'  : sc.secIII >= 1 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500';
+                            const scoreIV  = sc.secIV  >= 2 ? 'bg-red-100 text-red-700'  : sc.secIV  >= 1 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500';
+                            const encEscape = (r.eventoDescripcion||'').replace(/`/g,"'").replace(/\\/g,'');
+                            const invEscape = (r.eventoInvolucrados||'').replace(/`/g,"'").replace(/\\/g,'');
+                            return `
+                            <tr class="hover:bg-red-50 transition-colors cursor-pointer" onclick="evToggleDetail('${detId}', this)">
+                                <td class="px-3 py-3 text-slate-400">
+                                    <i id="${detId}-icon" class="ph ph-caret-right text-xs transition-transform duration-200"></i>
+                                </td>
+                                <td class="px-3 py-3 font-mono text-slate-400 whitespace-nowrap">${r.empId || '—'}</td>
+                                <td class="px-3 py-3">
+                                    <p class="font-semibold text-slate-800 whitespace-nowrap">${r.nombre || '—'}</p>
+                                    <p class="text-slate-400 mt-0.5">${r.puesto || ''}</p>
+                                </td>
+                                <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${r.sucursal || '—'}</td>
+                                <td class="px-3 py-3 text-slate-600 max-w-[200px]">${tipos}</td>
+                                <td class="px-3 py-3 text-center">
+                                    <div class="inline-flex gap-1 items-center">
+                                        <span class="px-1.5 py-0.5 rounded text-xs font-medium ${scoreII}" title="Sec II Recuerdos">${sc.secII}/2</span>
+                                        <span class="text-slate-300">·</span>
+                                        <span class="px-1.5 py-0.5 rounded text-xs font-medium ${scoreIII}" title="Sec III Evitacion">${sc.secIII}/7</span>
+                                        <span class="text-slate-300">·</span>
+                                        <span class="px-1.5 py-0.5 rounded text-xs font-medium ${scoreIV}" title="Sec IV Afectacion">${sc.secIV}/5</span>
+                                    </div>
+                                </td>
+                                <td class="px-3 py-3" onclick="event.stopPropagation()">
+                                    <select onchange="saveNOM035Seg('${segKey}', this.value); this.style.color=(${JSON.stringify(SEG_COLORS)})[this.value]||'#94a3b8'"
+                                            style="color:${SEG_COLORS[segVal]||'#94a3b8'}"
+                                            class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-blue-300 cursor-pointer w-36">
+                                        ${segOpts}
+                                    </select>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            ${(() => {
-                                const segData = getNOM035Seg();
-                                return atencionRows.map(r => {
-                                const sc = getSecCounts(r);
-                                const segKey = `${String(r.empId||'')}|${String(r.fecha||'')}`;
-                                const rawVal = segData[segKey];
-                                const segVal = SEG_OPTS.includes(rawVal) ? rawVal : SEG_DEF;
-                                const segOpts = SEG_OPTS.map(o => `<option value="${o}"${o===segVal?' selected':''}>${o}</option>`).join('');
-                                return `
-                                <tr class="hover:bg-red-50 transition-colors">
-                                    <td class="px-3 py-3 font-mono text-slate-500">${r.empId || '—'}</td>
-                                    <td class="px-3 py-3 font-medium text-slate-800 whitespace-nowrap">${r.nombre || '—'}</td>
-                                    <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${r.puesto || '—'}</td>
-                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${r.sucursal || '—'}</td>
-                                    <td class="px-3 py-3 text-slate-600 whitespace-nowrap">${getTiposRow(r)}</td>
-                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${formatFecha(r.fecha)}</td>
-                                    <td class="px-3 py-3 text-slate-500 whitespace-nowrap">${formatFecha(r.eventoFecha)}</td>
-                                    <td class="px-3 py-3 text-slate-500 max-w-[140px] truncate" title="${(r.eventoInvolucrados||'').replace(/"/g,'&quot;')}">${r.eventoInvolucrados || '—'}</td>
-                                    <td class="px-3 py-3 text-slate-500 max-w-[160px] truncate" title="${(r.eventoDescripcion||'').replace(/"/g,'&quot;')}">${r.eventoDescripcion || '—'}</td>
-                                    <td class="px-3 py-3 text-center">${secBadge(sc.secII, 2, 'Recuerdos recurrentes, sueños recurrentes')}</td>
-                                    <td class="px-3 py-3 text-center">${secBadge(sc.secIII, 7, 'Evitar sentimientos, lugares, personas; dificultad para recordar; distanciamiento; dificultad para expresar; sensación de futuro limitado')}</td>
-                                    <td class="px-3 py-3 text-center">${secBadge(sc.secIV, 5, 'Dificultad para dormir, irritabilidad, falta de concentración, alerta constante, sobresalto')}</td>
-                                    <td class="px-3 py-3">${sc.requiere ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">Atencion clinica</span>' : sc.tieneSI ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Seguimiento</span>' : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-400">N/A</span>'}</td>
-                                    <td class="px-3 py-3">
-                                        <select onchange="saveNOM035Seg('${segKey}', this.value); this.style.color=(${JSON.stringify(SEG_COLORS)})[this.value]||'#94a3b8'"
-                                                style="color:${SEG_COLORS[segVal]||'#94a3b8'}"
-                                                class="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-blue-300 cursor-pointer w-36">
-                                            ${segOpts}
-                                        </select>
-                                    </td>
-                                </tr>`;
-                                }).join('');
-                            })()}
-                        </tbody>
-                    </table>
-                </div>`;
+                            <tr id="${detId}" class="hidden bg-red-50 border-b border-red-100">
+                                <td colspan="7" class="px-6 py-4">
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                                        <div>
+                                            <p class="text-slate-400 font-semibold uppercase tracking-wide mb-1">F. Encuesta</p>
+                                            <p class="text-slate-700">${formatFecha(r.fecha) || '—'}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-400 font-semibold uppercase tracking-wide mb-1">F. del Evento</p>
+                                            <p class="text-slate-700">${formatFecha(r.eventoFecha) || '—'}</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-slate-400 font-semibold uppercase tracking-wide mb-1">Involucrados</p>
+                                            <p class="text-slate-700">${invEscape || '—'}</p>
+                                        </div>
+                                        <div class="sm:col-span-1">
+                                            <p class="text-slate-400 font-semibold uppercase tracking-wide mb-1">Descripción del evento</p>
+                                            <p class="text-slate-700 leading-relaxed">${encEscape || '—'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 pt-3 border-t border-red-100 flex flex-wrap gap-3 text-xs text-slate-500">
+                                        <span><strong class="text-slate-600">Sec II Recuerdos:</strong> ${sc.secII}/2 ${sc.secII>=1?'— criterio cumplido':''}</span>
+                                        <span>·</span>
+                                        <span><strong class="text-slate-600">Sec III Evitación:</strong> ${sc.secIII}/7 ${sc.secIII>=3?'— criterio cumplido':''}</span>
+                                        <span>·</span>
+                                        <span><strong class="text-slate-600">Sec IV Afectación:</strong> ${sc.secIV}/5 ${sc.secIV>=2?'— criterio cumplido':''}</span>
+                                    </div>
+                                </td>
+                            </tr>`;
+                            }).join('');
+                        })()}
+                    </tbody>
+                </table>`;
         }
 
         function downloadEventosExcel() {
