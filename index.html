@@ -5112,7 +5112,76 @@
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(wsData);
             ws['!cols'] = [10,30,25,25,20,10,12,40,18].map(w=>({wch:w}));
-            XLSX.utils.book_append_sheet(wb, ws, 'Riesgos Psicosociales');
+            XLSX.utils.book_append_sheet(wb, ws, 'Colaboradores');
+
+            // Hoja 2: Análisis — datos detrás de las gráficas
+            // Tomar dataset completo (Medio+Alto+MuyAlto) respetando filtros activos
+            let analysisData = _colabData.filter(r => {
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                return rg === 'Medio' || rg === 'Alto' || rg === 'Muy alto';
+            });
+            if (cadena)   analysisData = analysisData.filter(r => r.cadena   === cadena);
+            if (sucursal) analysisData = analysisData.filter(r => r.sucursal === sucursal);
+            if (nivel)    analysisData = analysisData.filter(r => (r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal)) === nivel);
+
+            const cntMA = analysisData.filter(r => (r.riesgoGlobal||calcRiesgoGlobal(r.puntajeTotal))==='Muy alto').length;
+            const cntA  = analysisData.filter(r => (r.riesgoGlobal||calcRiesgoGlobal(r.puntajeTotal))==='Alto').length;
+            const cntM  = analysisData.filter(r => (r.riesgoGlobal||calcRiesgoGlobal(r.puntajeTotal))==='Medio').length;
+            const filtroTexto = [cadena, sucursal, nivel].filter(Boolean).join(' · ') || 'Sin filtros';
+
+            // Por sucursal
+            const bySucPs = {};
+            analysisData.forEach(r => {
+                const s  = r.sucursal || '(Sin sucursal)';
+                const rg = r.riesgoGlobal || calcRiesgoGlobal(r.puntajeTotal);
+                if (!bySucPs[s]) bySucPs[s] = { cadena: r.cadena||'', muyAlto:0, alto:0, medio:0 };
+                if (rg === 'Muy alto') bySucPs[s].muyAlto++;
+                else if (rg === 'Alto') bySucPs[s].alto++;
+                else bySucPs[s].medio++;
+            });
+            const sucPsRows = Object.entries(bySucPs)
+                .sort((a,b)=>(b[1].muyAlto+b[1].alto+b[1].medio)-(a[1].muyAlto+a[1].alto+a[1].medio))
+                .map(([s,v])=>[s, v.cadena, v.muyAlto, v.alto, v.medio, v.muyAlto+v.alto+v.medio]);
+
+            // Por dominio
+            const domCnt = {};
+            analysisData.forEach(r => {
+                try {
+                    (_calcDomainScoresFromRows([r]) || []).forEach(s => {
+                        if (!domCnt[s.domain]) domCnt[s.domain] = { riesgo:0, total:0 };
+                        domCnt[s.domain].total++;
+                        if (s.riesgo==='Alto'||s.riesgo==='Muy alto') domCnt[s.domain].riesgo++;
+                    });
+                } catch {}
+            });
+            const domRows = Object.entries(domCnt)
+                .filter(([,v])=>v.riesgo>0)
+                .sort((a,b)=>b[1].riesgo-a[1].riesgo)
+                .map(([d,v])=>[d, v.riesgo, analysisData.length ? Math.round(v.riesgo/analysisData.length*100)+'%' : '0%']);
+
+            const analisisPsico = [
+                ['Análisis — Riesgos Psicosociales (NOM-035)'],
+                ['Generado:', new Date().toLocaleDateString('es-MX'), 'Filtros:', filtroTexto],
+                [],
+                ['RESUMEN'],
+                ['Nivel de riesgo', 'Colaboradores'],
+                ['Muy alto', cntMA],
+                ['Alto', cntA],
+                ['Medio', cntM],
+                ['Total con riesgo', analysisData.length],
+                [],
+                ['POR SUCURSAL'],
+                ['Sucursal', 'Cadena', 'Muy alto', 'Alto', 'Medio', 'Total'],
+                ...sucPsRows,
+                [],
+                ['POR DOMINIO — Colaboradores con riesgo Alto o Muy alto'],
+                ['Dominio', 'Colaboradores en riesgo', '% del total filtrado'],
+                ...domRows,
+            ];
+            const wsAn = XLSX.utils.aoa_to_sheet(analisisPsico);
+            wsAn['!cols'] = [{wch:38},{wch:22},{wch:12},{wch:10},{wch:10},{wch:10}];
+            XLSX.utils.book_append_sheet(wb, wsAn, 'Analisis');
+
             XLSX.writeFile(wb, `RiesgosPsicosociales_${new Date().toLocaleDateString('es-MX').replace(/\//g,'-')}.xlsx`);
             showToast('Excel descargado.');
         }
@@ -5757,6 +5826,71 @@
             const wsClin = XLSX.utils.aoa_to_sheet([header, ...rowsClin]);
             wsClin['!cols'] = wsAll['!cols'];
             XLSX.utils.book_append_sheet(wb, wsClin, 'Atencion clinica');
+
+            // Hoja 3: Análisis — datos detrás de las gráficas
+            const filtroTexto = [cadena, sucursal, tipoId ? ATS_TIPOS.find(t=>String(t.id)===tipoId)?.label : '', anio].filter(Boolean).join(' · ') || 'Sin filtros';
+            const cntClin = data.filter(r => getSecCounts(r).requiere).length;
+            const cntSeg  = data.filter(r => { const sc=getSecCounts(r); return sc.tieneSI && !sc.requiere; }).length;
+
+            // Por sucursal
+            const bySucEv = {};
+            data.forEach(r => {
+                const s = r.sucursal || '(Sin sucursal)';
+                if (!bySucEv[s]) bySucEv[s] = { cadena: r.cadena||'', clinica:0, seguimiento:0 };
+                const sc = getSecCounts(r);
+                if (sc.requiere) bySucEv[s].clinica++;
+                else if (sc.tieneSI) bySucEv[s].seguimiento++;
+            });
+            const sucEvRows = Object.entries(bySucEv)
+                .sort((a,b) => (b[1].clinica+b[1].seguimiento)-(a[1].clinica+a[1].seguimiento))
+                .map(([s,v]) => [s, v.cadena, v.clinica, v.seguimiento, v.clinica+v.seguimiento]);
+
+            // Por tipo de evento
+            const cntTipo = {};
+            ATS_TIPOS.forEach(t => { cntTipo[t.label] = 0; });
+            data.forEach(r => {
+                try {
+                    let resp = r.respuestas; if (typeof resp==='string') resp=JSON.parse(resp);
+                    ATS_TIPOS.forEach(t => { if (String(resp?.[String(t.id)]??'').toUpperCase()==='SI') cntTipo[t.label]++; });
+                } catch {}
+            });
+            const tipoRows = Object.entries(cntTipo).filter(([,c])=>c>0).sort((a,b)=>b[1]-a[1]).map(([t,c])=>[t,c]);
+
+            // Por año del evento
+            const cntAnio = {};
+            data.forEach(r => {
+                const m = String(r.eventoFecha||'').match(/\b(20\d{2})\b/);
+                const yr = m ? m[1] : 'Sin año';
+                cntAnio[yr] = (cntAnio[yr]||0)+1;
+            });
+            const anioRows = Object.entries(cntAnio).sort((a,b)=>a[0].localeCompare(b[0])).map(([y,c])=>[y,c]);
+
+            const analisisData = [
+                ['Análisis — Eventos Traumáticos Severos (NOM-035)'],
+                ['Generado:', new Date().toLocaleDateString('es-MX'), 'Filtros:', filtroTexto],
+                [],
+                ['RESUMEN'],
+                ['Categoría', 'Colaboradores'],
+                ['Total con evento traumático', data.length],
+                ['Requieren atención clínica', cntClin],
+                ['Solo seguimiento', cntSeg],
+                ['Sin criterio clínico', data.length - cntClin - cntSeg],
+                [],
+                ['POR SUCURSAL'],
+                ['Sucursal', 'Cadena', 'Atención clínica', 'Seguimiento', 'Total'],
+                ...sucEvRows,
+                [],
+                ['POR TIPO DE ACONTECIMIENTO'],
+                ['Tipo', 'Colaboradores'],
+                ...tipoRows,
+                [],
+                ['POR AÑO DEL EVENTO'],
+                ['Año', 'Colaboradores'],
+                ...anioRows,
+            ];
+            const wsAn = XLSX.utils.aoa_to_sheet(analisisData);
+            wsAn['!cols'] = [{wch:32},{wch:20},{wch:18},{wch:14},{wch:10}];
+            XLSX.utils.book_append_sheet(wb, wsAn, 'Analisis');
 
             const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
             const suf = sucursal ? `_${sucursal.replace(/\s+/g,'_').substring(0,20)}` : cadena ? `_${cadena.replace(/\s+/g,'_').substring(0,20)}` : '';
