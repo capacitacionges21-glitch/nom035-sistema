@@ -5220,16 +5220,25 @@
                 .sort((a,b)=>b[1].riesgo-a[1].riesgo)
                 .map(([d,v])=>[d, v.riesgo, analysisData.length ? Math.round(v.riesgo/analysisData.length*100)+'%' : '0%']);
 
+            const totalEncPs  = _colabData.filter(r => (!cadena || r.cadena===cadena) && (!sucursal || r.sucursal===sucursal)).length;
+            const totalCadPs  = cadena ? 1 : (new Set(loadedEmployees.map(e=>e.cadena).filter(Boolean)).size || new Set(_colabData.map(r=>r.cadena).filter(Boolean)).size);
+            const totalSucPs  = cadena
+                ? new Set(loadedEmployees.filter(e=>e.cadena===cadena).map(e=>e.sucursal).filter(Boolean)).size || new Set(_colabData.filter(r=>r.cadena===cadena).map(r=>r.sucursal).filter(Boolean)).size
+                : new Set(loadedEmployees.map(e=>e.sucursal).filter(Boolean)).size || new Set(_colabData.map(r=>r.sucursal).filter(Boolean)).size;
+
             const analisisPsico = [
                 ['Análisis — Riesgos Psicosociales (NOM-035)'],
                 ['Generado:', new Date().toLocaleDateString('es-MX'), 'Filtros:', filtroTexto],
                 [],
                 ['RESUMEN'],
-                ['Nivel de riesgo', 'Colaboradores'],
-                ['Muy alto', cntMA],
-                ['Alto', cntA],
-                ['Medio', cntM],
-                ['Total con riesgo', analysisData.length],
+                ['Indicador', 'Afectados', 'Total en scope', '% de cobertura'],
+                ['Total encuestados en scope', totalEncPs, '', ''],
+                ['Colabs. en riesgo muy alto', cntMA, totalEncPs, totalEncPs ? Math.round(cntMA/totalEncPs*100)+'%' : ''],
+                ['Colabs. en riesgo alto',     cntA,  totalEncPs, totalEncPs ? Math.round(cntA/totalEncPs*100)+'%'  : ''],
+                ['Colabs. en riesgo medio',    cntM,  totalEncPs, totalEncPs ? Math.round(cntM/totalEncPs*100)+'%'  : ''],
+                ['Total con riesgo (M+A+MA)',  analysisData.length, totalEncPs, totalEncPs ? Math.round(analysisData.length/totalEncPs*100)+'%' : ''],
+                ['Cadenas afectadas',          new Set(analysisData.map(r=>r.cadena).filter(Boolean)).size, totalCadPs, ''],
+                ['Sucursales afectadas',       new Set(analysisData.map(r=>r.sucursal).filter(Boolean)).size, totalSucPs, ''],
                 [],
                 ['POR SUCURSAL'],
                 ['Sucursal', 'Cadena', 'Muy alto', 'Alto', 'Medio', 'Total'],
@@ -5957,16 +5966,25 @@
             });
             const anioRows = Object.entries(cntAnio).sort((a,b)=>a[0].localeCompare(b[0])).map(([y,c])=>[y,c]);
 
+            const totalEncEv = _colabData.filter(r => (!cadena || r.cadena===cadena) && (!sucursal || r.sucursal===sucursal)).length || _colabData.length;
+            const totalCadEv = cadena ? 1 : (new Set(loadedEmployees.map(e=>e.cadena).filter(Boolean)).size || new Set(data.map(d=>d.cadena).filter(Boolean)).size);
+            const totalSucEv = cadena
+                ? new Set(loadedEmployees.filter(e=>e.cadena===cadena).map(e=>e.sucursal).filter(Boolean)).size || new Set(data.filter(d=>d.cadena===cadena).map(d=>d.sucursal).filter(Boolean)).size
+                : new Set(loadedEmployees.map(e=>e.sucursal).filter(Boolean)).size || new Set(data.map(d=>d.sucursal).filter(Boolean)).size;
+
             const analisisData = [
                 ['Análisis — Eventos Traumáticos Severos (NOM-035)'],
                 ['Generado:', new Date().toLocaleDateString('es-MX'), 'Filtros:', filtroTexto],
                 [],
                 ['RESUMEN'],
-                ['Categoría', 'Colaboradores'],
-                ['Total con evento traumático', data.length],
-                ['Requieren atención clínica', cntClin],
-                ['Solo seguimiento', cntSeg],
-                ['Sin criterio clínico', data.length - cntClin - cntSeg],
+                ['Indicador', 'Afectados', 'Total en scope', '% de cobertura'],
+                ['Total encuestados en scope', totalEncEv, '', ''],
+                ['Colabs. con evento traumático', data.length, totalEncEv, totalEncEv ? Math.round(data.length/totalEncEv*100)+'%' : ''],
+                ['Requieren atención clínica',    cntClin,   data.length,  data.length  ? Math.round(cntClin/data.length*100)+'%'   : ''],
+                ['Solo seguimiento',              cntSeg,    data.length,  data.length  ? Math.round(cntSeg/data.length*100)+'%'    : ''],
+                ['Sin criterio clínico',          data.length - cntClin - cntSeg, data.length, ''],
+                ['Cadenas afectadas',             new Set(data.map(d=>d.cadena).filter(Boolean)).size, totalCadEv, ''],
+                ['Sucursales afectadas',          new Set(data.map(d=>d.sucursal).filter(Boolean)).size, totalSucEv, ''],
                 [],
                 ['POR SUCURSAL'],
                 ['Sucursal', 'Cadena', 'Atención clínica', 'Seguimiento', 'Total'],
