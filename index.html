@@ -4173,7 +4173,20 @@
             if (typeof html2canvas === 'undefined') { showToast('No se pudo cargar la librería.', 'error'); return; }
             try {
                 showToast('Generando imagen...', 'info');
-                const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 3, useCORS: true, logging: false, imageTimeout: 0 });
+                // Clonar para capturar sin restricciones de overflow/scroll
+                const clone = el.cloneNode(true);
+                clone.style.cssText = 'position:fixed;top:-9999px;left:0;overflow:visible;width:max-content;z-index:-1;';
+                clone.querySelectorAll('*').forEach(c => {
+                    if (c.style.overflow || c.style.overflowX || c.style.overflowY) {
+                        c.style.overflow = 'visible';
+                        c.style.overflowX = 'visible';
+                        c.style.overflowY = 'visible';
+                    }
+                    if (c.style.maxHeight) c.style.maxHeight = 'none';
+                });
+                document.body.appendChild(clone);
+                const canvas = await html2canvas(clone, { backgroundColor: '#ffffff', scale: 3, useCORS: true, logging: false, imageTimeout: 0 });
+                document.body.removeChild(clone);
                 const a = document.createElement('a');
                 a.download = filename + '.png';
                 a.href = canvas.toDataURL('image/png');
@@ -5444,7 +5457,7 @@
                         ${hSeg   ? `<div style="height:${hSeg}px;background:#2563eb;"></div>`   : ''}
                     </div>
                     <div style="width:${BAR_W+16}px;text-align:center;margin-top:4px;">
-                        <span style="font-size:8px;color:#94a3b8;word-break:break-word;line-height:1.1;display:block;max-height:2.4em;overflow:hidden;">${shortLbl}</span>
+                        <span style="font-size:8px;color:#94a3b8;word-break:break-word;line-height:1.1;display:block;">${shortLbl}</span>
                     </div>
                 </div>`;
             }).join('');
