@@ -3803,15 +3803,24 @@
                 const qHeaders = surveyQuestions.map(q => `P${q.id} — ${q.pregunta}`);
                 const header = ['No. Colaborador','Nombre','Puesto','Cadena','Sucursal','Puntaje Total','Riesgo Global','Fecha de Encuesta', ...qHeaders, 'Comentarios'];
 
+                const _cleanDate = s => {
+                    if (!s) return '';
+                    const raw = String(s).replace(/^["']|["']$/g, '').trim();
+                    try { const d = new Date(raw); return isNaN(d) ? raw : d.toLocaleDateString('es-MX'); } catch { return raw; }
+                };
+
                 const rows = [header];
                 _colabData.forEach(r => {
                     let resp = {};
-                    try { resp = typeof r.respuestas === 'string' ? JSON.parse(r.respuestas) : (r.respuestas || {}); } catch {}
+                    try {
+                        resp = typeof r.respuestas === 'string' ? JSON.parse(r.respuestas) : (r.respuestas || {});
+                        if (typeof resp === 'string') resp = JSON.parse(resp); // JSON doblemente codificado
+                    } catch {}
                     const coment = r.comentarioFinal || resp['comentarioFinal'] || '';
                     const qVals = surveyQuestions.map(q => _toText(resp[q.id] ?? resp[String(q.id)]));
                     rows.push([
                         r.empId || '', r.nombre || '', r.puesto || '', r.cadena || '', r.sucursal || '',
-                        r.puntajeTotal || '', r.riesgoGlobal || '', r.fecha || '',
+                        r.puntajeTotal || '', r.riesgoGlobal || '', _cleanDate(r.fecha),
                         ...qVals, coment
                     ]);
                 });
