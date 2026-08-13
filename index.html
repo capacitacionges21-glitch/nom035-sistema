@@ -3784,37 +3784,36 @@
             btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-1"></i> Generando...';
             btn.disabled = true;
             try {
-                // Asegurar _colabData cargado (para obtener comentarioFinal)
+                // Asegurar _colabData cargado
                 if (!_colabData.length) {
                     const cr = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle').then(r => r.json()).catch(() => null);
                     if (cr?.status === 'success') _colabData = cr.data;
                 }
+                if (!_colabData.length) { showToast('No hay datos para exportar.', 'error'); return; }
 
-                // Mapa empId → comentarioFinal
-                const _norm = s => String(s || '').replace(/^0+/, '') || '0';
-                const comentMap = {};
-                (_colabData || []).forEach(r => {
-                    let coment = r.comentarioFinal || '';
-                    if (!coment && r.respuestas) {
-                        try {
-                            const rp = typeof r.respuestas === 'string' ? JSON.parse(r.respuestas) : r.respuestas;
-                            coment = rp?.comentarioFinal || '';
-                        } catch {}
-                    }
-                    if (r.empId) comentMap[_norm(r.empId)] = coment;
-                });
+                const ESCALA = { 0:'Nunca', 1:'Rara vez', 2:'A veces', 3:'Frecuentemente', 4:'Siempre' };
+                const _toText = v => {
+                    if (v === '' || v === null || v === undefined) return '';
+                    if (v === 'SI' || v === 'NO') return v;
+                    const n = parseFloat(v);
+                    return (!isNaN(n) && ESCALA[n] !== undefined) ? ESCALA[n] : String(v);
+                };
 
-                // Obtener respuestas en texto desde GAS
-                const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getRespuestasTexto');
-                const result = await res.json();
-                if (result.status !== 'success' || !result.data?.length) {
-                    showToast('No hay datos para exportar.', 'error'); return;
-                }
+                // Encabezados: info + P1..PN + Comentarios
+                const qHeaders = surveyQuestions.map(q => `P${q.id} — ${q.pregunta}`);
+                const header = ['No. Colaborador','Nombre','Puesto','Cadena','Sucursal','Puntaje Total','Riesgo Global','Fecha de Encuesta', ...qHeaders, 'Comentarios'];
 
-                // Añadir columna Comentarios (empId en columna 0)
-                const rows = result.data.map((row, i) => {
-                    if (i === 0) return [...row, 'Comentarios'];
-                    return [...row, comentMap[_norm(row[0])] || ''];
+                const rows = [header];
+                _colabData.forEach(r => {
+                    let resp = {};
+                    try { resp = typeof r.respuestas === 'string' ? JSON.parse(r.respuestas) : (r.respuestas || {}); } catch {}
+                    const coment = r.comentarioFinal || resp['comentarioFinal'] || '';
+                    const qVals = surveyQuestions.map(q => _toText(resp[q.id] ?? resp[String(q.id)]));
+                    rows.push([
+                        r.empId || '', r.nombre || '', r.puesto || '', r.cadena || '', r.sucursal || '',
+                        r.puntajeTotal || '', r.riesgoGlobal || '', r.fecha || '',
+                        ...qVals, coment
+                    ]);
                 });
 
                 const wb = XLSX.utils.book_new();
@@ -3824,7 +3823,7 @@
                 XLSX.writeFile(wb, `BaseCompleta_NOM035_${fecha}.xlsx`);
                 showToast('Excel descargado correctamente.', 'success');
             } catch(e) {
-                showToast('Error al generar el Excel. Verifica la conexión.', 'error');
+                showToast('Error al generar el Excel.', 'error');
             } finally {
                 btn.innerHTML = orig;
                 btn.disabled = false;
