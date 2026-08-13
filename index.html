@@ -523,9 +523,9 @@
                                 <div class="flex-1 min-w-0">
                                     <h3 class="font-semibold text-slate-800 mb-0.5">Base Completa de Respuestas</h3>
                                     <p class="text-xs text-slate-500 mb-3">Hoja de cálculo con todas las respuestas individuales de la encuesta NOM-035.</p>
-                                    <a href="https://docs.google.com/spreadsheets/d/1AUtcH5u3LbgCCO7jzmcFgC5xch_R1rjq2__oe7ZFZLY/export?format=xlsx&gid=859518563" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors">
+                                    <button id="btn-base-completa" onclick="downloadBaseCompletaExcel()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-60">
                                         <i class="ph ph-microsoft-excel-logo"></i> Descargar Excel
-                                    </a>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -3769,6 +3769,59 @@
                 XLSX.utils.book_append_sheet(wb, ws, 'Respuestas_Texto');
                 const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g,'-');
                 XLSX.writeFile(wb, `Respuestas_NOM035_${fecha}.xlsx`);
+                showToast('Excel descargado correctamente.', 'success');
+            } catch(e) {
+                showToast('Error al generar el Excel. Verifica la conexión.', 'error');
+            } finally {
+                btn.innerHTML = orig;
+                btn.disabled = false;
+            }
+        }
+
+        async function downloadBaseCompletaExcel() {
+            const btn = document.getElementById('btn-base-completa');
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="ph ph-spinner animate-spin mr-1"></i> Generando...';
+            btn.disabled = true;
+            try {
+                // Asegurar _colabData cargado (para obtener comentarioFinal)
+                if (!_colabData.length) {
+                    const cr = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getColaboradoresDetalle').then(r => r.json()).catch(() => null);
+                    if (cr?.status === 'success') _colabData = cr.data;
+                }
+
+                // Mapa empId → comentarioFinal
+                const _norm = s => String(s || '').replace(/^0+/, '') || '0';
+                const comentMap = {};
+                (_colabData || []).forEach(r => {
+                    let coment = r.comentarioFinal || '';
+                    if (!coment && r.respuestas) {
+                        try {
+                            const rp = typeof r.respuestas === 'string' ? JSON.parse(r.respuestas) : r.respuestas;
+                            coment = rp?.comentarioFinal || '';
+                        } catch {}
+                    }
+                    if (r.empId) comentMap[_norm(r.empId)] = coment;
+                });
+
+                // Obtener respuestas en texto desde GAS
+                const res = await fetch(GOOGLE_APPS_SCRIPT_URL + '?action=getRespuestasTexto');
+                const result = await res.json();
+                if (result.status !== 'success' || !result.data?.length) {
+                    showToast('No hay datos para exportar.', 'error'); return;
+                }
+
+                // Añadir columna Comentarios (empId en columna 0)
+                const rows = result.data.map((row, i) => {
+                    if (i === 0) return [...row, 'Comentarios'];
+                    return [...row, comentMap[_norm(row[0])] || ''];
+                });
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                XLSX.utils.book_append_sheet(wb, ws, 'Respuestas');
+                const fecha = new Date().toLocaleDateString('es-MX').replace(/\//g, '-');
+                XLSX.writeFile(wb, `BaseCompleta_NOM035_${fecha}.xlsx`);
                 showToast('Excel descargado correctamente.', 'success');
             } catch(e) {
                 showToast('Error al generar el Excel. Verifica la conexión.', 'error');
